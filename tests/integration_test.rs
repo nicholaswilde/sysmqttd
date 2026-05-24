@@ -21,6 +21,7 @@ async fn test_integration_daemon_discovery_and_publish() {
         net_interface: "wlan0".to_string(),
         gpio_inputs: vec![],
         gpio_outputs: vec![],
+        verbose: false,
     };
 
     let daemon = Daemon::new(config, "integration-tester".to_string());

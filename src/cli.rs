@@ -20,6 +20,7 @@ pub enum CliAction {
         monitored_services: Option<String>,
         gpio_inputs: Option<String>,
         gpio_outputs: Option<String>,
+        verbose: Option<bool>,
     },
 }
 
@@ -37,6 +38,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut monitored_services = None;
     let mut gpio_inputs = None;
     let mut gpio_outputs = None;
+    let mut verbose = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -128,6 +130,10 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing GPIO outputs after outputs flag".to_string());
                 }
             }
+            "--verbose" => {
+                verbose = Some(true);
+                i += 1;
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
@@ -144,6 +150,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
         monitored_services,
         gpio_inputs,
         gpio_outputs,
+        verbose,
     })
 }
 
@@ -165,7 +172,8 @@ Options:\n\
     -i, --interface <if>     Network interface card (default wlan0)\n\
     -s, --services <list>    Comma-separated whitelist of systemd services to monitor\n\
     -g, --gpio <list>        Comma-separated whitelist of GPIO input pins\n\
-    -o, --gpio-outputs <list> Comma-separated whitelist of GPIO output pins\n\n\
+    -o, --gpio-outputs <list> Comma-separated whitelist of GPIO output pins\n\
+        --verbose            Enable verbose logging (payloads and packets detail)\n\n\
 The daemon connects to an MQTT broker as configured via arguments, environment variables or a configuration file.\n",
         ver = version
     )
@@ -191,6 +199,7 @@ mod tests {
                 monitored_services: None,
                 gpio_inputs: None,
                 gpio_outputs: None,
+                verbose: None,
             }
         );
     }
@@ -227,6 +236,7 @@ mod tests {
                 monitored_services: None,
                 gpio_inputs: None,
                 gpio_outputs: None,
+                verbose: None,
             }
         );
     }
@@ -263,6 +273,7 @@ mod tests {
                 monitored_services: Some("docker,nginx".to_string()),
                 gpio_inputs: None,
                 gpio_outputs: None,
+                verbose: None,
             }
         );
     }
@@ -305,6 +316,7 @@ mod tests {
                 monitored_services: None,
                 gpio_inputs: None,
                 gpio_outputs: Some("24:Relay 1,25:LED Indicator".to_string()),
+                verbose: None,
             }
         );
     }
@@ -313,5 +325,26 @@ mod tests {
     fn test_gpio_outputs_flag_missing_val() {
         let args = vec!["sysmqttd".to_string(), "-o".to_string()];
         assert!(parse_arguments(args).is_err());
+    }
+
+    #[test]
+    fn test_verbose_flag_valid() {
+        let args = vec!["sysmqttd".to_string(), "--verbose".to_string()];
+        assert_eq!(
+            parse_arguments(args).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: Some(true),
+            }
+        );
     }
 }

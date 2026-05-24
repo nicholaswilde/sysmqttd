@@ -541,6 +541,7 @@ mod tests {
             net_interface: "wlan0".to_string(),
             gpio_inputs: vec![],
             gpio_outputs: vec![],
+            verbose: false,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -566,6 +567,7 @@ mod tests {
                 device_class: Some("door".to_string()),
             }],
             gpio_outputs: vec![],
+            verbose: false,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -587,6 +589,7 @@ mod tests {
                 pin: 24,
                 name: "Mock Switch".to_string(),
             }],
+            verbose: false,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);

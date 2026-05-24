@@ -2,14 +2,14 @@
 
 This plan guides the implementation of logging verbosity control.
 
-## Phase 1: CLI and Configuration Verbosity Flag
+## Phase 1: CLI and Configuration Verbosity Flag [checkpoint: 066bcfb]
 Add configuration parsing for verbose logging.
 
-- [ ] Task: Update `Config` and `CliOverrides` to support verbosity
-    - [ ] Add `verbose` field to `Config`, `FileConfig`, and `CliOverrides`
-    - [ ] Support `--verbose` CLI parameter and `SYSMQTTD_VERBOSE` environment variable
-- [ ] Task: Write unit tests for verbosity config overrides
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Configuration' (Protocol in workflow.md)
+- [x] Task: Update `Config` and `CliOverrides` to support verbosity
+    - [x] Add `verbose` field to `Config`, `FileConfig`, and `CliOverrides`
+    - [x] Support `--verbose` CLI parameter and `SYSMQTTD_VERBOSE` environment variable
+- [x] Task: Write unit tests for verbosity config overrides
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration' (Protocol in workflow.md)
 
 ## Phase 2: Logging Toggle Integration & Verification
 Integrate verbosity checks in daemon loops.

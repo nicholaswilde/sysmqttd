@@ -16,6 +16,7 @@ pub struct CliOverrides {
     pub monitored_services: Option<String>,
     pub gpio_inputs: Option<String>,
     pub gpio_outputs: Option<String>,
+    pub verbose: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -36,6 +37,8 @@ pub struct Config {
     pub gpio_inputs: Vec<GpioInputConfig>,
     #[serde(default)]
     pub gpio_outputs: Vec<GpioOutputConfig>,
+    #[serde(default)]
+    pub verbose: bool,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -68,6 +71,8 @@ pub struct FileConfig {
     pub gpio_inputs: Option<Vec<GpioInputConfig>>,
     #[serde(alias = "gpio_outputs")]
     pub gpio_outputs: Option<Vec<GpioOutputConfig>>,
+    #[serde(alias = "verbose")]
+    pub verbose: Option<bool>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -223,6 +228,17 @@ impl Config {
             gpio_outputs = parse_gpio_outputs_env(cli_gpio_out);
         }
 
+        let verbose = overrides
+            .verbose
+            .or_else(|| {
+                env::var("SYSMQTTD_VERBOSE").ok().map(|v| {
+                    let v_lower = v.to_lowercase();
+                    v_lower == "true" || v_lower == "1" || v_lower == "yes"
+                })
+            })
+            .or(file_config.verbose)
+            .unwrap_or(false);
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -232,6 +248,7 @@ impl Config {
             net_interface,
             gpio_inputs,
             gpio_outputs,
+            verbose,
         })
     }
 }
@@ -411,6 +428,7 @@ mod tests {
             monitored_services: Some("cli_svc1,cli_svc2".to_string()),
             gpio_inputs: None,
             gpio_outputs: None,
+            verbose: None,
         };
         let config_overrides = Config::load_with_overrides(overrides).unwrap();
         assert_eq!(config_overrides.mqtt_host, "10.20.30.40");
@@ -422,5 +440,54 @@ mod tests {
         assert_eq!(env::var("MONITORED_SERVICES").unwrap(), "cli_svc1,cli_svc2");
 
         clean_env();
+    }
+
+    #[test]
+    fn test_verbose_config_overrides() {
+        // 1. Default verbose is false
+        clean_env();
+        let overrides_default = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert!(!cfg.verbose);
+
+        // 2. CLI override verbose
+        clean_env();
+        let overrides_cli = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            verbose: Some(true),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_cli).unwrap();
+        assert!(cfg.verbose);
+
+        // 3. Env override verbose (SYSMQTTD_VERBOSE=true)
+        clean_env();
+        env::set_var("SYSMQTTD_VERBOSE", "true");
+        let overrides_env = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env).unwrap();
+        assert!(cfg.verbose);
+
+        // 4. Env override verbose (SYSMQTTD_VERBOSE=1)
+        clean_env();
+        env::set_var("SYSMQTTD_VERBOSE", "1");
+        let overrides_env2 = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env2).unwrap();
+        assert!(cfg.verbose);
+
+        clean_env();
+        env::remove_var("SYSMQTTD_VERBOSE");
     }
 }
