@@ -19,7 +19,7 @@ tasks:
   test:
     desc: Run unit tests
     cmds:
-      - cargo test --lib --bins
+      - cargo test
 
   test-integration:
     desc: Run integration tests

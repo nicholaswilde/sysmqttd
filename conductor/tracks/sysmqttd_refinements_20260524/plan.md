@@ -12,10 +12,10 @@ Draft basic configurations and warnings.
 ## Phase 2: Daemon Refactoring & Unit Tests
 Extract the async telemetry poller out of `main.rs` to allow robust testing.
 
-- [ ] Task: Design and create `src/daemon.rs` housing telemetry collection and connection event loops.
-- [ ] Task: Simplify `src/main.rs` to boot config and instantiate the new `Daemon` structure.
-- [ ] Task: Write unit tests verifying core `Daemon` operations.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2 Daemon Refactor' (Protocol in workflow.md)
+- [x] Task: Design and create `src/daemon.rs` housing telemetry collection and connection event loops.
+- [x] Task: Simplify `src/main.rs` to boot config and instantiate the new `Daemon` structure.
+- [x] Task: Write unit tests verifying core `Daemon` operations.
+- [x] Task: Conductor - User Manual Verification 'Phase 2 Daemon Refactor' (Protocol in workflow.md)
 
 ## Phase 3: Integration Tests & 90% Coverage Gate
 Enhance the testing infrastructure to enforce quality gates.
