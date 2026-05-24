@@ -4,7 +4,6 @@ use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
 use tokio::time;
 
-#[ignore]
 #[tokio::test]
 async fn test_integration_daemon_discovery_and_publish() {
     // 1. Establish connection options to our local docker broker

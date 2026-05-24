@@ -7,8 +7,10 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 - [x] **Track: Add network interface bandwidth (RX/TX rates) by parsing /proc/net/dev**
   *Link: [./tracks/sysmqttd_net_bandwidth_20260524/](./tracks/sysmqttd_net_bandwidth_20260524/)*
 
-- [ ] **Track: Add systemd service status binary monitor for whitelisted services**
+- [x] **Track: Add systemd service status binary monitor for whitelisted services**
   *Link: [./tracks/sysmqttd_systemd_status_20260524/](./tracks/sysmqttd_systemd_status_20260524/)*
+
+
 
 - [ ] **Track: Add safe remote commands (reboot, shutdown, restart service) via MQTT subscriptions**
   *Link: [./tracks/sysmqttd_remote_commands_20260524/](./tracks/sysmqttd_remote_commands_20260524/)*
