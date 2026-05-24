@@ -1,6 +1,10 @@
 version: '3'
 
 tasks:
+  clippy:
+    desc: Run cargo clippy
+    cmds:
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings
   check:
     desc: Check code for errors without generating binary
     cmds:
