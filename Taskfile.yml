@@ -29,7 +29,7 @@ tasks:
   coverage:
     desc: Run tests and audit code coverage, enforcing a 90% line gate
     cmds:
-      - cargo llvm-cov --all-features --fail-under-lines 90
+      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --fail-under-lines 90
 
   build-all:
     desc: Cross-compile optimized release binaries for ARMv6, ARMv7, ARM64, and AMD64

@@ -85,8 +85,8 @@ impl Daemon {
         Ok(())
     }
 
-    /// Run the main daemon loop
-    pub async fn run(self) -> Result<(), String> {
+    /// Run the main daemon loop with support for a clean shutdown signal
+    pub async fn run_with_shutdown(self, mut shutdown_rx: tokio::sync::oneshot::Receiver<()>) -> Result<(), String> {
         let mqttoptions = self.get_mqtt_options();
         let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
@@ -95,25 +95,36 @@ impl Daemon {
 
         println!("Connecting to MQTT broker...");
         loop {
-            match eventloop.poll().await {
-                Ok(notification) => {
+            tokio::select! {
+                _ = &mut shutdown_rx => {
+                    println!("Shutdown signal received. Exiting daemon event loop.");
+                    break;
+                }
+                notification = eventloop.poll() => {
                     match notification {
-                        Event::Incoming(Packet::ConnAck(connack)) => {
+                        Ok(Event::Incoming(Packet::ConnAck(connack))) => {
                             println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
                             if let Err(e) = self.publish_discovery(&client).await {
                                 eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
                             }
                         }
-                        Event::Incoming(_incoming) => {}
-                        Event::Outgoing(_outgoing) => {}
+                        Ok(Event::Incoming(_incoming)) => {}
+                        Ok(Event::Outgoing(_outgoing)) => {}
+                        Err(e) => {
+                            eprintln!("MQTT EventLoop Error: {}. Retrying in 5 seconds...", e);
+                            time::sleep(Duration::from_secs(5)).await;
+                        }
                     }
-                }
-                Err(e) => {
-                    eprintln!("MQTT EventLoop Error: {}. Retrying in 5 seconds...", e);
-                    time::sleep(Duration::from_secs(5)).await;
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Run the main daemon loop (blocks indefinitely)
+    pub async fn run(self) -> Result<(), String> {
+        let (_tx, rx) = tokio::sync::oneshot::channel();
+        self.run_with_shutdown(rx).await
     }
 }
 
@@ -135,7 +146,6 @@ mod tests {
         let options = daemon.get_mqtt_options();
         assert_eq!(options.broker_address(), ("10.0.0.5".to_string(), 1883));
         
-        // Assertions verifying that client_id matches
         let client_id = format!("sysmqttd_{}", "pi-zero");
         assert_eq!(options.client_id(), client_id);
     }

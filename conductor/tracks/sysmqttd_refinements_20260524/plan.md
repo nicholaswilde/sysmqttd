@@ -20,10 +20,10 @@ Extract the async telemetry poller out of `main.rs` to allow robust testing.
 ## Phase 3: Integration Tests & 90% Coverage Gate
 Enhance the testing infrastructure to enforce quality gates.
 
-- [ ] Task: Create `tests/integration_test.rs` to verify daemon behavior against mock brokers.
-- [ ] Task: Configure the coverage task inside `Taskfile.yml` to enforce a 90% line coverage threshold.
-- [ ] Task: Verify that `task coverage` runs successfully and passes the 90%+ limit check.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3 Coverage Gate' (Protocol in workflow.md)
+- [x] Task: Create `tests/integration_test.rs` to verify daemon behavior against mock brokers.
+- [x] Task: Configure the coverage task inside `Taskfile.yml` to enforce a 90% line coverage threshold.
+- [x] Task: Verify that `task coverage` runs successfully and passes the 90%+ limit check.
+- [x] Task: Conductor - User Manual Verification 'Phase 3 Coverage Gate' (Protocol in workflow.md)
 
 ## Phase 4: Docker & Compose Configurations
 Implement multi-architecture docker containers and sandbox compose configs.

@@ -1,10 +1,5 @@
-mod config;
-mod daemon;
-mod discovery;
-mod telemetry;
-
-use config::Config;
-use daemon::Daemon;
+use sysmqttd::config::Config;
+use sysmqttd::daemon::Daemon;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
