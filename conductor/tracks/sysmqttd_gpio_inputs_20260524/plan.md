@@ -11,7 +11,7 @@ Implement lightweight sysfs-based GPIO input edge listener and verify via unit t
 - [x] Task: Write unit tests with a mock sysfs directory structure
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Input Core' (Protocol in workflow.md)
 
-## Phase 2: Async Loop Integration & Discovery
+## Phase 2: Async Loop Integration & Discovery [checkpoint: 7f8eebb]
 Integrate the GPIO input edge polling task into the main async event loop.
 
 - [x] Task: Spawn GPIO input polling task in daemon startup
