@@ -14,6 +14,7 @@
 - **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
+- **Safe Remote Commands:** Securely executes whitelisted system controls (`reboot`, `shutdown`, `restart_service`) via a dedicated MQTT subscription topic.
 - **Zero-Configuration Auto-Discovery:** Registers all collected telemetry and monitored services/pins under a single parent device in Home Assistant using standard MQTT Discovery.
 - **Asynchronous Loop:** Built on the Tokio runtime, featuring isolated, non-blocking telemetry and service monitoring loops.
 - **Hardened Deployment:** Comes with a secure systemd unit template utilizing Linux sandboxing technologies for tight security constraints.
@@ -261,6 +262,18 @@ Monitored GPIO output pins are registered as switch entities:
 - **GPIO Output Command Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_pin<pin_number>/set`
 - **GPIO Output State Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_pin<pin_number>/state`
 - **Values:** `"ON"` or `"OFF"`. When a command payload is received, the daemon actuates the pin and confirms the updated state.
+
+### Remote Commands Topic
+
+The daemon subscribes to a dedicated command topic to receive and securely process whitelisted system instructions:
+
+- **Remote Command Topic:** `<MQTT_TOPIC_PREFIX>/sensor/sysmqttd_<hostname>/command`
+- **Supported Payloads:** 
+  - `"reboot"` – Reboots the host system (executes `sudo reboot`).
+  - `"shutdown"` – Powers off the host system (executes `sudo poweroff`).
+  - `"restart_service"` – Restarts the `sysmqttd` daemon itself (executes `sudo systemctl restart sysmqttd`).
+
+*Note: All other command strings, arguments, or shell flags are completely ignored and discarded to prevent command injection.*
 
 ### Auto-Discovery Topics
 

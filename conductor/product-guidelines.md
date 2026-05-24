@@ -6,6 +6,7 @@ This document defines the guidelines and standards for the `sysmqttd` daemon's t
 *   **MQTT Client ID:** Must follow the pattern `sysmqttd_<hostname>` to ensure uniqueness across the broker network.
 *   **Home Assistant Unique IDs:** All discovery entities must use `sysmqttd_<hostname>_<metric>` (e.g., `sysmqttd_pi-zero_cpu_temp`).
 *   **Home Assistant Device Identifier:** `sysmqttd_<hostname>` is the parent identifier. All sensors must list this identifier in their `device.identifiers` list.
+*   **Remote Command Topic:** `<prefix>/sensor/sysmqttd_<hostname>/command` (used for receiving whitelisted safe commands: `reboot`, `shutdown`, `restart_service`).
 
 ## 2. Telemetry and Payload Conventions
 *   **Discovery Payloads:**
