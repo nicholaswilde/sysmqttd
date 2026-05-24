@@ -40,13 +40,13 @@ Implement non-blocking telemetry acquisition for CPU Temperature, RAM, and Disk 
 - [x] Task: Implement the main 60-second telemetry polling and async publish loop.
 - [x] Task: Conductor - User Manual Verification 'Phase 4 Telemetry' (Protocol in workflow.md)
 
-## Phase 5: Size & Resource Optimization
+## Phase 5: Size & Resource Optimization [checkpoint: 13abe90]
 Optimize binary sizes and runtime memory footprint.
 
-- [ ] Task: Compile cross-compiled release build using `cross` and verify binary is stripped.
-- [ ] Task: Measure final compiled binary size (target < 2MB).
-- [ ] Task: Run performance profiling or runtime memory monitoring (Valgrind or RSS tracking) if possible to verify RAM consumption target (< 8MB RAM).
-- [ ] Task: Conductor - User Manual Verification 'Phase 5 Optimization' (Protocol in workflow.md)
+- [x] Task: Compile cross-compiled release build using `cross` and verify binary is stripped.
+- [x] Task: Measure final compiled binary size (target < 2MB).
+- [x] Task: Run performance profiling or runtime memory monitoring (Valgrind or RSS tracking) if possible to verify RAM consumption target (< 8MB RAM).
+- [x] Task: Conductor - User Manual Verification 'Phase 5 Optimization' (Protocol in workflow.md)
 
 ## Phase 6: Systemd Service Installation & Deployment
 Draft systemd unit configuration, service deployment, and installation scripts.
