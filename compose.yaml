@@ -1,0 +1,31 @@
+services:
+  # The local MQTT broker container
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: sysmqttd-mosquitto
+    ports:
+      - "1883:1883"
+    command: mosquitto -c /mosquitto-no-auth.conf
+    restart: unless-stopped
+    networks:
+      - sysmqttd_net
+
+  # The sysmqttd daemon container
+  sysmqttd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sysmqttd-daemon
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_TOPIC_PREFIX=homeassistant
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - sysmqttd_net
+
+networks:
+  sysmqttd_net:
+    driver: bridge
