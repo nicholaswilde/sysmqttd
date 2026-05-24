@@ -12,7 +12,9 @@
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
 - **Comprehensive Telemetry:** Gathers CPU Temperature, RAM Usage (%), Disk Storage Utilization (%), CPU Load Averages (1m, 5m, 15m), System Uptime, and Real-time Network Bandwidth Rates (RX & TX rate in kB/s).
 - **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
-- **Zero-Configuration Auto-Discovery:** Registers all collected telemetry and monitored services under a single parent device in Home Assistant using standard MQTT Discovery.
+- **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
+- **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
+- **Zero-Configuration Auto-Discovery:** Registers all collected telemetry and monitored services/pins under a single parent device in Home Assistant using standard MQTT Discovery.
 - **Asynchronous Loop:** Built on the Tokio runtime, featuring isolated, non-blocking telemetry and service monitoring loops.
 - **Hardened Deployment:** Comes with a secure systemd unit template utilizing Linux sandboxing technologies for tight security constraints.
 
@@ -58,6 +60,8 @@ The binary supports the following command-line flags, processed before any confi
 - `-p`, `--prefix <prefix>` – Home Assistant discovery topic prefix (default `homeassistant`).
 - `-i`, `--interface <if>` – Network interface card to monitor (default `wlan0`).
 - `-s`, `--services <list>` / `--monitored-services <list>` – Comma-separated whitelist of systemd services to monitor.
+- `-g`, `--gpio <list>` / `--gpio-inputs <list>` – Comma-separated list of GPIO input pins in `pin:name[:device_class]` format.
+- `-o`, `--gpio-outputs <list>` – Comma-separated list of GPIO output pins in `pin:name` format.
 
 ---
 
@@ -82,6 +86,8 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_MQTT_TOPIC_PREFIX`| `MQTT_TOPIC_PREFIX` | `mqtt_topic_prefix` (`prefix`) | `homeassistant` | Discovery prefix for Home Assistant MQTT topics. |
 | `SYSMQTTD_NET_INTERFACE` | `NET_INTERFACE` | `net_interface` (`interface`) | `wlan0` | The network interface to monitor for RX/TX rates. |
 | *N/A* (Environment only) | `MONITORED_SERVICES` | *N/A* (Environment only) | *None* | Comma-separated list of systemd services to monitor. |
+| `SYSMQTTD_GPIO_INPUTS`   | `GPIO_INPUTS`   | `gpio_inputs` | *None* | Whitelist of GPIO input pins in `pin:name[:device_class]` format. |
+| `SYSMQTTD_GPIO_OUTPUTS`  | `GPIO_OUTPUTS`  | `gpio_outputs` | *None* | Whitelist of GPIO output pins in `pin:name` format. |
 
 ### Sample Configuration Files
 
@@ -95,6 +101,14 @@ user = "mqtt_user"
 password = "supersecretpassword"
 prefix = "homeassistant"
 interface = "eth0"
+
+gpio_inputs = [
+  { pin = 23, name = "Front Door", device_class = "door" }
+]
+
+gpio_outputs = [
+  { pin = 24, name = "Relay 1" }
+]
 ```
 
 #### YAML (`sysmqttd.yaml` / `sysmqttd.yml`)
@@ -105,6 +119,13 @@ user: "mqtt_user"
 password: "supersecretpassword"
 prefix: "homeassistant"
 interface: "eth0"
+gpio_inputs:
+  - pin: 23
+    name: "Front Door"
+    device_class: "door"
+gpio_outputs:
+  - pin: 24
+    name: "Relay 1"
 ```
 
 #### JSON (`sysmqttd.json`)
@@ -115,7 +136,13 @@ interface: "eth0"
   "user": "mqtt_user",
   "password": "supersecretpassword",
   "prefix": "homeassistant",
-  "interface": "eth0"
+  "interface": "eth0",
+  "gpio_inputs": [
+    { "pin": 23, "name": "Front Door", "device_class": "door" }
+  ],
+  "gpio_outputs": [
+    { "pin": 24, "name": "Relay 1" }
+  ]
 }
 ```
 
@@ -214,6 +241,21 @@ Monitored systemd services are registered as individual binary sensors of the `c
 
 - **Service State Topic:** `<MQTT_TOPIC_PREFIX>/binary_sensor/sysmqttd_<hostname>/service_<service_name>/state`
 - **Values:** `"on"` (service is running/active) or `"off"` (service is inactive/dead).
+
+### GPIO Input Topics
+
+Monitored GPIO input pins are registered as binary sensors:
+
+- **GPIO Input State Topic:** `<MQTT_TOPIC_PREFIX>/binary_sensor/sysmqttd_<hostname>_pin<pin_number>/state`
+- **Values:** `"ON"` (high/1) or `"OFF"` (low/0).
+
+### GPIO Output Switch Topics
+
+Monitored GPIO output pins are registered as switch entities:
+
+- **GPIO Output Command Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_pin<pin_number>/set`
+- **GPIO Output State Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_pin<pin_number>/state`
+- **Values:** `"ON"` or `"OFF"`. When a command payload is received, the daemon actuates the pin and confirms the updated state.
 
 ### Auto-Discovery Topics
 

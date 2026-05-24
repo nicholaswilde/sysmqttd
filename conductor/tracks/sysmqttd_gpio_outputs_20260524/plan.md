@@ -10,10 +10,10 @@ Implement sysfs GPIO output driver and MQTT subscription hooks.
 - [x] Task: Write unit tests with mock sysfs structure
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Output Core' (Protocol in workflow.md)
 
-## Phase 2: Switch Command Integration
+## Phase 2: Switch Command Integration [checkpoint: 79605e1]
 Subscribe to command topics in the event loop and confirm states back.
 
-- [ ] Task: Hook subscription commands in eventloop polling
-- [ ] Task: Add Home Assistant discovery and state feedback topics
-- [ ] Task: Audit formatting, linting, and coverage gates (>90%)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Integration' (Protocol in workflow.md)
+- [x] Task: Hook subscription commands in eventloop polling
+- [x] Task: Add Home Assistant discovery and state feedback topics
+- [x] Task: Audit formatting, linting, and coverage gates (>90%)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Integration' (Protocol in workflow.md)

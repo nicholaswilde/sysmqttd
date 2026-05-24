@@ -2,6 +2,7 @@
 
 /// Represents the action requested via command line.
 #[derive(Debug, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub enum CliAction {
     /// Print help/usage information and exit.
     PrintHelp,

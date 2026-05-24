@@ -112,11 +112,8 @@ mod tests {
         fs::create_dir_all(&temp_dir).unwrap();
 
         let pin = 24;
-        let controller = GpioOutputController::with_base_path(
-            pin,
-            "Mock Relay".to_string(),
-            temp_dir.clone(),
-        );
+        let controller =
+            GpioOutputController::with_base_path(pin, "Mock Relay".to_string(), temp_dir.clone());
 
         controller.export().unwrap();
         let export_content = fs::read_to_string(temp_dir.join("export")).unwrap();
@@ -139,9 +136,20 @@ mod tests {
         assert_eq!(val_content, "1");
         assert_eq!(controller.read_value().unwrap(), 1);
 
+        // Test unexporting when pin_dir exists
         controller.unexport().unwrap();
         let unexport_content = fs::read_to_string(temp_dir.join("unexport")).unwrap();
         assert_eq!(unexport_content, "24");
+
+        // Test unexporting when pin_dir does not exist (should do nothing)
+        let _ = fs::remove_dir_all(&pin_dir);
+        controller.unexport().unwrap();
+
+        // Test invalid value parse in read_value
+        let pin_dir = temp_dir.join("gpio24");
+        fs::create_dir_all(&pin_dir).unwrap();
+        fs::write(pin_dir.join("value"), "invalid_val\n").unwrap();
+        assert!(controller.read_value().is_err());
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

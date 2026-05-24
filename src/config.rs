@@ -213,7 +213,8 @@ impl Config {
 
         let mut gpio_outputs = file_config.gpio_outputs.unwrap_or_default();
 
-        if let Ok(env_gpio_out) = env::var("SYSMQTTD_GPIO_OUTPUTS").or_else(|_| env::var("GPIO_OUTPUTS"))
+        if let Ok(env_gpio_out) =
+            env::var("SYSMQTTD_GPIO_OUTPUTS").or_else(|_| env::var("GPIO_OUTPUTS"))
         {
             gpio_outputs = parse_gpio_outputs_env(&env_gpio_out);
         }
