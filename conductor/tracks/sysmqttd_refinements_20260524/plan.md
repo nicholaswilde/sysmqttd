@@ -2,7 +2,7 @@
 
 This plan guides the implementation of the new testing, deployment, and taskrunner requirements.
 
-## Phase 1: Taskfile Scaffolding & README Warning
+## Phase 1: Taskfile Scaffolding & README Warning [checkpoint: ca3845f]
 Draft basic configurations and warnings.
 
 - [x] Task: Update `README.md` at project root with development warning at the top.
