@@ -18,16 +18,16 @@ Implement the logic to scan and parse CLI arguments and verify it via unit tests
 ## Phase 2: CLI Integration in Daemon Driver
 Integrate CLI argument scanning into `main.rs` to control the boot sequence.
 
-- [ ] Task: Modify `src/main.rs` to process arguments before configuration boot
-    - [ ] Extract `std::env::args()` and call `parse_arguments`
-    - [ ] If `CliAction::PrintHelp`, print usage info to stdout and exit(0)
-    - [ ] If `CliAction::PrintVersion`, print dynamic Cargo PKG version to stdout and exit(0)
-    - [ ] If `CliAction::Boot`, proceed with the standard config loading and daemon boot sequence
-    - [ ] If error, print the error to stderr and exit(1)
-- [ ] Task: Verify overall command line options and unit test coverage
-    - [ ] Run `task fmt` and `task lint` to verify code style and lints
-    - [ ] Run `task coverage` to ensure we maintain at least 90% total line coverage
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: CLI Integration in Daemon Driver' (Protocol in workflow.md)
+- [x] Task: Modify `src/main.rs` to process arguments before configuration boot
+    - [x] Extract `std::env::args()` and call `parse_arguments`
+    - [x] If `CliAction::PrintHelp`, print usage info to stdout and exit(0)
+    - [x] If `CliAction::PrintVersion`, print dynamic Cargo PKG version to stdout and exit(0)
+    - [x] If `CliAction::Boot`, proceed with the standard config loading and daemon boot sequence
+    - [x] If error, print the error to stderr and exit(1)
+- [x] Task: Verify overall command line options and unit test coverage
+    - [x] Run `task fmt` and `task lint` to verify code style and lints
+    - [x] Run `task coverage` to ensure we maintain at least 90% total line coverage
+- [x] Task: Conductor - User Manual Verification 'Phase 2: CLI Integration in Daemon Driver' (Protocol in workflow.md)
 
 ## Phase 3: Final Verification & Cross-Compilations
 Verify the implementation under the Taskfile framework and perform multi-architecture builds.

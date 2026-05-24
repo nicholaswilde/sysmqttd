@@ -13,6 +13,6 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 4.  **Robust Async Lifecycle:** Asynchronous client loop that handles system startup, intermittent network dropouts, and broker reconnects gracefully.
 5.  **Service Status Monitoring:** Real-time checking of whitelisted systemd services (e.g., `docker`, `nginx`) via async polling and registers them as binary sensors.
 6.  **Layered Configuration:** Supports multi-format configuration files (TOML, YAML, JSON), custom config path overrides via `-c`/`--config` flags, and high-precedence `SYSMQTTD_` prefixed environment variables.
-*   **CLI Arguments:** `-h/--help`, `-v/--version`, and `-c/--config` flags for configuration, usage, and version information.
+*   **CLI Arguments:** Supports `-h/--help`, `-v/--version`, `-c/--config`, and individual parameter override flags (`-H/--host`, `-P/--port`, `-u/--user/--username`, `-w/--password/--pass`, `-p/--prefix`, `-i/--interface`, and `-s/--services/--monitored-services`) taking absolute highest precedence.
 
 

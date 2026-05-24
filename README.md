@@ -51,6 +51,13 @@ The binary supports the following command-line flags, processed before any confi
 - `-h`, `--help` – Show usage information and exit.
 - `-v`, `--version` – Show the current version (e.g., `sysmqttd v0.1.0`) and exit.
 - `-c`, `--config <path>` – Specify custom path to a configuration file (TOML, YAML, or JSON).
+- `-H`, `--host <host>` – MQTT broker host (e.g., `localhost`).
+- `-P`, `--port <port>` – MQTT broker port (default `1883`).
+- `-u`, `--user <username>` / `--username <username>` – MQTT broker username.
+- `-w`, `--password <pass>` / `--pass <pass>` – MQTT broker password.
+- `-p`, `--prefix <prefix>` – Home Assistant discovery topic prefix (default `homeassistant`).
+- `-i`, `--interface <if>` – Network interface card to monitor (default `wlan0`).
+- `-s`, `--services <list>` / `--monitored-services <list>` – Comma-separated whitelist of systemd services to monitor.
 
 ---
 
@@ -58,7 +65,7 @@ The binary supports the following command-line flags, processed before any confi
 
 `sysmqttd` supports configuration through a hierarchical, layered structure with the following precedence (from highest to lowest):
 
-1. **Command Line Argument** (`-c` / `--config <path>`)
+1. **Command Line Arguments** (both custom config path and individual parameter flags)
 2. **Prefixed Environment Variables** (`SYSMQTTD_*`)
 3. **Legacy Environment Variables** (`MQTT_*`)
 4. **Configuration File** (searched in order: TOML, YAML, JSON in the local directory, falling back to `/etc/sysmqttd/`)

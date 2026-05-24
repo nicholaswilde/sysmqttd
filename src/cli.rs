@@ -8,7 +8,16 @@ pub enum CliAction {
     /// Print the version of the binary and exit.
     PrintVersion,
     /// Proceed with normal daemon boot.
-    Boot { config_path: Option<String> },
+    Boot {
+        config_path: Option<String>,
+        mqtt_host: Option<String>,
+        mqtt_port: Option<u16>,
+        mqtt_user: Option<String>,
+        mqtt_password: Option<String>,
+        mqtt_topic_prefix: Option<String>,
+        net_interface: Option<String>,
+        monitored_services: Option<String>,
+    },
 }
 
 /// Parse command line arguments.
@@ -16,6 +25,14 @@ pub enum CliAction {
 /// Returns a `CliAction` on success or an error string describing the problem.
 pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut config_path = None;
+    let mut mqtt_host = None;
+    let mut mqtt_port = None;
+    let mut mqtt_user = None;
+    let mut mqtt_password = None;
+    let mut mqtt_topic_prefix = None;
+    let mut net_interface = None;
+    let mut monitored_services = None;
+
     let mut i = 1;
     while i < args.len() {
         let arg = &args[i];
@@ -30,12 +47,81 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing path after configuration flag".to_string());
                 }
             }
+            "-H" | "--host" => {
+                if i + 1 < args.len() {
+                    mqtt_host = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing host after host flag".to_string());
+                }
+            }
+            "-P" | "--port" => {
+                if i + 1 < args.len() {
+                    let val = &args[i + 1];
+                    let port = val
+                        .parse::<u16>()
+                        .map_err(|e| format!("Invalid port value '{}': {}", val, e))?;
+                    mqtt_port = Some(port);
+                    i += 2;
+                } else {
+                    return Err("Missing port after port flag".to_string());
+                }
+            }
+            "-u" | "--user" | "--username" => {
+                if i + 1 < args.len() {
+                    mqtt_user = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing username after user flag".to_string());
+                }
+            }
+            "-w" | "--password" | "--pass" => {
+                if i + 1 < args.len() {
+                    mqtt_password = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing password after password flag".to_string());
+                }
+            }
+            "-p" | "--prefix" => {
+                if i + 1 < args.len() {
+                    mqtt_topic_prefix = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing prefix after prefix flag".to_string());
+                }
+            }
+            "-i" | "--interface" => {
+                if i + 1 < args.len() {
+                    net_interface = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing interface after interface flag".to_string());
+                }
+            }
+            "-s" | "--services" | "--monitored-services" => {
+                if i + 1 < args.len() {
+                    monitored_services = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing services after services flag".to_string());
+                }
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
         }
     }
-    Ok(CliAction::Boot { config_path })
+    Ok(CliAction::Boot {
+        config_path,
+        mqtt_host,
+        mqtt_port,
+        mqtt_user,
+        mqtt_password,
+        mqtt_topic_prefix,
+        net_interface,
+        monitored_services,
+    })
 }
 
 /// Returns a short usage string printed for the `--help` flag.
@@ -45,10 +131,17 @@ pub fn usage() -> String {
         "sysmqttd {ver}\n\n\
 Usage: sysmqttd [OPTIONS]\n\
 Options:\n\
-    -h, --help        Print this help message and exit\n\
-    -v, --version     Print version information and exit\n\
-    -c, --config      Specify custom path to configuration file (TOML, YAML, JSON)\n\
-The daemon connects to an MQTT broker as configured via environment variables or a configuration file.\n",
+    -h, --help               Print this help message and exit\n\
+    -v, --version            Print version information and exit\n\
+    -c, --config <path>      Specify custom path to configuration file (TOML, YAML, JSON)\n\
+    -H, --host <host>        MQTT broker host (e.g., localhost)\n\
+    -P, --port <port>        MQTT broker port (default 1883)\n\
+    -u, --user <username>    MQTT broker username\n\
+    -w, --password <pass>    MQTT broker password\n\
+    -p, --prefix <prefix>    Home Assistant discovery topic prefix (default homeassistant)\n\
+    -i, --interface <if>     Network interface card (default wlan0)\n\
+    -s, --services <list>    Comma-separated whitelist of systemd services to monitor\n\n\
+The daemon connects to an MQTT broker as configured via arguments, environment variables or a configuration file.\n",
         ver = version
     )
 }
@@ -62,7 +155,16 @@ mod tests {
         let args = vec!["sysmqttd".to_string()];
         assert_eq!(
             parse_arguments(args).unwrap(),
-            CliAction::Boot { config_path: None }
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+            }
         );
     }
 
@@ -88,7 +190,48 @@ mod tests {
         assert_eq!(
             parse_arguments(args).unwrap(),
             CliAction::Boot {
-                config_path: Some("custom_cfg.json".to_string())
+                config_path: Some("custom_cfg.json".to_string()),
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_all_parameter_flags_valid() {
+        let args = vec![
+            "sysmqttd".to_string(),
+            "-H".to_string(),
+            "10.0.0.5".to_string(),
+            "-P".to_string(),
+            "1884".to_string(),
+            "-u".to_string(),
+            "username".to_string(),
+            "-w".to_string(),
+            "password".to_string(),
+            "-p".to_string(),
+            "prefix".to_string(),
+            "-i".to_string(),
+            "eth0".to_string(),
+            "-s".to_string(),
+            "docker,nginx".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: Some("10.0.0.5".to_string()),
+                mqtt_port: Some(1884),
+                mqtt_user: Some("username".to_string()),
+                mqtt_password: Some("password".to_string()),
+                mqtt_topic_prefix: Some("prefix".to_string()),
+                net_interface: Some("eth0".to_string()),
+                monitored_services: Some("docker,nginx".to_string()),
             }
         );
     }
@@ -96,6 +239,12 @@ mod tests {
     #[test]
     fn test_config_flag_missing_val() {
         let args = vec!["sysmqttd".to_string(), "--config".to_string()];
+        assert!(parse_arguments(args).is_err());
+    }
+
+    #[test]
+    fn test_port_invalid() {
+        let args = vec!["sysmqttd".to_string(), "-P".to_string(), "abc".to_string()];
         assert!(parse_arguments(args).is_err());
     }
 
