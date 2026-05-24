@@ -1,7 +1,7 @@
+use rumqttc::{AsyncClient, Event, MqttOptions, Packet};
+use std::time::Duration;
 use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
-use rumqttc::{AsyncClient, Packet, Event, MqttOptions};
-use std::time::Duration;
 use tokio::time;
 
 #[tokio::test]
@@ -16,14 +16,12 @@ async fn test_integration_daemon_discovery_and_publish() {
     };
 
     let daemon = Daemon::new(config, "integration-tester".to_string());
-    
+
     // 2. Setup oneshot shutdown signal
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
 
     // 3. Spawn daemon's run loop in a separate task
-    let daemon_task = tokio::spawn(async move {
-        daemon.run_with_shutdown(shutdown_rx).await
-    });
+    let daemon_task = tokio::spawn(async move { daemon.run_with_shutdown(shutdown_rx).await });
 
     // 4. Run for a short period (6 seconds) to let connection, discovery, and first telemetry states stream
     time::sleep(Duration::from_secs(6)).await;
@@ -31,16 +29,26 @@ async fn test_integration_daemon_discovery_and_publish() {
     // 5. Send shutdown signal and await daemon task completion
     let _ = shutdown_tx.send(());
     let daemon_result = daemon_task.await.unwrap();
-    assert!(daemon_result.is_ok(), "Daemon execution failed: {:?}", daemon_result);
+    assert!(
+        daemon_result.is_ok(),
+        "Daemon execution failed: {:?}",
+        daemon_result
+    );
 
     // 6. Verify that discovery retained payloads were successfully published by subscribing to them
     let client_id = "verifier_client".to_string();
     let mut mqttoptions = MqttOptions::new(client_id, "127.0.0.1", 1883);
     mqttoptions.set_keep_alive(Duration::from_secs(30));
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
-    
-    client.subscribe("homeassistant_test/sensor/sysmqttd_integration-tester_cpu_temp/config", rumqttc::QoS::AtLeastOnce).await.unwrap();
-    
+
+    client
+        .subscribe(
+            "homeassistant_test/sensor/sysmqttd_integration-tester_cpu_temp/config",
+            rumqttc::QoS::AtLeastOnce,
+        )
+        .await
+        .unwrap();
+
     let mut pub_received = false;
     let timeout = time::sleep(Duration::from_secs(3));
     tokio::pin!(timeout);
@@ -61,5 +69,8 @@ async fn test_integration_daemon_discovery_and_publish() {
         }
     }
 
-    assert!(pub_received, "Expected to receive retained Home Assistant Discovery payload on subscription");
+    assert!(
+        pub_received,
+        "Expected to receive retained Home Assistant Discovery payload on subscription"
+    );
 }

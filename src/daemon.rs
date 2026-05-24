@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::discovery;
 use crate::telemetry;
-use rumqttc::{AsyncClient, MqttOptions, Event, Packet, QoS};
+use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
 use std::time::Duration;
 use tokio::time;
 
@@ -18,7 +18,8 @@ impl Daemon {
     /// Set up MqttOptions for client
     pub fn get_mqtt_options(&self) -> MqttOptions {
         let client_id = format!("sysmqttd_{}", self.hostname);
-        let mut mqttoptions = MqttOptions::new(client_id, &self.config.mqtt_host, self.config.mqtt_port);
+        let mut mqttoptions =
+            MqttOptions::new(client_id, &self.config.mqtt_host, self.config.mqtt_port);
         mqttoptions.set_keep_alive(Duration::from_secs(30));
         if let (Some(user), Some(pass)) = (&self.config.mqtt_user, &self.config.mqtt_password) {
             mqttoptions.set_credentials(user, pass);
@@ -30,18 +31,21 @@ impl Daemon {
     pub fn spawn_telemetry_loop(&self, client: AsyncClient) {
         let hostname_clone = self.hostname.clone();
         let prefix_clone = self.config.mqtt_topic_prefix.clone();
-        
+
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
             let mut collector = telemetry::TelemetryCollector::new();
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
-            
+
             loop {
                 let state = collector.collect();
                 match serde_json::to_vec(&state) {
                     Ok(payload) => {
                         println!("Publishing telemetry state: {:?}", state);
-                        if let Err(e) = client.publish(&state_topic, QoS::AtLeastOnce, false, payload).await {
+                        if let Err(e) = client
+                            .publish(&state_topic, QoS::AtLeastOnce, false, payload)
+                            .await
+                        {
                             eprintln!("Telemetry publication error: {}", e);
                         }
                     }
@@ -55,7 +59,10 @@ impl Daemon {
     }
 
     /// Publish HA discovery payloads
-    pub async fn publish_discovery(&self, client: &AsyncClient) -> Result<(), rumqttc::ClientError> {
+    pub async fn publish_discovery(
+        &self,
+        client: &AsyncClient,
+    ) -> Result<(), rumqttc::ClientError> {
         let device = discovery::DeviceInfo {
             identifiers: vec![format!("sysmqttd_{}", self.hostname)],
             name: format!("sysmqttd {}", self.hostname),
@@ -64,29 +71,59 @@ impl Daemon {
         };
 
         // 1. CPU Temperature Discovery configuration
-        let cpu_payload = discovery::DiscoveryPayload::new_cpu_temp(&self.config.mqtt_topic_prefix, &self.hostname, device.clone());
-        let cpu_topic = format!("{}/sensor/sysmqttd_{}_cpu_temp/config", self.config.mqtt_topic_prefix, self.hostname);
+        let cpu_payload = discovery::DiscoveryPayload::new_cpu_temp(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let cpu_topic = format!(
+            "{}/sensor/sysmqttd_{}_cpu_temp/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
         let cpu_json = serde_json::to_vec(&cpu_payload).unwrap();
-        client.publish(cpu_topic, QoS::AtLeastOnce, true, cpu_json).await?;
+        client
+            .publish(cpu_topic, QoS::AtLeastOnce, true, cpu_json)
+            .await?;
 
         // 2. RAM Usage Discovery configuration
-        let ram_payload = discovery::DiscoveryPayload::new_ram_usage(&self.config.mqtt_topic_prefix, &self.hostname, device.clone());
-        let ram_topic = format!("{}/sensor/sysmqttd_{}_ram_usage/config", self.config.mqtt_topic_prefix, self.hostname);
+        let ram_payload = discovery::DiscoveryPayload::new_ram_usage(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let ram_topic = format!(
+            "{}/sensor/sysmqttd_{}_ram_usage/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
         let ram_json = serde_json::to_vec(&ram_payload).unwrap();
-        client.publish(ram_topic, QoS::AtLeastOnce, true, ram_json).await?;
+        client
+            .publish(ram_topic, QoS::AtLeastOnce, true, ram_json)
+            .await?;
 
         // 3. Disk Usage Discovery configuration
-        let disk_payload = discovery::DiscoveryPayload::new_disk_usage(&self.config.mqtt_topic_prefix, &self.hostname, device);
-        let disk_topic = format!("{}/sensor/sysmqttd_{}_disk_usage/config", self.config.mqtt_topic_prefix, self.hostname);
+        let disk_payload = discovery::DiscoveryPayload::new_disk_usage(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let disk_topic = format!(
+            "{}/sensor/sysmqttd_{}_disk_usage/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
         let disk_json = serde_json::to_vec(&disk_payload).unwrap();
-        client.publish(disk_topic, QoS::AtLeastOnce, true, disk_json).await?;
+        client
+            .publish(disk_topic, QoS::AtLeastOnce, true, disk_json)
+            .await?;
 
         println!("Published Home Assistant MQTT Discovery configs successfully.");
         Ok(())
     }
 
     /// Run the main daemon loop with support for a clean shutdown signal
-    pub async fn run_with_shutdown(self, mut shutdown_rx: tokio::sync::oneshot::Receiver<()>) -> Result<(), String> {
+    pub async fn run_with_shutdown(
+        self,
+        mut shutdown_rx: tokio::sync::oneshot::Receiver<()>,
+    ) -> Result<(), String> {
         let mqttoptions = self.get_mqtt_options();
         let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
@@ -142,10 +179,10 @@ mod tests {
             mqtt_topic_prefix: "ha_home".to_string(),
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
-        
+
         let options = daemon.get_mqtt_options();
         assert_eq!(options.broker_address(), ("10.0.0.5".to_string(), 1883));
-        
+
         let client_id = format!("sysmqttd_{}", "pi-zero");
         assert_eq!(options.client_id(), client_id);
     }

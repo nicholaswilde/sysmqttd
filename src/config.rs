@@ -33,7 +33,12 @@ impl Config {
                         }
                         if let Some((key, val)) = trimmed.split_once('=') {
                             let k = key.trim().to_lowercase();
-                            let v = val.trim().trim_matches('"').trim_matches('\'').trim().to_string();
+                            let v = val
+                                .trim()
+                                .trim_matches('"')
+                                .trim_matches('\'')
+                                .trim()
+                                .to_string();
                             if v.is_empty() {
                                 continue;
                             }
@@ -104,7 +109,10 @@ mod tests {
 
         let result = Config::load();
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Missing required MQTT_HOST configuration");
+        assert_eq!(
+            result.err().unwrap(),
+            "Missing required MQTT_HOST configuration"
+        );
 
         // 2. Test ENV loading
         env::set_var("MQTT_HOST", "127.0.0.1");
@@ -163,5 +171,3 @@ mod tests {
         env::remove_var("MQTT_PORT");
     }
 }
-
-

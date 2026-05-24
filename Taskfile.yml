@@ -1,6 +1,11 @@
 version: '3'
 
 tasks:
+  check:
+    desc: Check code for errors without generating binary
+    cmds:
+      - cargo check
+      
   default:
     desc: List all available tasks
     cmds:
@@ -17,18 +22,27 @@ tasks:
       - cargo clippy --all-targets --all-features -- -D warnings
 
   test:
-    desc: Run unit tests
+    desc: Run unit and integration tests with a temporary broker container
     cmds:
+      - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
+      - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
+      - sleep 2
       - cargo test
 
   test-integration:
-    desc: Run integration tests
+    desc: Run integration tests with a temporary broker container
     cmds:
+      - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
+      - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
+      - sleep 2
       - cargo test --test integration_test
 
   coverage:
-    desc: Run tests and audit code coverage, enforcing a 90% line gate
+    desc: Run tests and audit code coverage, enforcing a 90% line gate with a temporary broker container
     cmds:
+      - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
+      - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
+      - sleep 2
       - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --fail-under-lines 90
 
   build-all:

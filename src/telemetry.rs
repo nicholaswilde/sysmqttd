@@ -1,7 +1,7 @@
-use sysinfo::{System, Disks};
-use std::fs;
-use std::path::Path;
 use serde::Serialize;
+use std::fs;
+use std::path::{Path, PathBuf};
+use sysinfo::{Disks, System};
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct TelemetryState {
@@ -12,21 +12,38 @@ pub struct TelemetryState {
 
 pub struct TelemetryCollector {
     sys: System,
+    sysfs_root: PathBuf,
+}
+
+impl Default for TelemetryCollector {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TelemetryCollector {
     pub fn new() -> Self {
         let mut sys = System::new();
         sys.refresh_memory();
-        TelemetryCollector { sys }
+        TelemetryCollector {
+            sys,
+            sysfs_root: PathBuf::from("/"),
+        }
+    }
+
+    /// Helper to instantiate with a custom sysfs root for testing
+    pub fn with_sysfs_root(sysfs_root: PathBuf) -> Self {
+        let mut sys = System::new();
+        sys.refresh_memory();
+        TelemetryCollector { sys, sysfs_root }
     }
 
     /// Read CPU temperature from Linux sysfs with fallback options
     pub fn get_cpu_temperature(&self) -> f64 {
         // Primary source: Raspberry Pi/DietPi CPU thermal zone
-        let thermal_path = "/sys/class/thermal/thermal_zone0/temp";
-        if Path::new(thermal_path).exists() {
-            if let Ok(content) = fs::read_to_string(thermal_path) {
+        let thermal_path = self.sysfs_root.join("sys/class/thermal/thermal_zone0/temp");
+        if thermal_path.exists() {
+            if let Ok(content) = fs::read_to_string(&thermal_path) {
                 if let Ok(milli_temp) = content.trim().parse::<i32>() {
                     return (milli_temp as f64 / 1000.0 * 10.0).round() / 10.0;
                 }
@@ -35,8 +52,10 @@ impl TelemetryCollector {
 
         // Secondary source: Standard hwmon devices on general Linux
         for i in 0..10 {
-            let hwmon_path = format!("/sys/class/hwmon/hwmon{}/temp1_input", i);
-            if Path::new(&hwmon_path).exists() {
+            let hwmon_path = self
+                .sysfs_root
+                .join(format!("sys/class/hwmon/hwmon{}/temp1_input", i));
+            if hwmon_path.exists() {
                 if let Ok(content) = fs::read_to_string(&hwmon_path) {
                     if let Ok(milli_temp) = content.trim().parse::<i32>() {
                         return (milli_temp as f64 / 1000.0 * 10.0).round() / 10.0;
@@ -97,10 +116,54 @@ mod tests {
     fn test_telemetry_collection() {
         let mut collector = TelemetryCollector::new();
         let state = collector.collect();
-        
+
         // Assertions verifying that outputs are plausible percentages/temperatures
         assert!(state.cpu_temperature >= -40.0 && state.cpu_temperature <= 120.0);
         assert!(state.ram_usage >= 0.0 && state.ram_usage <= 100.0);
         assert!(state.disk_usage >= 0.0 && state.disk_usage <= 100.0);
+    }
+
+    #[test]
+    fn test_cpu_temp_thermal_zone() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_thermal");
+        let thermal_dir = test_dir.join("sys/class/thermal/thermal_zone0");
+        fs::create_dir_all(&thermal_dir).unwrap();
+
+        let temp_file = thermal_dir.join("temp");
+        fs::write(&temp_file, "45600\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let temp = collector.get_cpu_temperature();
+        assert_eq!(temp, 45.6);
+
+        // Clean up
+        let _ = fs::remove_file(temp_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_cpu_temp_hwmon() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_hwmon");
+        let hwmon_dir = test_dir.join("sys/class/hwmon/hwmon3");
+        fs::create_dir_all(&hwmon_dir).unwrap();
+
+        let temp_file = hwmon_dir.join("temp1_input");
+        fs::write(&temp_file, "37200\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let temp = collector.get_cpu_temperature();
+        assert_eq!(temp, 37.2);
+
+        // Clean up
+        let _ = fs::remove_file(temp_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_cpu_temp_fallback() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_fallback");
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let temp = collector.get_cpu_temperature();
+        assert_eq!(temp, 42.0);
     }
 }

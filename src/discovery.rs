@@ -88,7 +88,7 @@ mod tests {
         };
         let payload = DiscoveryPayload::new_cpu_temp("homeassistant", "test-host", device);
         let serialized = serde_json::to_string(&payload).unwrap();
-        
+
         // Assertions verifying exact keys and structure
         assert!(serialized.contains(r#""name":"CPU Temperature""#));
         assert!(serialized.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#));
