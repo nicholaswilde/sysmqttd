@@ -80,6 +80,10 @@ jobs:
     - name: Build sysmqttd
       run: ${{ env.CARGO }} build --verbose --workspace ${{ env.TARGET_FLAGS }}
 
+    - name: Start Mosquitto broker
+      if: matrix.run_docker == true
+      run: docker compose up -d mosquitto
+
     - name: Run tests
       run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }} -- --test-threads=1
       env:
