@@ -14,7 +14,7 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 - [ ] **Track: Add GPIO output pin control for switches (e.g. relays, indicators)**
   *Link: [./tracks/sysmqttd_gpio_outputs_20260524/](./tracks/sysmqttd_gpio_outputs_20260524/)*
 
-- [~] **Track: Implement command-line equivalents for all environment variables**
+- [x] **Track: Implement command-line equivalents for all environment variables**
   *Link: [./tracks/sysmqttd_cli_params_20260524/](./tracks/sysmqttd_cli_params_20260524/)*
 
 
