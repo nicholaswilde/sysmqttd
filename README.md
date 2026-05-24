@@ -62,6 +62,7 @@ The binary supports the following command-line flags, processed before any confi
 - `-s`, `--services <list>` / `--monitored-services <list>` – Comma-separated whitelist of systemd services to monitor.
 - `-g`, `--gpio <list>` / `--gpio-inputs <list>` – Comma-separated list of GPIO input pins in `pin:name[:device_class]` format.
 - `-o`, `--gpio-outputs <list>` – Comma-separated list of GPIO output pins in `pin:name` format.
+- `--verbose` – Enable verbose logging (detailed payloads, events, and transitions).
 
 ---
 
@@ -88,6 +89,7 @@ The binary supports the following command-line flags, processed before any confi
 | *N/A* (Environment only) | `MONITORED_SERVICES` | *N/A* (Environment only) | *None* | Comma-separated list of systemd services to monitor. |
 | `SYSMQTTD_GPIO_INPUTS`   | `GPIO_INPUTS`   | `gpio_inputs` | *None* | Whitelist of GPIO input pins in `pin:name[:device_class]` format. |
 | `SYSMQTTD_GPIO_OUTPUTS`  | `GPIO_OUTPUTS`  | `gpio_outputs` | *None* | Whitelist of GPIO output pins in `pin:name` format. |
+| `SYSMQTTD_VERBOSE`       | *N/A*           | `verbose` | `false` | Enable verbose logging (detailed payloads, events, and transitions). |
 
 ### Sample Configuration Files
 
@@ -101,6 +103,7 @@ user = "mqtt_user"
 password = "supersecretpassword"
 prefix = "homeassistant"
 interface = "eth0"
+verbose = false
 
 gpio_inputs = [
   { pin = 23, name = "Front Door", device_class = "door" }
@@ -119,6 +122,7 @@ user: "mqtt_user"
 password: "supersecretpassword"
 prefix: "homeassistant"
 interface: "eth0"
+verbose: false
 gpio_inputs:
   - pin: 23
     name: "Front Door"
@@ -137,6 +141,7 @@ gpio_outputs:
   "password": "supersecretpassword",
   "prefix": "homeassistant",
   "interface": "eth0",
+  "verbose": false,
   "gpio_inputs": [
     { "pin": 23, "name": "Front Door", "device_class": "door" }
   ],

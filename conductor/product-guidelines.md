@@ -24,9 +24,11 @@ This document defines the guidelines and standards for the `sysmqttd` daemon's t
 *   Logs must be written to standard output (`stdout`/`stderr`) using standard Rust logging crates (e.g., `env_logger` or `tracing` configured for simple outputs) so that systemd can capture them in the journal.
 *   Log levels:
     *   `INFO`: Startup announcements, successful broker connections, successful HA discovery registration.
-*   `WARN`: Non-fatal issues (e.g., failed to read disk stats, temporary MQTT reconnect attempts).
+    *   `WARN`: Non-fatal issues (e.g., failed to read disk stats, temporary MQTT reconnect attempts).
     *   `ERROR`: Fatal issues (e.g., failed to load configuration, broker connection completely lost after max retries).
-*   **Silent operation:** Telemetry loops must not log on every 60-second publish to avoid filling the systemd journal on low-resource flash media.
+*   **Verbosity Control:**
+    *   **Quiet Mode (Default):** Operates silently (no logging of periodic 60-second telemetry publishing payloads, standard GPIO polling runs, systemd service checks, or MQTT event loop packets) to protect single-board computer SD cards from excessive write cycles.
+    *   **Verbose Mode:** Enabled via `--verbose` CLI parameter or `SYSMQTTD_VERBOSE=true` environment variable. In this mode, the daemon logs detailed telemetry payloads before publication, exact incoming and outgoing MQTT packets (such as ConnAck, Publish, etc.) inside the async event loop, and all initial states/transitions for systemd services and GPIO inputs.
 
 ## 4. Documentation Standards
 *   **README.md Updates**: The project `README.md` at the repository root must be updated each time a feature is added, changed, or refined. This guarantees that deployment guides, CLI usage flags, and configuration examples are always accurate and synchronised with the executable.
