@@ -2,7 +2,7 @@
 
 This plan guides the implementation of GPIO input monitoring.
 
-## Phase 1: GPIO Sysfs Input Core & Unit Tests
+## Phase 1: GPIO Sysfs Input Core & Unit Tests [checkpoint: 09ebc69]
 Implement lightweight sysfs-based GPIO input edge listener and verify via unit tests.
 
 - [x] Task: Implement sysfs-based GPIO input reader
