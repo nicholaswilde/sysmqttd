@@ -17,7 +17,7 @@ Extract the async telemetry poller out of `main.rs` to allow robust testing.
 - [x] Task: Write unit tests verifying core `Daemon` operations.
 - [x] Task: Conductor - User Manual Verification 'Phase 2 Daemon Refactor' (Protocol in workflow.md)
 
-## Phase 3: Integration Tests & 90% Coverage Gate
+## Phase 3: Integration Tests & 90% Coverage Gate [checkpoint: f2cca22]
 Enhance the testing infrastructure to enforce quality gates.
 
 - [x] Task: Create `tests/integration_test.rs` to verify daemon behavior against mock brokers.
