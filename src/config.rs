@@ -9,6 +9,7 @@ pub struct Config {
     pub mqtt_user: Option<String>,
     pub mqtt_password: Option<String>,
     pub mqtt_topic_prefix: String,
+    pub net_interface: String,
 }
 
 impl Config {
@@ -20,6 +21,7 @@ impl Config {
         let mut file_user = None;
         let mut file_password = None;
         let mut file_prefix = None;
+        let mut file_interface = None;
 
         // Try reading local sysmqttd.toml first, then /etc/sysmqttd/sysmqttd.toml
         let paths = ["sysmqttd.toml", "/etc/sysmqttd/sysmqttd.toml"];
@@ -52,6 +54,7 @@ impl Config {
                                 "mqtt_user" | "user" | "username" => file_user = Some(v),
                                 "mqtt_password" | "password" | "pass" => file_password = Some(v),
                                 "mqtt_topic_prefix" | "prefix" => file_prefix = Some(v),
+                                "net_interface" | "interface" => file_interface = Some(v),
                                 _ => {}
                             }
                         }
@@ -81,12 +84,18 @@ impl Config {
             .or(file_prefix)
             .unwrap_or_else(|| "homeassistant".to_string());
 
+        let net_interface = env::var("NET_INTERFACE")
+            .ok()
+            .or(file_interface)
+            .unwrap_or_else(|| "wlan0".to_string());
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
             mqtt_user,
             mqtt_password,
             mqtt_topic_prefix,
+            net_interface,
         })
     }
 }
@@ -120,6 +129,7 @@ mod tests {
         env::set_var("MQTT_USER", "user");
         env::set_var("MQTT_PASSWORD", "secret");
         env::set_var("MQTT_TOPIC_PREFIX", "homeassistant_test");
+        env::set_var("NET_INTERFACE", "eth0");
 
         let config = Config::load().unwrap();
         assert_eq!(config.mqtt_host, "127.0.0.1");
@@ -127,6 +137,7 @@ mod tests {
         assert_eq!(config.mqtt_user, Some("user".to_string()));
         assert_eq!(config.mqtt_password, Some("secret".to_string()));
         assert_eq!(config.mqtt_topic_prefix, "homeassistant_test");
+        assert_eq!(config.net_interface, "eth0");
 
         // Cleanup env for next step
         env::remove_var("MQTT_HOST");
@@ -134,6 +145,7 @@ mod tests {
         env::remove_var("MQTT_USER");
         env::remove_var("MQTT_PASSWORD");
         env::remove_var("MQTT_TOPIC_PREFIX");
+        env::remove_var("NET_INTERFACE");
 
         // 3. Test TOML fallback
         let mut file = File::create("sysmqttd.toml").unwrap();
@@ -146,6 +158,7 @@ mod tests {
             user = "toml_user"
             password = "toml_password"
             prefix = "toml_prefix"
+            interface = "eth1"
             "#
         )
         .unwrap();
@@ -156,6 +169,7 @@ mod tests {
         assert_eq!(config_toml.mqtt_user, Some("toml_user".to_string()));
         assert_eq!(config_toml.mqtt_password, Some("toml_password".to_string()));
         assert_eq!(config_toml.mqtt_topic_prefix, "toml_prefix");
+        assert_eq!(config_toml.net_interface, "eth1");
 
         // 4. Test ENV overriding TOML
         env::set_var("MQTT_HOST", "10.0.0.1");

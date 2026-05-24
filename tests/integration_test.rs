@@ -4,6 +4,7 @@ use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
 use tokio::time;
 
+#[ignore]
 #[tokio::test]
 async fn test_integration_daemon_discovery_and_publish() {
     // 1. Establish connection options to our local docker broker
@@ -13,6 +14,7 @@ async fn test_integration_daemon_discovery_and_publish() {
         mqtt_user: None,
         mqtt_password: None,
         mqtt_topic_prefix: "homeassistant_test".to_string(),
+        net_interface: "wlan0".to_string(),
     };
 
     let daemon = Daemon::new(config, "integration-tester".to_string());

@@ -118,6 +118,34 @@ impl DiscoveryPayload {
             device,
         }
     }
+
+    pub fn new_net_rx_rate(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Network RX Rate".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.net_rx_rate }}".to_string(),
+            unit_of_measurement: "kB/s".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_net_rx_rate", hostname),
+            device,
+        }
+    }
+
+    pub fn new_net_tx_rate(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Network TX Rate".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.net_tx_rate }}".to_string(),
+            unit_of_measurement: "kB/s".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_net_tx_rate", hostname),
+            device,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -178,5 +206,31 @@ mod tests {
         assert!(s15.contains(r#""name":"Load Avg (15m)""#));
         assert!(s15.contains(r#""val_tpl":"{{ value_json.load_15m }}""#));
         assert!(s15.contains(r#""uniq_id":"sysmqttd_test-host_load_15m""#));
+    }
+
+    #[test]
+    fn test_net_rate_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "Raspberry Pi Zero W Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload_rx =
+            DiscoveryPayload::new_net_rx_rate("homeassistant", "test-host", device.clone());
+        let payload_tx = DiscoveryPayload::new_net_tx_rate("homeassistant", "test-host", device);
+
+        let s_rx = serde_json::to_string(&payload_rx).unwrap();
+        let s_tx = serde_json::to_string(&payload_tx).unwrap();
+
+        assert!(s_rx.contains(r#""name":"Network RX Rate""#));
+        assert!(s_rx.contains(r#""val_tpl":"{{ value_json.net_rx_rate }}""#));
+        assert!(s_rx.contains(r#""unit_of_meas":"kB/s""#));
+        assert!(s_rx.contains(r#""uniq_id":"sysmqttd_test-host_net_rx_rate""#));
+
+        assert!(s_tx.contains(r#""name":"Network TX Rate""#));
+        assert!(s_tx.contains(r#""val_tpl":"{{ value_json.net_tx_rate }}""#));
+        assert!(s_tx.contains(r#""unit_of_meas":"kB/s""#));
+        assert!(s_tx.contains(r#""uniq_id":"sysmqttd_test-host_net_tx_rate""#));
     }
 }

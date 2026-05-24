@@ -15,11 +15,18 @@ pub struct TelemetryState {
     #[serde(rename = "load_15m")]
     pub load_average_15: f64,
     pub uptime_seconds: f64,
+    #[serde(rename = "net_rx_rate")]
+    pub net_rx_rate: f64,
+    #[serde(rename = "net_tx_rate")]
+    pub net_tx_rate: f64,
 }
 
 pub struct TelemetryCollector {
     sys: System,
     sysfs_root: PathBuf,
+    prev_rx_bytes: Option<u64>,
+    prev_tx_bytes: Option<u64>,
+    prev_time: Option<std::time::Instant>,
 }
 
 impl Default for TelemetryCollector {
@@ -35,6 +42,9 @@ impl TelemetryCollector {
         TelemetryCollector {
             sys,
             sysfs_root: PathBuf::from("/"),
+            prev_rx_bytes: None,
+            prev_tx_bytes: None,
+            prev_time: None,
         }
     }
 
@@ -42,7 +52,13 @@ impl TelemetryCollector {
     pub fn with_sysfs_root(sysfs_root: PathBuf) -> Self {
         let mut sys = System::new();
         sys.refresh_memory();
-        TelemetryCollector { sys, sysfs_root }
+        TelemetryCollector {
+            sys,
+            sysfs_root,
+            prev_rx_bytes: None,
+            prev_tx_bytes: None,
+            prev_time: None,
+        }
     }
 
     /// Read CPU temperature from Linux sysfs with fallback options
@@ -100,6 +116,28 @@ impl TelemetryCollector {
         let fifteen = parts[2].parse::<f64>().map_err(|e| e.to_string())?;
         Ok((one, five, fifteen))
     }
+
+    /// Read interface cumulative RX and TX bytes from /proc/net/dev
+    pub fn read_interface_bytes(&self, interface: &str) -> Result<(u64, u64), String> {
+        let net_dev_path = self.sysfs_root.join("proc/net/dev");
+        let content = std::fs::read_to_string(&net_dev_path).map_err(|e| e.to_string())?;
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() == 2 && parts[0].trim() == interface {
+                let cols: Vec<&str> = parts[1].split_whitespace().collect();
+                if cols.len() < 9 {
+                    return Err(format!("Malformed columns for interface {}", interface));
+                }
+                let rx = cols[0].parse::<u64>().map_err(|e| e.to_string())?;
+                let tx = cols[8].parse::<u64>().map_err(|e| e.to_string())?;
+                return Ok((rx, tx));
+            }
+        }
+        Err(format!(
+            "Interface {} not found in /proc/net/dev",
+            interface
+        ))
+    }
     /// Read RAM usage percentage utilizing minimized sysinfo features
     pub fn get_ram_usage(&mut self) -> f64 {
         self.sys.refresh_memory();
@@ -131,8 +169,32 @@ impl TelemetryCollector {
     }
 
     /// Collect all metrics
-    pub fn collect(&mut self) -> TelemetryState {
+    pub fn collect(&mut self, interface: &str) -> TelemetryState {
         let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
+
+        let mut net_rx_rate = 0.0;
+        let mut net_tx_rate = 0.0;
+
+        if let Ok((curr_rx, curr_tx)) = self.read_interface_bytes(interface) {
+            let now = std::time::Instant::now();
+            if let (Some(prev_rx), Some(prev_tx), Some(prev_t)) =
+                (self.prev_rx_bytes, self.prev_tx_bytes, self.prev_time)
+            {
+                let delta_secs = now.duration_since(prev_t).as_secs_f64();
+                if delta_secs > 0.0 {
+                    let rx_delta = curr_rx.saturating_sub(prev_rx) as f64;
+                    let tx_delta = curr_tx.saturating_sub(prev_tx) as f64;
+                    let rx_rate = (rx_delta / delta_secs) / 1024.0;
+                    let tx_rate = (tx_delta / delta_secs) / 1024.0;
+                    net_rx_rate = (rx_rate * 10.0).round() / 10.0;
+                    net_tx_rate = (tx_rate * 10.0).round() / 10.0;
+                }
+            }
+            self.prev_rx_bytes = Some(curr_rx);
+            self.prev_tx_bytes = Some(curr_tx);
+            self.prev_time = Some(now);
+        }
+
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
             ram_usage: self.get_ram_usage(),
@@ -141,6 +203,8 @@ impl TelemetryCollector {
             load_average_5: load5,
             load_average_15: load15,
             uptime_seconds: self.read_uptime().unwrap_or(0.0),
+            net_rx_rate,
+            net_tx_rate,
         }
     }
 }
@@ -152,12 +216,50 @@ mod tests {
     #[test]
     fn test_telemetry_collection() {
         let mut collector = TelemetryCollector::new();
-        let state = collector.collect();
+        let state = collector.collect("wlan0");
 
         // Assertions verifying that outputs are plausible percentages/temperatures
         assert!(state.cpu_temperature >= -40.0 && state.cpu_temperature <= 120.0);
         assert!(state.ram_usage >= 0.0 && state.ram_usage <= 100.0);
         assert!(state.disk_usage >= 0.0 && state.disk_usage <= 100.0);
+    }
+
+    #[test]
+    fn test_telemetry_collection_with_bandwidth_rates() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_telemetry_rates");
+        let proc_dir = test_dir.join("proc/net");
+        std::fs::create_dir_all(&proc_dir).unwrap();
+        let net_dev_file = proc_dir.parent().unwrap().join("net/dev");
+
+        let mock_content_1 =
+            "Inter-|   Receive\n face |bytes\n wlan0: 1000 10 0 0 0 0 0 0 2000 20 0 0 0 0 0 0\n";
+        std::fs::write(&net_dev_file, mock_content_1).unwrap();
+
+        let mut collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+
+        // First collection establishes base/prev values
+        let state_1 = collector.collect("wlan0");
+        assert_eq!(state_1.net_rx_rate, 0.0);
+        assert_eq!(state_1.net_tx_rate, 0.0);
+
+        // Advance time manually by modifying collector's prev_time
+        let past_time = std::time::Instant::now() - std::time::Duration::from_secs(2);
+        collector.prev_time = Some(past_time);
+
+        // Update mock content with more bytes
+        // RX delta = 2048 bytes (2 kB) -> Rate over 2s = 1 kB/s
+        // TX delta = 4096 bytes (4 kB) -> Rate over 2s = 2 kB/s
+        let mock_content_2 =
+            "Inter-|   Receive\n face |bytes\n wlan0: 3048 10 0 0 0 0 0 0 6096 20 0 0 0 0 0 0\n";
+        std::fs::write(&net_dev_file, mock_content_2).unwrap();
+
+        let state_2 = collector.collect("wlan0");
+        assert!((state_2.net_rx_rate - 1.0).abs() < 0.1);
+        assert!((state_2.net_tx_rate - 2.0).abs() < 0.1);
+
+        // Clean up
+        let _ = std::fs::remove_file(net_dev_file);
+        let _ = std::fs::remove_dir_all(test_dir);
     }
 
     #[test]
@@ -271,6 +373,47 @@ mod tests {
 
         // Clean up
         let _ = std::fs::remove_file(load_file);
+        let _ = std::fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_read_interface_bytes() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_net_bandwidth");
+        let proc_dir = test_dir.join("proc/net");
+        std::fs::create_dir_all(&proc_dir).unwrap();
+        let net_dev_file = proc_dir.parent().unwrap().join("net/dev");
+
+        let mock_content = "Inter-|   Receive                                                |  Transmit\n\
+                             face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n\
+                              lo: 1000 10 0 0 0 0 0 0 2000 20 0 0 0 0 0 0\n\
+                              wlan0: 150000 150 0 1 0 0 0 0 250000 250 0 0 0 0 0 0\n";
+        std::fs::write(&net_dev_file, mock_content).unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (rx, tx) = collector.read_interface_bytes("wlan0").unwrap();
+        assert_eq!(rx, 150000);
+        assert_eq!(tx, 250000);
+
+        let (lo_rx, lo_tx) = collector.read_interface_bytes("lo").unwrap();
+        assert_eq!(lo_rx, 1000);
+        assert_eq!(lo_tx, 2000);
+
+        // Test non-existent interface
+        assert!(collector.read_interface_bytes("eth0").is_err());
+
+        // Test malformed columns
+        let malformed_content = "Inter-|   Receive\n face |bytes\n wlan0: 1500\n";
+        std::fs::write(&net_dev_file, malformed_content).unwrap();
+        assert!(collector.read_interface_bytes("wlan0").is_err());
+
+        // Test invalid parsing values
+        let invalid_val_content =
+            "Inter-|   Receive\n face |bytes\n wlan0: abc 10 0 0 0 0 0 0 2000 20 0 0 0 0 0 0\n";
+        std::fs::write(&net_dev_file, invalid_val_content).unwrap();
+        assert!(collector.read_interface_bytes("wlan0").is_err());
+
+        // Clean up
+        let _ = std::fs::remove_file(net_dev_file);
         let _ = std::fs::remove_dir_all(test_dir);
     }
 }

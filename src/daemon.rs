@@ -68,6 +68,7 @@ impl Daemon {
     pub fn spawn_telemetry_loop(&self, client: AsyncClient) {
         let hostname_clone = self.hostname.clone();
         let prefix_clone = self.config.mqtt_topic_prefix.clone();
+        let interface_clone = self.config.net_interface.clone();
 
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
@@ -75,7 +76,7 @@ impl Daemon {
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
 
             loop {
-                let state = collector.collect();
+                let state = collector.collect(&interface_clone);
                 match serde_json::to_vec(&state) {
                     Ok(payload) => {
                         println!("Publishing telemetry state: {:?}", state);
@@ -186,7 +187,7 @@ impl Daemon {
         let load_15m_payload = discovery::DiscoveryPayload::new_load_15m(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let load_15m_topic = format!(
             "{}/sensor/sysmqttd_{}_load_15m/config",
@@ -195,6 +196,36 @@ impl Daemon {
         let load_15m_json = serde_json::to_vec(&load_15m_payload).unwrap();
         client
             .publish(load_15m_topic, QoS::AtLeastOnce, true, load_15m_json)
+            .await?;
+
+        // 7. Network RX Rate Discovery configuration
+        let net_rx_payload = discovery::DiscoveryPayload::new_net_rx_rate(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let net_rx_topic = format!(
+            "{}/sensor/sysmqttd_{}_net_rx_rate/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let net_rx_json = serde_json::to_vec(&net_rx_payload).unwrap();
+        client
+            .publish(net_rx_topic, QoS::AtLeastOnce, true, net_rx_json)
+            .await?;
+
+        // 8. Network TX Rate Discovery configuration
+        let net_tx_payload = discovery::DiscoveryPayload::new_net_tx_rate(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let net_tx_topic = format!(
+            "{}/sensor/sysmqttd_{}_net_tx_rate/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let net_tx_json = serde_json::to_vec(&net_tx_payload).unwrap();
+        client
+            .publish(net_tx_topic, QoS::AtLeastOnce, true, net_tx_json)
             .await?;
 
         println!("Published Home Assistant MQTT Discovery configs successfully.");
@@ -277,6 +308,7 @@ mod tests {
             mqtt_user: Some("my_user".to_string()),
             mqtt_password: Some("my_pass".to_string()),
             mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "wlan0".to_string(),
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
