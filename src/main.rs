@@ -1,12 +1,30 @@
 use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
+mod cli;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    // Parse CLI arguments before any other work
+    let path_override = match cli::parse_arguments(std::env::args().collect()) {
+        Ok(cli::CliAction::PrintHelp) => {
+            println!("{}", cli::usage());
+            std::process::exit(0);
+        }
+        Ok(cli::CliAction::PrintVersion) => {
+            println!("sysmqttd v{}", env!("CARGO_PKG_VERSION"));
+            std::process::exit(0);
+        }
+        Ok(cli::CliAction::Boot { config_path }) => config_path,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
+    };
+
     println!("Starting sysmqttd system monitoring daemon...");
 
     // 1. Load configuration
-    let config = match Config::load() {
+    let config = match Config::load_with_path(path_override.as_deref()) {
         Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("Configuration Error: {}", e);

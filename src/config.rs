@@ -2,91 +2,152 @@ use std::env;
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Config {
+    #[serde(alias = "host")]
     pub mqtt_host: String,
+    #[serde(alias = "port", default = "default_mqtt_port")]
     pub mqtt_port: u16,
+    #[serde(alias = "user", alias = "username")]
     pub mqtt_user: Option<String>,
+    #[serde(alias = "password", alias = "pass")]
     pub mqtt_password: Option<String>,
+    #[serde(alias = "prefix", default = "default_mqtt_prefix")]
     pub mqtt_topic_prefix: String,
+    #[serde(alias = "interface", default = "default_net_interface")]
     pub net_interface: String,
+}
+
+fn default_mqtt_port() -> u16 {
+    1883
+}
+
+fn default_mqtt_prefix() -> String {
+    "homeassistant".to_string()
+}
+
+fn default_net_interface() -> String {
+    "wlan0".to_string()
+}
+
+#[derive(serde::Deserialize, Default, Clone)]
+pub struct FileConfig {
+    #[serde(alias = "host")]
+    pub mqtt_host: Option<String>,
+    #[serde(alias = "port")]
+    pub mqtt_port: Option<u16>,
+    #[serde(alias = "user", alias = "username")]
+    pub mqtt_user: Option<String>,
+    #[serde(alias = "password", alias = "pass")]
+    pub mqtt_password: Option<String>,
+    #[serde(alias = "prefix")]
+    pub mqtt_topic_prefix: Option<String>,
+    #[serde(alias = "interface")]
+    pub net_interface: Option<String>,
+}
+
+fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
+    let p = path.to_lowercase();
+    if p.ends_with(".toml") {
+        toml::from_str(content).map_err(|e| format!("Failed to parse TOML config: {}", e))
+    } else if p.ends_with(".yaml") || p.ends_with(".yml") {
+        serde_yaml::from_str(content).map_err(|e| format!("Failed to parse YAML config: {}", e))
+    } else if p.ends_with(".json") {
+        serde_json::from_str(content).map_err(|e| format!("Failed to parse JSON config: {}", e))
+    } else {
+        // Fallback: try auto-detecting
+        if let Ok(cfg) = toml::from_str(content) {
+            return Ok(cfg);
+        }
+        if let Ok(cfg) = serde_yaml::from_str(content) {
+            return Ok(cfg);
+        }
+        if let Ok(cfg) = serde_json::from_str(content) {
+            return Ok(cfg);
+        }
+        Err("Unknown configuration file extension and auto-detection failed".to_string())
+    }
 }
 
 impl Config {
     /// Load configurations from fallback files and environment variables.
     /// Environment variables have higher precedence.
     pub fn load() -> Result<Self, String> {
-        let mut file_host = None;
-        let mut file_port = None;
-        let mut file_user = None;
-        let mut file_password = None;
-        let mut file_prefix = None;
-        let mut file_interface = None;
+        Self::load_with_path(None)
+    }
 
-        // Try reading local sysmqttd.toml first, then /etc/sysmqttd/sysmqttd.toml
-        let paths = ["sysmqttd.toml", "/etc/sysmqttd/sysmqttd.toml"];
-        for path in paths.iter() {
+    /// Load configuration using a custom config file path or falling back to defaults.
+    pub fn load_with_path(custom_path: Option<&str>) -> Result<Self, String> {
+        let mut file_config = FileConfig::default();
+
+        if let Some(path) = custom_path {
             if Path::new(path).exists() {
-                if let Ok(content) = fs::read_to_string(path) {
-                    for line in content.lines() {
-                        let trimmed = line.trim();
-                        if trimmed.is_empty() || trimmed.starts_with('#') {
-                            continue;
-                        }
-                        if let Some((key, val)) = trimmed.split_once('=') {
-                            let k = key.trim().to_lowercase();
-                            let v = val
-                                .trim()
-                                .trim_matches('"')
-                                .trim_matches('\'')
-                                .trim()
-                                .to_string();
-                            if v.is_empty() {
-                                continue;
-                            }
-                            match k.as_str() {
-                                "mqtt_host" | "host" => file_host = Some(v),
-                                "mqtt_port" | "port" => {
-                                    if let Ok(parsed_port) = v.parse::<u16>() {
-                                        file_port = Some(parsed_port);
-                                    }
-                                }
-                                "mqtt_user" | "user" | "username" => file_user = Some(v),
-                                "mqtt_password" | "password" | "pass" => file_password = Some(v),
-                                "mqtt_topic_prefix" | "prefix" => file_prefix = Some(v),
-                                "net_interface" | "interface" => file_interface = Some(v),
-                                _ => {}
-                            }
-                        }
+                let content = fs::read_to_string(path)
+                    .map_err(|e| format!("Failed to read custom config file '{}': {}", path, e))?;
+                file_config = parse_file_content(path, &content)?;
+            } else {
+                return Err(format!(
+                    "Custom configuration file '{}' does not exist",
+                    path
+                ));
+            }
+        } else {
+            // Check default paths in order
+            let default_paths = [
+                "sysmqttd.toml",
+                "sysmqttd.yaml",
+                "sysmqttd.yml",
+                "sysmqttd.json",
+                "/etc/sysmqttd/sysmqttd.toml",
+                "/etc/sysmqttd/sysmqttd.yaml",
+                "/etc/sysmqttd/sysmqttd.yml",
+                "/etc/sysmqttd/sysmqttd.json",
+            ];
+            for path in default_paths.iter() {
+                if Path::new(path).exists() {
+                    if let Ok(content) = fs::read_to_string(path) {
+                        file_config = parse_file_content(path, &content)?;
+                        break; // Stop at first found config file
                     }
                 }
-                break; // Stop at first found config file
             }
         }
 
-        // Environment variables override file configs
-        let mqtt_host = env::var("MQTT_HOST")
+        // Environment variables prefixed with SYSMQTTD_ take highest precedence,
+        // followed by legacy MQTT_ env vars, then file configs, then defaults.
+        let mqtt_host = env::var("SYSMQTTD_MQTT_HOST")
             .ok()
-            .or(file_host)
+            .or_else(|| env::var("MQTT_HOST").ok())
+            .or(file_config.mqtt_host)
             .ok_or_else(|| "Missing required MQTT_HOST configuration".to_string())?;
 
-        let mqtt_port = env::var("MQTT_PORT")
+        let mqtt_port = env::var("SYSMQTTD_MQTT_PORT")
             .ok()
+            .or_else(|| env::var("MQTT_PORT").ok())
             .and_then(|p| p.parse::<u16>().ok())
-            .or(file_port)
+            .or(file_config.mqtt_port)
             .unwrap_or(1883);
 
-        let mqtt_user = env::var("MQTT_USER").ok().or(file_user);
-        let mqtt_password = env::var("MQTT_PASSWORD").ok().or(file_password);
-
-        let mqtt_topic_prefix = env::var("MQTT_TOPIC_PREFIX")
+        let mqtt_user = env::var("SYSMQTTD_MQTT_USER")
             .ok()
-            .or(file_prefix)
+            .or_else(|| env::var("MQTT_USER").ok())
+            .or(file_config.mqtt_user);
+
+        let mqtt_password = env::var("SYSMQTTD_MQTT_PASSWORD")
+            .ok()
+            .or_else(|| env::var("MQTT_PASSWORD").ok())
+            .or(file_config.mqtt_password);
+
+        let mqtt_topic_prefix = env::var("SYSMQTTD_MQTT_TOPIC_PREFIX")
+            .ok()
+            .or_else(|| env::var("MQTT_TOPIC_PREFIX").ok())
+            .or(file_config.mqtt_topic_prefix)
             .unwrap_or_else(|| "homeassistant".to_string());
 
-        let net_interface = env::var("NET_INTERFACE")
+        let net_interface = env::var("SYSMQTTD_NET_INTERFACE")
             .ok()
-            .or(file_interface)
+            .or_else(|| env::var("NET_INTERFACE").ok())
+            .or(file_config.net_interface)
             .unwrap_or_else(|| "wlan0".to_string());
 
         Ok(Config {
@@ -106,40 +167,14 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
 
-    #[test]
-    fn test_config_suite() {
-        // 1. Test missing host error (with clean env and no TOML)
-        env::remove_var("MQTT_HOST");
-        env::remove_var("MQTT_PORT");
-        env::remove_var("MQTT_USER");
-        env::remove_var("MQTT_PASSWORD");
-        env::remove_var("MQTT_TOPIC_PREFIX");
-        let _ = fs::remove_file("sysmqttd.toml");
+    fn clean_env() {
+        env::remove_var("SYSMQTTD_MQTT_HOST");
+        env::remove_var("SYSMQTTD_MQTT_PORT");
+        env::remove_var("SYSMQTTD_MQTT_USER");
+        env::remove_var("SYSMQTTD_MQTT_PASSWORD");
+        env::remove_var("SYSMQTTD_MQTT_TOPIC_PREFIX");
+        env::remove_var("SYSMQTTD_NET_INTERFACE");
 
-        let result = Config::load();
-        assert!(result.is_err());
-        assert_eq!(
-            result.err().unwrap(),
-            "Missing required MQTT_HOST configuration"
-        );
-
-        // 2. Test ENV loading
-        env::set_var("MQTT_HOST", "127.0.0.1");
-        env::set_var("MQTT_PORT", "1883");
-        env::set_var("MQTT_USER", "user");
-        env::set_var("MQTT_PASSWORD", "secret");
-        env::set_var("MQTT_TOPIC_PREFIX", "homeassistant_test");
-        env::set_var("NET_INTERFACE", "eth0");
-
-        let config = Config::load().unwrap();
-        assert_eq!(config.mqtt_host, "127.0.0.1");
-        assert_eq!(config.mqtt_port, 1883);
-        assert_eq!(config.mqtt_user, Some("user".to_string()));
-        assert_eq!(config.mqtt_password, Some("secret".to_string()));
-        assert_eq!(config.mqtt_topic_prefix, "homeassistant_test");
-        assert_eq!(config.net_interface, "eth0");
-
-        // Cleanup env for next step
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
         env::remove_var("MQTT_USER");
@@ -147,22 +182,69 @@ mod tests {
         env::remove_var("MQTT_TOPIC_PREFIX");
         env::remove_var("NET_INTERFACE");
 
-        // 3. Test TOML fallback
-        let mut file = File::create("sysmqttd.toml").unwrap();
-        writeln!(
-            file,
-            r#"
-            # Sample config
-            host = "192.168.1.100"
-            port = 8883
-            user = "toml_user"
-            password = "toml_password"
-            prefix = "toml_prefix"
-            interface = "eth1"
-            "#
-        )
-        .unwrap();
+        let _ = fs::remove_file("sysmqttd.toml");
+        let _ = fs::remove_file("sysmqttd.yaml");
+        let _ = fs::remove_file("sysmqttd.yml");
+        let _ = fs::remove_file("sysmqttd.json");
+        let _ = fs::remove_file("custom.toml");
+        let _ = fs::remove_file("custom.yaml");
+        let _ = fs::remove_file("custom.json");
+    }
 
+    #[test]
+    fn test_config_suite_expanded() {
+        clean_env();
+
+        // 1. Test missing host error
+        let result = Config::load();
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap(),
+            "Missing required MQTT_HOST configuration"
+        );
+
+        // 2. Test legacy ENV loading
+        env::set_var("MQTT_HOST", "127.0.0.1");
+        env::set_var("MQTT_PORT", "1883");
+        env::set_var("MQTT_USER", "legacy_user");
+        env::set_var("MQTT_PASSWORD", "legacy_password");
+        env::set_var("MQTT_TOPIC_PREFIX", "legacy_prefix");
+        env::set_var("NET_INTERFACE", "eth0");
+
+        let config = Config::load().unwrap();
+        assert_eq!(config.mqtt_host, "127.0.0.1");
+        assert_eq!(config.mqtt_port, 1883);
+        assert_eq!(config.mqtt_user, Some("legacy_user".to_string()));
+        assert_eq!(config.mqtt_password, Some("legacy_password".to_string()));
+        assert_eq!(config.mqtt_topic_prefix, "legacy_prefix");
+        assert_eq!(config.net_interface, "eth0");
+
+        // 3. Test SYSMQTTD_ prefixed ENV overriding legacy ENV
+        env::set_var("SYSMQTTD_MQTT_HOST", "10.0.0.2");
+        env::set_var("SYSMQTTD_MQTT_PORT", "9999");
+        let config_prefixed = Config::load().unwrap();
+        assert_eq!(config_prefixed.mqtt_host, "10.0.0.2");
+        assert_eq!(config_prefixed.mqtt_port, 9999);
+        assert_eq!(config_prefixed.mqtt_user, Some("legacy_user".to_string())); // Prefixed not set for user, so falls back to legacy
+
+        clean_env();
+
+        // 4. Test TOML file loading
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "192.168.1.100"
+                port = 8883
+                user = "toml_user"
+                password = "toml_password"
+                prefix = "toml_prefix"
+                interface = "eth1"
+                "#
+            )
+            .unwrap();
+        }
         let config_toml = Config::load().unwrap();
         assert_eq!(config_toml.mqtt_host, "192.168.1.100");
         assert_eq!(config_toml.mqtt_port, 8883);
@@ -171,17 +253,75 @@ mod tests {
         assert_eq!(config_toml.mqtt_topic_prefix, "toml_prefix");
         assert_eq!(config_toml.net_interface, "eth1");
 
-        // 4. Test ENV overriding TOML
-        env::set_var("MQTT_HOST", "10.0.0.1");
-        env::set_var("MQTT_PORT", "1883");
-        let config_overridden = Config::load().unwrap();
-        assert_eq!(config_overridden.mqtt_host, "10.0.0.1");
-        assert_eq!(config_overridden.mqtt_port, 1883);
-        assert_eq!(config_overridden.mqtt_user, Some("toml_user".to_string())); // Stays same from TOML
+        clean_env();
 
-        // Cleanup
-        let _ = fs::remove_file("sysmqttd.toml");
-        env::remove_var("MQTT_HOST");
-        env::remove_var("MQTT_PORT");
+        // 5. Test YAML file loading
+        {
+            let mut file = File::create("sysmqttd.yaml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host: "192.168.1.200"
+                port: 7777
+                user: "yaml_user"
+                password: "yaml_password"
+                prefix: "yaml_prefix"
+                interface: "eth2"
+                "#
+            )
+            .unwrap();
+        }
+        let config_yaml = Config::load().unwrap();
+        assert_eq!(config_yaml.mqtt_host, "192.168.1.200");
+        assert_eq!(config_yaml.mqtt_port, 7777);
+        assert_eq!(config_yaml.mqtt_user, Some("yaml_user".to_string()));
+        assert_eq!(config_yaml.mqtt_password, Some("yaml_password".to_string()));
+        assert_eq!(config_yaml.mqtt_topic_prefix, "yaml_prefix");
+        assert_eq!(config_yaml.net_interface, "eth2");
+
+        clean_env();
+
+        // 6. Test JSON file loading
+        {
+            let mut file = File::create("sysmqttd.json").unwrap();
+            writeln!(
+                file,
+                r#"{{
+                "host": "192.168.1.250",
+                "port": 5555,
+                "user": "json_user",
+                "password": "json_password",
+                "prefix": "json_prefix",
+                "interface": "eth3"
+                }}"#
+            )
+            .unwrap();
+        }
+        let config_json = Config::load().unwrap();
+        assert_eq!(config_json.mqtt_host, "192.168.1.250");
+        assert_eq!(config_json.mqtt_port, 5555);
+        assert_eq!(config_json.mqtt_user, Some("json_user".to_string()));
+        assert_eq!(config_json.mqtt_password, Some("json_password".to_string()));
+        assert_eq!(config_json.mqtt_topic_prefix, "json_prefix");
+        assert_eq!(config_json.net_interface, "eth3");
+
+        // 7. Test custom path CLI overriding
+        clean_env();
+        {
+            let mut file = File::create("custom.json").unwrap();
+            writeln!(
+                file,
+                r#"{{
+                "host": "10.10.10.10",
+                "port": 1234
+                }}"#
+            )
+            .unwrap();
+        }
+        let config_custom = Config::load_with_path(Some("custom.json")).unwrap();
+        assert_eq!(config_custom.mqtt_host, "10.10.10.10");
+        assert_eq!(config_custom.mqtt_port, 1234);
+
+        clean_env();
     }
 }
