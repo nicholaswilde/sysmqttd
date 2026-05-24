@@ -11,4 +11,6 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 2.  **Home Assistant Autodiscovery:** Zero-configuration setup in Home Assistant via explicit, retained MQTT discovery payloads published on startup.
 3.  **Core System Telemetry:** 60-second updates of CPU Temperature, RAM percentage, root disk percentage utilization, system load averages (1m, 5m, 15m), and network interface bandwidth (RX/TX kB/s rates).
 4.  **Robust Async Lifecycle:** Asynchronous client loop that handles system startup, intermittent network dropouts, and broker reconnects gracefully.
+5.  **Service Status Monitoring:** Real-time checking of whitelisted systemd services (e.g., `docker`, `nginx`) via async polling and registers them as binary sensors.
 *   **CLI Arguments:** `-h/--help` and `-v/--version` flags for usage and version information.
+
