@@ -22,5 +22,6 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 - [ ] **Track: Implement multi-format configuration manager supporting TOML, YAML, JSON, CLI overrides, and SYSMQTTD_ prefixed environment variables**
   *Link: [./tracks/sysmqttd_config_expansion_20260524/](./tracks/sysmqttd_config_expansion_20260524/)*
 
-- [ ] **Track: Update README with service, MQTT and Home Assistant setup**
+- [x] **Track: Update README with service, MQTT and Home Assistant setup**
   *Link: [./tracks/sysmqttd_readme_update_20260524/](./tracks/sysmqttd_readme_update_20260524/)*
+
