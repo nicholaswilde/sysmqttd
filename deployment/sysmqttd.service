@@ -1,0 +1,31 @@
+[Unit]
+Description=sysmqttd Lightweight System Monitoring Daemon
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Run as a non-root standard user (e.g. dietpi, sysmqttd)
+User=dietpi
+Group=dietpi
+
+# Environment variable loading or fallback configuration
+EnvironmentFile=-/etc/default/sysmqttd
+WorkingDirectory=/var/lib/sysmqttd
+ExecStart=/usr/bin/sysmqttd
+
+# Logging & Resource bounds
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=10s
+
+# Extremely low resource sandboxing (Linux security hardening)
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sysmqttd
+PrivateTmp=true
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
