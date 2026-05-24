@@ -1,0 +1,60 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  format:
+    desc: Format all Rust files using cargo fmt
+    cmds:
+      - cargo fmt --all
+
+  lint:
+    desc: Run clippy lints on all targets
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - cargo test --lib --bins
+
+  test-integration:
+    desc: Run integration tests
+    cmds:
+      - cargo test --test integration_test
+
+  coverage:
+    desc: Run tests and audit code coverage, enforcing a 90% line gate
+    cmds:
+      - cargo llvm-cov --all-features --fail-under-lines 90
+
+  build-all:
+    desc: Cross-compile optimized release binaries for ARMv6, ARMv7, ARM64, and AMD64
+    cmds:
+      - task: build-armv6
+      - task: build-armv7
+      - task: build-arm64
+      - task: build-amd64
+
+  build-armv6:
+    desc: Compile ARMv6 binary (Raspberry Pi Zero W)
+    cmds:
+      - cross build --target arm-unknown-linux-gnueabihf --release
+
+  build-armv7:
+    desc: Compile ARMv7 binary (Raspberry Pi 2/3)
+    cmds:
+      - cross build --target armv7-unknown-linux-gnueabihf --release
+
+  build-arm64:
+    desc: Compile ARM64 binary (Raspberry Pi 3/4/5)
+    cmds:
+      - cross build --target aarch64-unknown-linux-gnu --release
+
+  build-amd64:
+    desc: Compile AMD64 binary (Standard PC/server)
+    cmds:
+      - cross build --target x86_64-unknown-linux-gnu --release

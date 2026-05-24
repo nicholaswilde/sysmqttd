@@ -5,9 +5,9 @@ This plan guides the implementation of the new testing, deployment, and taskrunn
 ## Phase 1: Taskfile Scaffolding & README Warning
 Draft basic configurations and warnings.
 
-- [ ] Task: Update `README.md` at project root with development warning at the top.
-- [ ] Task: Create initial `Taskfile.yml` with formatting, linting, and default recipes.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1 Scaffolding' (Protocol in workflow.md)
+- [x] Task: Update `README.md` at project root with development warning at the top.
+- [x] Task: Create initial `Taskfile.yml` with formatting, linting, and default recipes.
+- [x] Task: Conductor - User Manual Verification 'Phase 1 Scaffolding' (Protocol in workflow.md)
 
 ## Phase 2: Daemon Refactoring & Unit Tests
 Extract the async telemetry poller out of `main.rs` to allow robust testing.
