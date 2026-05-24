@@ -11,10 +11,10 @@ Add configuration parsing for verbose logging.
 - [x] Task: Write unit tests for verbosity config overrides
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration' (Protocol in workflow.md)
 
-## Phase 2: Logging Toggle Integration & Verification
+## Phase 2: Logging Toggle Integration & Verification [checkpoint: fcf1ec1]
 Integrate verbosity checks in daemon loops.
 
-- [ ] Task: Conditionally print telemetry publication payloads in daemon state loops
-- [ ] Task: Conditionally print MQTT event loop packets (`Event::Incoming` / `Event::Outgoing`)
-- [ ] Task: Confirm formatting, clippy lints, and 90%+ code coverage
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Logging Verification' (Protocol in workflow.md)
+- [x] Task: Conditionally print telemetry publication payloads in daemon state loops
+- [x] Task: Conditionally print MQTT event loop packets (`Event::Incoming` / `Event::Outgoing`)
+- [x] Task: Confirm formatting, clippy lints, and 90%+ code coverage
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Logging Verification' (Protocol in workflow.md)

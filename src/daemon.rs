@@ -110,6 +110,7 @@ impl Daemon {
             }
         }
 
+        let verbose_clone = self.config.verbose;
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_millis(100));
             loop {
@@ -122,10 +123,12 @@ impl Daemon {
                                 prefix_clone, hostname_clone, listener.pin
                             );
                             let state_payload = if val == 1 { "ON" } else { "OFF" };
-                            println!(
-                                "Publishing GPIO state: {} -> {}",
-                                state_topic, state_payload
-                            );
+                            if verbose_clone {
+                                println!(
+                                    "Publishing GPIO state: {} -> {}",
+                                    state_topic, state_payload
+                                );
+                            }
                             if let Err(e) = client
                                 .publish(&state_topic, QoS::AtLeastOnce, true, state_payload)
                                 .await
@@ -194,6 +197,7 @@ impl Daemon {
         let prefix_clone = self.config.mqtt_topic_prefix.clone();
         let interface_clone = self.config.net_interface.clone();
 
+        let verbose_clone = self.config.verbose;
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
             let mut collector = telemetry::TelemetryCollector::new();
@@ -203,7 +207,9 @@ impl Daemon {
                 let state = collector.collect(&interface_clone);
                 match serde_json::to_vec(&state) {
                     Ok(payload) => {
-                        println!("Publishing telemetry state: {:?}", state);
+                        if verbose_clone {
+                            println!("Publishing telemetry state: {:?}", state);
+                        }
                         if let Err(e) = client
                             .publish(&state_topic, QoS::AtLeastOnce, false, payload)
                             .await
@@ -436,77 +442,90 @@ impl Daemon {
                 }
                 notification = eventloop.poll() => {
                     match notification {
-                        Ok(Event::Incoming(Packet::ConnAck(connack))) => {
-                            println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
-                            // Publish Birth Message
-                            let availability_topic = format!(
-                                "{}/sensor/sysmqttd_{}/availability",
-                                self.config.mqtt_topic_prefix, self.hostname
-                            );
-                            if let Err(e) = client.publish(&availability_topic, QoS::AtLeastOnce, true, "online").await {
-                                eprintln!("Failed to publish online availability state: {}", e);
+                        Ok(Event::Incoming(incoming)) => {
+                            if self.config.verbose {
+                                println!("MQTT Incoming Packet: {:?}", incoming);
                             }
-                            if let Err(e) = self.publish_discovery(&client).await {
-                                eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
-                            }
-                            // Subscribe to GPIO output command topics
-                            for pin_config in &self.config.gpio_outputs {
-                                let cmd_topic = format!(
-                                    "{}/switch/sysmqttd_{}_pin{}/set",
-                                    self.config.mqtt_topic_prefix, self.hostname, pin_config.pin
-                                );
-                                if let Err(e) = client.subscribe(&cmd_topic, QoS::AtLeastOnce).await {
-                                    eprintln!("Failed to subscribe to GPIO command topic {}: {}", cmd_topic, e);
-                                }
-                            }
-                        }
-                        Ok(Event::Incoming(Packet::Publish(publish))) => {
-                            // Check if this publish is for one of our GPIO output command topics
-                            let prefix = &self.config.mqtt_topic_prefix;
-                            let hostname = &self.hostname;
-                            for pin_config in &self.config.gpio_outputs {
-                                let cmd_topic = format!(
-                                    "{}/switch/sysmqttd_{}_pin{}/set",
-                                    prefix, hostname, pin_config.pin
-                                );
-                                if publish.topic == cmd_topic {
-                                    let payload_str = String::from_utf8_lossy(&publish.payload).trim().to_uppercase();
-                                    let val = match payload_str.as_str() {
-                                        "ON" => Some(1),
-                                        "OFF" => Some(0),
-                                        _ => {
-                                            eprintln!("Unknown GPIO command payload: {}", payload_str);
-                                            None
-                                        }
-                                    };
-                                    if let Some(v) = val {
-                                        let controller = crate::gpio_outputs::GpioOutputController::new(
-                                            pin_config.pin,
-                                            pin_config.name.clone(),
+                            match incoming {
+                                Packet::ConnAck(connack) => {
+                                    println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
+                                    // Publish Birth Message
+                                    let availability_topic = format!(
+                                        "{}/sensor/sysmqttd_{}/availability",
+                                        self.config.mqtt_topic_prefix, self.hostname
+                                    );
+                                    if let Err(e) = client.publish(&availability_topic, QoS::AtLeastOnce, true, "online").await {
+                                        eprintln!("Failed to publish online availability state: {}", e);
+                                    }
+                                    if let Err(e) = self.publish_discovery(&client).await {
+                                        eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
+                                    }
+                                    // Subscribe to GPIO output command topics
+                                    for pin_config in &self.config.gpio_outputs {
+                                        let cmd_topic = format!(
+                                            "{}/switch/sysmqttd_{}_pin{}/set",
+                                            self.config.mqtt_topic_prefix, self.hostname, pin_config.pin
                                         );
-                                        if let Err(e) = controller.write_value(v) {
-                                            eprintln!("Failed to write GPIO output pin {}: {}", pin_config.pin, e);
-                                        } else {
-                                            println!("Set GPIO output pin {} to {}", pin_config.pin, v);
-                                            // Publish confirmed state back
-                                            let state_topic = format!(
-                                                "{}/switch/sysmqttd_{}_pin{}/state",
-                                                prefix, hostname, pin_config.pin
-                                            );
-                                            let confirmed_payload = if v == 1 { "ON" } else { "OFF" };
-                                            let client_clone = client.clone();
-                                            tokio::spawn(async move {
-                                                if let Err(e) = client_clone.publish(state_topic, QoS::AtLeastOnce, true, confirmed_payload).await {
-                                                    eprintln!("Failed to publish state confirmation: {}", e);
-                                                }
-                                            });
+                                        if let Err(e) = client.subscribe(&cmd_topic, QoS::AtLeastOnce).await {
+                                            eprintln!("Failed to subscribe to GPIO command topic {}: {}", cmd_topic, e);
                                         }
                                     }
                                 }
+                                Packet::Publish(publish) => {
+                                    // Check if this publish is for one of our GPIO output command topics
+                                    let prefix = &self.config.mqtt_topic_prefix;
+                                    let hostname = &self.hostname;
+                                    for pin_config in &self.config.gpio_outputs {
+                                        let cmd_topic = format!(
+                                            "{}/switch/sysmqttd_{}_pin{}/set",
+                                            prefix, hostname, pin_config.pin
+                                        );
+                                        if publish.topic == cmd_topic {
+                                            let payload_str = String::from_utf8_lossy(&publish.payload).trim().to_uppercase();
+                                            let val = match payload_str.as_str() {
+                                                "ON" => Some(1),
+                                                "OFF" => Some(0),
+                                                _ => {
+                                                    eprintln!("Unknown GPIO command payload: {}", payload_str);
+                                                    None
+                                                }
+                                            };
+                                            if let Some(v) = val {
+                                                let controller = crate::gpio_outputs::GpioOutputController::new(
+                                                    pin_config.pin,
+                                                    pin_config.name.clone(),
+                                                );
+                                                if let Err(e) = controller.write_value(v) {
+                                                    eprintln!("Failed to write GPIO output pin {}: {}", pin_config.pin, e);
+                                                } else {
+                                                    if self.config.verbose {
+                                                        println!("Set GPIO output pin {} to {}", pin_config.pin, v);
+                                                    }
+                                                    // Publish confirmed state back
+                                                    let state_topic = format!(
+                                                        "{}/switch/sysmqttd_{}_pin{}/state",
+                                                        prefix, hostname, pin_config.pin
+                                                    );
+                                                    let confirmed_payload = if v == 1 { "ON" } else { "OFF" };
+                                                    let client_clone = client.clone();
+                                                    tokio::spawn(async move {
+                                                        if let Err(e) = client_clone.publish(state_topic, QoS::AtLeastOnce, true, confirmed_payload).await {
+                                                            eprintln!("Failed to publish state confirmation: {}", e);
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
                             }
                         }
-                        Ok(Event::Incoming(_incoming)) => {}
-                        Ok(Event::Outgoing(_outgoing)) => {}
+                        Ok(Event::Outgoing(outgoing)) => {
+                            if self.config.verbose {
+                                println!("MQTT Outgoing Packet: {:?}", outgoing);
+                            }
+                        }
                         Err(e) => {
                             eprintln!("MQTT EventLoop Error: {}. Retrying in 5 seconds...", e);
                             time::sleep(Duration::from_secs(5)).await;
