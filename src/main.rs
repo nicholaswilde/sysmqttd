@@ -1,7 +1,8 @@
 mod config;
+mod discovery;
 
 use config::Config;
-use rumqttc::{AsyncClient, MqttOptions, Event, Packet};
+use rumqttc::{AsyncClient, MqttOptions, Event, Packet, QoS};
 use std::time::Duration;
 use tokio::time;
 
@@ -35,7 +36,7 @@ async fn main() {
     // 3. Initialize client and event loop
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    // 4. Run event loop in a dedicated task or main loop
+    // 4. Run event loop
     println!("Connecting to MQTT broker...");
     loop {
         match eventloop.poll().await {
@@ -43,9 +44,13 @@ async fn main() {
                 match notification {
                     Event::Incoming(Packet::ConnAck(connack)) => {
                         println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
+                        
+                        // Publish discovery payloads on successful connection (or reconnect)
+                        if let Err(e) = publish_discovery_payloads(&client, &config.mqtt_topic_prefix, &hostname).await {
+                            eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
+                        }
                     }
                     Event::Incoming(incoming) => {
-                        // Diagnostic log (optional, e.g. for sub/pub ack)
                         println!("Incoming packet: {:?}", incoming);
                     }
                     Event::Outgoing(outgoing) => {
@@ -61,7 +66,38 @@ async fn main() {
     }
 }
 
-// A simple hostname module since we want to avoid extra crates where possible.
+/// Publish Home Assistant Auto-Discovery Configuration payloads
+async fn publish_discovery_payloads(client: &AsyncClient, prefix: &str, hostname: &str) -> Result<(), rumqttc::ClientError> {
+    let device = discovery::DeviceInfo {
+        identifiers: vec![format!("sysmqttd_{}", hostname)],
+        name: format!("sysmqttd {}", hostname),
+        model: "Raspberry Pi Zero W Monitor".to_string(),
+        manufacturer: "sysmqttd".to_string(),
+    };
+
+    // 1. CPU Temperature Discovery configuration
+    let cpu_payload = discovery::DiscoveryPayload::new_cpu_temp(prefix, hostname, device.clone());
+    let cpu_topic = format!("{}/sensor/sysmqttd_{}_cpu_temp/config", prefix, hostname);
+    let cpu_json = serde_json::to_vec(&cpu_payload).unwrap();
+    client.publish(cpu_topic, QoS::AtLeastOnce, true, cpu_json).await?;
+
+    // 2. RAM Usage Discovery configuration
+    let ram_payload = discovery::DiscoveryPayload::new_ram_usage(prefix, hostname, device.clone());
+    let ram_topic = format!("{}/sensor/sysmqttd_{}_ram_usage/config", prefix, hostname);
+    let ram_json = serde_json::to_vec(&ram_payload).unwrap();
+    client.publish(ram_topic, QoS::AtLeastOnce, true, ram_json).await?;
+
+    // 3. Disk Usage Discovery configuration
+    let disk_payload = discovery::DiscoveryPayload::new_disk_usage(prefix, hostname, device);
+    let disk_topic = format!("{}/sensor/sysmqttd_{}_disk_usage/config", prefix, hostname);
+    let disk_json = serde_json::to_vec(&disk_payload).unwrap();
+    client.publish(disk_topic, QoS::AtLeastOnce, true, disk_json).await?;
+
+    println!("Published Home Assistant MQTT Discovery configs successfully.");
+    Ok(())
+}
+
+// A simple hostname module to get host name
 mod hostname {
     use std::fs;
     pub fn get_hostname() -> Option<String> {
