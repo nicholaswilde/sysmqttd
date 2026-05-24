@@ -25,7 +25,7 @@ Enhance the testing infrastructure to enforce quality gates.
 - [x] Task: Verify that `task coverage` runs successfully and passes the 90%+ limit check.
 - [x] Task: Conductor - User Manual Verification 'Phase 3 Coverage Gate' (Protocol in workflow.md)
 
-## Phase 4: Docker & Compose Configurations
+## Phase 4: Docker & Compose Configurations [checkpoint: df46171]
 Implement multi-architecture docker containers and sandbox compose configs.
 
 - [x] Task: Create multi-stage `Dockerfile`.
