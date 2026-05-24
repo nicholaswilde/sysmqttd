@@ -1,5 +1,6 @@
 mod config;
 mod discovery;
+mod telemetry;
 
 use config::Config;
 use rumqttc::{AsyncClient, MqttOptions, Event, Packet, QoS};
@@ -36,7 +37,36 @@ async fn main() {
     // 3. Initialize client and event loop
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    // 4. Run event loop
+    // 4. Spawn Telemetry Polling Loop
+    let client_telemetry = client.clone();
+    let hostname_telemetry = hostname.clone();
+    let prefix_telemetry = config.mqtt_topic_prefix.clone();
+    
+    tokio::spawn(async move {
+        // Wait 5 seconds after startup before streaming first telemetry metrics
+        time::sleep(Duration::from_secs(5)).await;
+        
+        let mut collector = telemetry::TelemetryCollector::new();
+        let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_telemetry, hostname_telemetry);
+        
+        loop {
+            let state = collector.collect();
+            match serde_json::to_vec(&state) {
+                Ok(payload) => {
+                    println!("Publishing telemetry state: {:?}", state);
+                    if let Err(e) = client_telemetry.publish(&state_topic, QoS::AtLeastOnce, false, payload).await {
+                        eprintln!("Telemetry publication error: {}", e);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to serialize telemetry state payload: {}", e);
+                }
+            }
+            time::sleep(Duration::from_secs(60)).await;
+        }
+    });
+
+    // 5. Run MQTT Event loop
     println!("Connecting to MQTT broker...");
     loop {
         match eventloop.poll().await {
@@ -50,11 +80,11 @@ async fn main() {
                             eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
                         }
                     }
-                    Event::Incoming(incoming) => {
-                        println!("Incoming packet: {:?}", incoming);
+                    Event::Incoming(_incoming) => {
+                        // Suppressed diagnostic logging of other incoming packets to keep logs clean
                     }
-                    Event::Outgoing(outgoing) => {
-                        println!("Outgoing packet: {:?}", outgoing);
+                    Event::Outgoing(_outgoing) => {
+                        // Suppressed diagnostic logging of outgoing packets to keep logs clean
                     }
                 }
             }
