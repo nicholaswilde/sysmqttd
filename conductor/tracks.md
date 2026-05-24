@@ -4,7 +4,7 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 
 ---
 
-- [ ] **Track: Add network interface bandwidth (RX/TX rates) by parsing /proc/net/dev**
+- [x] **Track: Add network interface bandwidth (RX/TX rates) by parsing /proc/net/dev**
   *Link: [./tracks/sysmqttd_net_bandwidth_20260524/](./tracks/sysmqttd_net_bandwidth_20260524/)*
 
 - [ ] **Track: Add systemd service status binary monitor for whitelisted services**
