@@ -13,8 +13,9 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 4.  **Robust Async Lifecycle:** Asynchronous client loop that handles system startup, intermittent network dropouts, and broker reconnects gracefully.
 5.  **Service Status Monitoring:** Real-time checking of whitelisted systemd services (e.g., `docker`, `nginx`) via async polling and registers them as binary sensors.
 6.  **Layered Configuration:** Supports multi-format configuration files (TOML, YAML, JSON), custom config path overrides via `-c`/`--config` flags, and high-precedence `SYSMQTTD_` prefixed environment variables.
-*   **CLI Arguments:** Supports `-h/--help`, `-v/--version`, `-c/--config`, and individual parameter override flags (`-H/--host`, `-P/--port`, `-u/--user/--username`, `-w/--password/--pass`, `-p/--prefix`, `-i/--interface`, `-s/--services/--monitored-services`, and `-g/--gpio/--gpio-inputs`) taking absolute highest precedence.
+*   **CLI Arguments:** Supports `-h/--help`, `-v/--version`, `-c/--config`, and individual parameter override flags (`-H/--host`, `-P/--port`, `-u/--user/--username`, `-w/--password/--pass`, `-p/--prefix`, `-i/--interface`, `-s/--services/--monitored-services`, `-g/--gpio/--gpio-inputs`, and `-o/--gpio-outputs`) taking absolute highest precedence.
 7.  **GPIO Input Monitoring:** Monitors physical state transitions of system GPIO pins configured as inputs (e.g., buttons, magnetic contact door sensors) and publishes changes instantly as Home Assistant binary sensors (`binary_sensor`) with customizable device classes.
+8.  **GPIO Output Control:** Actuates physical output devices (like relays, status LEDs, and buzzers) connected to configured GPIO pins via incoming MQTT switch commands, registering them as standard Home Assistant switch entities.
 
 
 
