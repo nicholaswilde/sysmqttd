@@ -1,4 +1,5 @@
 use crate::gpio_inputs::{parse_gpio_inputs_env, GpioInputConfig};
+use crate::gpio_outputs::{parse_gpio_outputs_env, GpioOutputConfig};
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -14,6 +15,7 @@ pub struct CliOverrides {
     pub net_interface: Option<String>,
     pub monitored_services: Option<String>,
     pub gpio_inputs: Option<String>,
+    pub gpio_outputs: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -32,6 +34,8 @@ pub struct Config {
     pub net_interface: String,
     #[serde(default)]
     pub gpio_inputs: Vec<GpioInputConfig>,
+    #[serde(default)]
+    pub gpio_outputs: Vec<GpioOutputConfig>,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -62,6 +66,8 @@ pub struct FileConfig {
     pub net_interface: Option<String>,
     #[serde(alias = "gpio_inputs")]
     pub gpio_inputs: Option<Vec<GpioInputConfig>>,
+    #[serde(alias = "gpio_outputs")]
+    pub gpio_outputs: Option<Vec<GpioOutputConfig>>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -205,6 +211,17 @@ impl Config {
             gpio_inputs = parse_gpio_inputs_env(cli_gpio);
         }
 
+        let mut gpio_outputs = file_config.gpio_outputs.unwrap_or_default();
+
+        if let Ok(env_gpio_out) = env::var("SYSMQTTD_GPIO_OUTPUTS").or_else(|_| env::var("GPIO_OUTPUTS"))
+        {
+            gpio_outputs = parse_gpio_outputs_env(&env_gpio_out);
+        }
+
+        if let Some(cli_gpio_out) = &overrides.gpio_outputs {
+            gpio_outputs = parse_gpio_outputs_env(cli_gpio_out);
+        }
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -213,6 +230,7 @@ impl Config {
             mqtt_topic_prefix,
             net_interface,
             gpio_inputs,
+            gpio_outputs,
         })
     }
 }
@@ -391,6 +409,7 @@ mod tests {
             net_interface: Some("cli_eth".to_string()),
             monitored_services: Some("cli_svc1,cli_svc2".to_string()),
             gpio_inputs: None,
+            gpio_outputs: None,
         };
         let config_overrides = Config::load_with_overrides(overrides).unwrap();
         assert_eq!(config_overrides.mqtt_host, "10.20.30.40");

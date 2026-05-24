@@ -2,13 +2,13 @@
 
 This plan guides the implementation of GPIO output control.
 
-## Phase 1: GPIO Output Core & Subscriptions
+## Phase 1: GPIO Output Core & Subscriptions [checkpoint: 7a32206]
 Implement sysfs GPIO output driver and MQTT subscription hooks.
 
-- [ ] Task: Implement sysfs-based GPIO output driver
-    - [ ] Configure direction as `out` and support writing `0` or `1`
-- [ ] Task: Write unit tests with mock sysfs structure
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Output Core' (Protocol in workflow.md)
+- [x] Task: Implement sysfs-based GPIO output driver
+    - [x] Configure direction as `out` and support writing `0` or `1`
+- [x] Task: Write unit tests with mock sysfs structure
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Output Core' (Protocol in workflow.md)
 
 ## Phase 2: Switch Command Integration
 Subscribe to command topics in the event loop and confirm states back.

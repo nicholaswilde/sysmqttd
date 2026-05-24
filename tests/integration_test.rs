@@ -20,6 +20,7 @@ async fn test_integration_daemon_discovery_and_publish() {
         mqtt_topic_prefix: "homeassistant_test".to_string(),
         net_interface: "wlan0".to_string(),
         gpio_inputs: vec![],
+        gpio_outputs: vec![],
     };
 
     let daemon = Daemon::new(config, "integration-tester".to_string());

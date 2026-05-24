@@ -2,5 +2,6 @@ pub mod config;
 pub mod daemon;
 pub mod discovery;
 pub mod gpio_inputs;
+pub mod gpio_outputs;
 pub mod service_status;
 pub mod telemetry;

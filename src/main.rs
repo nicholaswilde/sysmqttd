@@ -24,6 +24,7 @@ async fn main() {
             net_interface,
             monitored_services,
             gpio_inputs,
+            gpio_outputs,
         }) => sysmqttd::config::CliOverrides {
             config_path,
             mqtt_host,
@@ -34,6 +35,7 @@ async fn main() {
             net_interface,
             monitored_services,
             gpio_inputs,
+            gpio_outputs,
         },
         Err(e) => {
             eprintln!("Error: {}", e);

@@ -418,6 +418,7 @@ mod tests {
             mqtt_topic_prefix: "ha_home".to_string(),
             net_interface: "wlan0".to_string(),
             gpio_inputs: vec![],
+            gpio_outputs: vec![],
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -442,6 +443,7 @@ mod tests {
                 name: "Front Door".to_string(),
                 device_class: Some("door".to_string()),
             }],
+            gpio_outputs: vec![],
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);

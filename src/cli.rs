@@ -18,6 +18,7 @@ pub enum CliAction {
         net_interface: Option<String>,
         monitored_services: Option<String>,
         gpio_inputs: Option<String>,
+        gpio_outputs: Option<String>,
     },
 }
 
@@ -34,6 +35,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut net_interface = None;
     let mut monitored_services = None;
     let mut gpio_inputs = None;
+    let mut gpio_outputs = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -117,6 +119,14 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing GPIO inputs after GPIO flag".to_string());
                 }
             }
+            "-o" | "--gpio-outputs" => {
+                if i + 1 < args.len() {
+                    gpio_outputs = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing GPIO outputs after outputs flag".to_string());
+                }
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
@@ -132,6 +142,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
         net_interface,
         monitored_services,
         gpio_inputs,
+        gpio_outputs,
     })
 }
 
@@ -151,7 +162,9 @@ Options:\n\
     -w, --password <pass>    MQTT broker password\n\
     -p, --prefix <prefix>    Home Assistant discovery topic prefix (default homeassistant)\n\
     -i, --interface <if>     Network interface card (default wlan0)\n\
-    -s, --services <list>    Comma-separated whitelist of systemd services to monitor\n\n\
+    -s, --services <list>    Comma-separated whitelist of systemd services to monitor\n\
+    -g, --gpio <list>        Comma-separated whitelist of GPIO input pins\n\
+    -o, --gpio-outputs <list> Comma-separated whitelist of GPIO output pins\n\n\
 The daemon connects to an MQTT broker as configured via arguments, environment variables or a configuration file.\n",
         ver = version
     )
@@ -176,6 +189,7 @@ mod tests {
                 net_interface: None,
                 monitored_services: None,
                 gpio_inputs: None,
+                gpio_outputs: None,
             }
         );
     }
@@ -211,6 +225,7 @@ mod tests {
                 net_interface: None,
                 monitored_services: None,
                 gpio_inputs: None,
+                gpio_outputs: None,
             }
         );
     }
@@ -246,6 +261,7 @@ mod tests {
                 net_interface: Some("eth0".to_string()),
                 monitored_services: Some("docker,nginx".to_string()),
                 gpio_inputs: None,
+                gpio_outputs: None,
             }
         );
     }
@@ -265,6 +281,36 @@ mod tests {
     #[test]
     fn test_unknown_flag() {
         let args = vec!["sysmqttd".to_string(), "--foo".to_string()];
+        assert!(parse_arguments(args).is_err());
+    }
+
+    #[test]
+    fn test_gpio_outputs_flag_valid() {
+        let args = vec![
+            "sysmqttd".to_string(),
+            "-o".to_string(),
+            "24:Relay 1,25:LED Indicator".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: Some("24:Relay 1,25:LED Indicator".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn test_gpio_outputs_flag_missing_val() {
+        let args = vec!["sysmqttd".to_string(), "-o".to_string()];
         assert!(parse_arguments(args).is_err());
     }
 }
