@@ -48,7 +48,7 @@ tasks:
       - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
       - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
       - sleep 2
-      - cargo test
+      - RUN_DOCKER_TESTS=1 cargo test
 
   test:integration:
     desc: Run integration tests with a temporary broker container
@@ -56,7 +56,7 @@ tasks:
       - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
       - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
       - sleep 2
-      - cargo test --test integration_test
+      - RUN_DOCKER_TESTS=1 cargo test --test integration_test
 
   coverage:
     desc: Run tests and audit code coverage, enforcing a 90% line gate with a temporary broker container
@@ -64,7 +64,7 @@ tasks:
       - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
       - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
       - sleep 2
-      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --fail-under-lines 90
+      - RUN_DOCKER_TESTS=1 cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --fail-under-lines 90
 
   coverage:report:
     desc: Generate coverage reports (lcov and html) with a temporary broker container
@@ -72,8 +72,8 @@ tasks:
       - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
       - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
       - sleep 2
-      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --lcov --output-path lcov.info
-      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --html
+      - RUN_DOCKER_TESTS=1 cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --lcov --output-path lcov.info
+      - RUN_DOCKER_TESTS=1 cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --html
 
   coverage:upload:
     desc: Upload coverage report to Coveralls

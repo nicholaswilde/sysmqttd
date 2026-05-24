@@ -6,6 +6,11 @@ use tokio::time;
 
 #[tokio::test]
 async fn test_integration_daemon_discovery_and_publish() {
+    if std::env::var("RUN_DOCKER_TESTS").is_err() {
+        println!("Skipping docker-based integration test because RUN_DOCKER_TESTS is not set.");
+        return;
+    }
+
     // 1. Establish connection options to our local docker broker
     let config = Config {
         mqtt_host: "127.0.0.1".to_string(),
