@@ -9,7 +9,7 @@ Draft basic configurations and warnings.
 - [x] Task: Create initial `Taskfile.yml` with formatting, linting, and default recipes.
 - [x] Task: Conductor - User Manual Verification 'Phase 1 Scaffolding' (Protocol in workflow.md)
 
-## Phase 2: Daemon Refactoring & Unit Tests
+## Phase 2: Daemon Refactoring & Unit Tests [checkpoint: ae99c42]
 Extract the async telemetry poller out of `main.rs` to allow robust testing.
 
 - [x] Task: Design and create `src/daemon.rs` housing telemetry collection and connection event loops.
