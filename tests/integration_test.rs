@@ -82,4 +82,18 @@ async fn test_integration_daemon_discovery_and_publish() {
         pub_received,
         "Expected to receive retained Home Assistant Discovery payload on subscription"
     );
+
+    // 7. Publish a whitelisted remote command to verify integration handling
+    client
+        .publish(
+            "homeassistant_test/sensor/sysmqttd_integration-tester/command",
+            rumqttc::QoS::AtLeastOnce,
+            false,
+            "reboot",
+        )
+        .await
+        .unwrap();
+
+    // Small delay to allow message processing and execution in event loop
+    time::sleep(Duration::from_secs(1)).await;
 }

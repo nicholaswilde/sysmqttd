@@ -462,19 +462,45 @@ impl Daemon {
                                     }
                                     // Subscribe to GPIO output command topics
                                     for pin_config in &self.config.gpio_outputs {
-                                        let cmd_topic = format!(
-                                            "{}/switch/sysmqttd_{}_pin{}/set",
-                                            self.config.mqtt_topic_prefix, self.hostname, pin_config.pin
-                                        );
-                                        if let Err(e) = client.subscribe(&cmd_topic, QoS::AtLeastOnce).await {
-                                            eprintln!("Failed to subscribe to GPIO command topic {}: {}", cmd_topic, e);
-                                        }
+                                         let cmd_topic = format!(
+                                             "{}/switch/sysmqttd_{}_pin{}/set",
+                                             self.config.mqtt_topic_prefix, self.hostname, pin_config.pin
+                                         );
+                                         if let Err(e) = client.subscribe(&cmd_topic, QoS::AtLeastOnce).await {
+                                             eprintln!("Failed to subscribe to GPIO command topic {}: {}", cmd_topic, e);
+                                         }
+                                    }
+                                    // Subscribe to remote command topic
+                                    let remote_cmd_topic = format!(
+                                        "{}/sensor/sysmqttd_{}/command",
+                                        self.config.mqtt_topic_prefix, self.hostname
+                                    );
+                                    if let Err(e) = client.subscribe(&remote_cmd_topic, QoS::AtLeastOnce).await {
+                                        eprintln!("Failed to subscribe to remote commands topic {}: {}", remote_cmd_topic, e);
                                     }
                                 }
                                 Packet::Publish(publish) => {
-                                    // Check if this publish is for one of our GPIO output command topics
                                     let prefix = &self.config.mqtt_topic_prefix;
                                     let hostname = &self.hostname;
+
+                                    // Check if this publish is for our remote command topic
+                                    let global_cmd_topic = format!("{}/sensor/sysmqttd_{}/command", prefix, hostname);
+                                    if publish.topic == global_cmd_topic {
+                                        let payload_str = String::from_utf8_lossy(&publish.payload);
+                                        match payload_str.trim().parse::<crate::commands::RemoteAction>() {
+                                            Ok(action) => {
+                                                println!("Executing whitelisted remote command: {:?}", action);
+                                                if let Err(e) = action.execute() {
+                                                    eprintln!("Error executing remote command {:?}: {}", action, e);
+                                                }
+                                            }
+                                            Err(e) => {
+                                                eprintln!("Ignoring unauthorized or malformed remote command payload: {}", e);
+                                            }
+                                        }
+                                    }
+
+                                    // Check if this publish is for one of our GPIO output command topics
                                     for pin_config in &self.config.gpio_outputs {
                                         let cmd_topic = format!(
                                             "{}/switch/sysmqttd_{}_pin{}/set",
