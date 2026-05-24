@@ -8,6 +8,13 @@ pub struct TelemetryState {
     pub cpu_temperature: f64,
     pub ram_usage: f64,
     pub disk_usage: f64,
+    #[serde(rename = "load_1m")]
+    pub load_average_1: f64,
+    #[serde(rename = "load_5m")]
+    pub load_average_5: f64,
+    #[serde(rename = "load_15m")]
+    pub load_average_15: f64,
+    pub uptime_seconds: f64,
 }
 
 pub struct TelemetryCollector {
@@ -68,6 +75,31 @@ impl TelemetryCollector {
         42.0
     }
 
+    /// Read system uptime in seconds from /proc/uptime
+    pub fn read_uptime(&self) -> Result<f64, String> {
+        let uptime_path = self.sysfs_root.join("proc/uptime");
+        let content = std::fs::read_to_string(&uptime_path).map_err(|e| e.to_string())?;
+        let first = content
+            .split_whitespace()
+            .next()
+            .ok_or("Empty /proc/uptime")?;
+        let seconds: f64 = first.parse::<f64>().map_err(|e| e.to_string())?;
+        Ok(seconds)
+    }
+
+    /// Read load averages from /proc/loadavg
+    pub fn read_load_avg(&self) -> Result<(f64, f64, f64), String> {
+        let load_path = self.sysfs_root.join("proc/loadavg");
+        let content = std::fs::read_to_string(&load_path).map_err(|e| e.to_string())?;
+        let parts: Vec<&str> = content.split_whitespace().collect();
+        if parts.len() < 3 {
+            return Err("Malformed /proc/loadavg".into());
+        }
+        let one = parts[0].parse::<f64>().map_err(|e| e.to_string())?;
+        let five = parts[1].parse::<f64>().map_err(|e| e.to_string())?;
+        let fifteen = parts[2].parse::<f64>().map_err(|e| e.to_string())?;
+        Ok((one, five, fifteen))
+    }
     /// Read RAM usage percentage utilizing minimized sysinfo features
     pub fn get_ram_usage(&mut self) -> f64 {
         self.sys.refresh_memory();
@@ -100,10 +132,15 @@ impl TelemetryCollector {
 
     /// Collect all metrics
     pub fn collect(&mut self) -> TelemetryState {
+        let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
             ram_usage: self.get_ram_usage(),
             disk_usage: self.get_disk_usage(),
+            load_average_1: load1,
+            load_average_5: load5,
+            load_average_15: load15,
+            uptime_seconds: self.read_uptime().unwrap_or(0.0),
         }
     }
 }
@@ -165,5 +202,75 @@ mod tests {
         let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
         let temp = collector.get_cpu_temperature();
         assert_eq!(temp, 42.0);
+    }
+
+    #[test]
+    fn test_cpu_temp_invalid_hwmon() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_invalid_hwmon");
+        let hwmon_dir = test_dir.join("sys/class/hwmon/hwmon3");
+        fs::create_dir_all(&hwmon_dir).unwrap();
+
+        let temp_file = hwmon_dir.join("temp1_input");
+        fs::write(&temp_file, "abc\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let temp = collector.get_cpu_temperature();
+        assert_eq!(temp, 42.0); // should fallback to 42.0
+
+        // Clean up
+        let _ = fs::remove_file(temp_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_read_uptime() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_uptime");
+        let proc_dir = test_dir.join("proc");
+        std::fs::create_dir_all(&proc_dir).unwrap();
+        let uptime_file = proc_dir.join("uptime");
+        std::fs::write(&uptime_file, "12345.67 0.00\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let uptime = collector.read_uptime().unwrap();
+        assert!((uptime - 12345.67).abs() < 0.001);
+
+        // Test empty uptime
+        std::fs::write(&uptime_file, "\n").unwrap();
+        assert!(collector.read_uptime().is_err());
+
+        // Test invalid float uptime
+        std::fs::write(&uptime_file, "abc 0.00\n").unwrap();
+        assert!(collector.read_uptime().is_err());
+
+        // Clean up
+        let _ = std::fs::remove_file(uptime_file);
+        let _ = std::fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_read_load_avg() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_load_avg");
+        let proc_dir = test_dir.join("proc");
+        std::fs::create_dir_all(&proc_dir).unwrap();
+        let load_file = proc_dir.join("loadavg");
+        std::fs::write(&load_file, "0.15 0.25 0.35 1/140 12345\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (one, five, fifteen) = collector.read_load_avg().unwrap();
+        assert!((one - 0.15).abs() < 0.001);
+        assert!((five - 0.25).abs() < 0.001);
+        assert!((fifteen - 0.35).abs() < 0.001);
+
+        // Test malformed loadavg file
+        std::fs::write(&load_file, "0.15 0.25\n").unwrap();
+        assert!(collector.read_load_avg().is_err());
+
+        // Test invalid float values
+        std::fs::write(&load_file, "0.15 abc 0.35 1/140 12345\n").unwrap();
+        assert!(collector.read_load_avg().is_err());
+
+        // Clean up
+        let _ = std::fs::remove_file(load_file);
+        let _ = std::fs::remove_dir_all(test_dir);
     }
 }

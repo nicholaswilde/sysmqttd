@@ -76,6 +76,48 @@ impl DiscoveryPayload {
             device,
         }
     }
+
+    pub fn new_load_1m(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Load Avg (1m)".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.load_1m }}".to_string(),
+            unit_of_measurement: "".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_load_1m", hostname),
+            device,
+        }
+    }
+
+    pub fn new_load_5m(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Load Avg (5m)".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.load_5m }}".to_string(),
+            unit_of_measurement: "".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_load_5m", hostname),
+            device,
+        }
+    }
+
+    pub fn new_load_15m(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Load Avg (15m)".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.load_15m }}".to_string(),
+            unit_of_measurement: "".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_load_15m", hostname),
+            device,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -105,5 +147,36 @@ mod tests {
         assert!(serialized.contains(r#""state_class":"measurement""#));
         assert!(serialized.contains(r#""uniq_id":"sysmqttd_test-host_cpu_temp""#));
         assert!(serialized.contains(r#""dev":{"ids":["sysmqttd_test-host"],"name":"sysmqttd test-host","mdl":"Raspberry Pi Zero W Monitor","mf":"sysmqttd"}"#));
+    }
+
+    #[test]
+    fn test_load_avg_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "Raspberry Pi Zero W Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload_1m =
+            DiscoveryPayload::new_load_1m("homeassistant", "test-host", device.clone());
+        let payload_5m =
+            DiscoveryPayload::new_load_5m("homeassistant", "test-host", device.clone());
+        let payload_15m = DiscoveryPayload::new_load_15m("homeassistant", "test-host", device);
+
+        let s1 = serde_json::to_string(&payload_1m).unwrap();
+        let s5 = serde_json::to_string(&payload_5m).unwrap();
+        let s15 = serde_json::to_string(&payload_15m).unwrap();
+
+        assert!(s1.contains(r#""name":"Load Avg (1m)""#));
+        assert!(s1.contains(r#""val_tpl":"{{ value_json.load_1m }}""#));
+        assert!(s1.contains(r#""uniq_id":"sysmqttd_test-host_load_1m""#));
+
+        assert!(s5.contains(r#""name":"Load Avg (5m)""#));
+        assert!(s5.contains(r#""val_tpl":"{{ value_json.load_5m }}""#));
+        assert!(s5.contains(r#""uniq_id":"sysmqttd_test-host_load_5m""#));
+
+        assert!(s15.contains(r#""name":"Load Avg (15m)""#));
+        assert!(s15.contains(r#""val_tpl":"{{ value_json.load_15m }}""#));
+        assert!(s15.contains(r#""uniq_id":"sysmqttd_test-host_load_15m""#));
     }
 }
