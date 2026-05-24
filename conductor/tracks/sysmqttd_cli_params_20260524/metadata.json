@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_cli_params_20260524",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-24T15:33:00Z",
+  "updated_at": "2026-05-24T15:33:00Z",
+  "description": "add a track that evaluates all environmental variables and ensures that equivalent command line arguments exists for them"
+}
