@@ -1,6 +1,11 @@
 version: '3'
 
 tasks:
+  update:
+    desc: Update all cargo dependencies
+    cmds:
+      - cargo update
+
   clippy:
     desc: Run cargo clippy
     cmds:
@@ -9,16 +14,21 @@ tasks:
     desc: Check code for errors without generating binary
     cmds:
       - cargo check
-      
+
   default:
     desc: List all available tasks
     cmds:
       - task --list
 
-  format:
-    desc: Format all Rust files using cargo fmt
+  fmt:
+    desc: Format code with rustfmt
     cmds:
-      - cargo fmt --all
+      - cargo fmt --all --check
+
+  fmt:check:
+    desc: Check code formatting with rustfmt
+    cmds:
+      - cargo fmt -- --check
 
   lint:
     desc: Run clippy lints on all targets

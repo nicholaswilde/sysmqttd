@@ -16,3 +16,9 @@ codegen-units = 1
 panic = "abort"
 opt-level = "z"
 strip = true
+
+# Profile for CI/CD builds (inherits from dev)
+[profile.ci]
+inherits = "dev"
+incremental = false # Disable incremental compilation for CI
+debug = 0 # No debug info needed for basic CI checks
