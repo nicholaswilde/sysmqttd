@@ -1,5 +1,11 @@
 version: '3'
 
+dotenv: ['.env']
+
+vars:
+  LOCAL_IP:
+    sh: hostname -I | awk '{print $1}'
+
 tasks:
   update:
     desc: Update all cargo dependencies
@@ -10,6 +16,7 @@ tasks:
     desc: Run cargo clippy
     cmds:
       - cargo clippy --workspace --all-targets --all-features -- -D warnings
+
   check:
     desc: Check code for errors without generating binary
     cmds:
@@ -43,7 +50,7 @@ tasks:
       - sleep 2
       - cargo test
 
-  test-integration:
+  test:integration:
     desc: Run integration tests with a temporary broker container
     cmds:
       - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
@@ -59,30 +66,69 @@ tasks:
       - sleep 2
       - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --fail-under-lines 90
 
-  build-all:
+  coverage:report:
+    desc: Generate coverage reports (lcov and html) with a temporary broker container
+    cmds:
+      - docker run -d --name test-mqtt-test -p 1883:1883 eclipse-mosquitto mosquitto -c /mosquitto-no-auth.conf
+      - defer: docker stop test-mqtt-test && docker rm test-mqtt-test
+      - sleep 2
+      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --lcov --output-path lcov.info
+      - cargo llvm-cov --ignore-filename-regex "src/main.rs" --all-features --html
+
+  coverage:upload:
+    desc: Upload coverage report to Coveralls
+    preconditions:
+      - sh: test -f lcov.info
+        msg: "lcov.info doesn't exist"
+    cmds:
+      - coveralls report lcov.info  -n -r {{ .COVERALLS_REPO_TOKEN }}
+    silent: true
+
+  encrypt:
+    desc: Encrypt files using SOPS
+    preconditions:
+      - sh: test -f .env
+        msg: ".env file doesn't exist"
+    cmds:
+      - sops -e --input-type dotenv --output-type dotenv .env > .env.enc
+
+  decrypt:
+    desc: Decrypt files using SOPS
+    preconditions:
+      - sh: test -f .env.enc
+        msg: ".env.enc doesn't exist"
+    cmds:
+      - sops -d --input-type dotenv --output-type dotenv .env.enc > .env
+
+  deps:
+    desc: Install dependencies
+    cmds:
+      - cargo install cross --git https://github.com/cross-rs/cross
+
+  build:all:
     desc: Cross-compile optimized release binaries for ARMv6, ARMv7, ARM64, and AMD64
     cmds:
-      - task: build-armv6
-      - task: build-armv7
-      - task: build-arm64
-      - task: build-amd64
+      - task: build:armv6
+      - task: build:armv7
+      - task: build:arm64
+      - task: build:amd64
 
-  build-armv6:
+  build:armv6:
     desc: Compile ARMv6 binary (Raspberry Pi Zero W)
     cmds:
       - cross build --target arm-unknown-linux-gnueabihf --release
 
-  build-armv7:
+  build:armv7:
     desc: Compile ARMv7 binary (Raspberry Pi 2/3)
     cmds:
       - cross build --target armv7-unknown-linux-gnueabihf --release
 
-  build-arm64:
+  build:arm64:
     desc: Compile ARM64 binary (Raspberry Pi 3/4/5)
     cmds:
       - cross build --target aarch64-unknown-linux-gnu --release
 
-  build-amd64:
+  build:amd64:
     desc: Compile AMD64 binary (Standard PC/server)
     cmds:
       - cross build --target x86_64-unknown-linux-gnu --release

@@ -10,10 +10,10 @@ This skill compiles the `sysmqttd` system monitoring daemon for a specific archi
 1. **Determine Target Architecture:**
    - The target architecture is provided via the first argument `<architecture>` (defaults to `amd64` if empty or unspecified).
    - Valid architectures:
-     - **amd64** (default): Run `task build-amd64` (x86_64-unknown-linux-gnu)
-     - **armv6**: Run `task build-armv6` (arm-unknown-linux-gnueabihf)
-     - **armv7**: Run `task build-armv7` (armv7-unknown-linux-gnueabihf)
-     - **arm64**: Run `task build-arm64` (aarch64-unknown-linux-gnu)
+     - **amd64** (default): Run `task build:amd64` (x86_64-unknown-linux-gnu)
+     - **armv6**: Run `task build:armv6` (arm-unknown-linux-gnueabihf)
+     - **armv7**: Run `task build:armv7` (armv7-unknown-linux-gnueabihf)
+     - **arm64**: Run `task build:arm64` (aarch64-unknown-linux-gnu)
      - **local**: Run `cargo build` (Native build)
 
 2. **Execute Build:**
