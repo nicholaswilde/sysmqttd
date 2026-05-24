@@ -17,8 +17,6 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 - [ ] **Track: Add GPIO output pin control for switches (e.g. relays, indicators)**
   *Link: [./tracks/sysmqttd_gpio_outputs_20260524/](./tracks/sysmqttd_gpio_outputs_20260524/)*
 
-- [x] **Track: Implement multi-format configuration manager supporting TOML, YAML, JSON, CLI overrides, and SYSMQTTD_ prefixed environment variables**
-  *Link: [./tracks/sysmqttd_config_expansion_20260524/](./tracks/sysmqttd_config_expansion_20260524/)*
 
 
 
