@@ -73,3 +73,4 @@ A task is complete when:
 3. Code is formatted (`cargo fmt`) and clippy is clean.
 4. Binary size and optimization criteria are verified.
 5. Code changes are committed with conventional commit messages.
+6. The `README.md` at the project root is updated to accurately document any new or changed features, options, and parameters.
