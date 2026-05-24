@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [linux, linux-arm, linux-armv7, linux-armv6, macos, macos-arm, win-msvc, win32-msvc]
+        build: [linux, linux-arm, linux-armv7, linux-armv6]
         include:
         - build: linux
           os: ubuntu-latest
@@ -106,22 +106,6 @@ jobs:
           target: arm-unknown-linux-gnueabihf
           strip: arm-linux-gnueabihf-strip
           qemu: qemu-arm
-        - build: macos
-          os: macos-latest
-          rust: stable
-          target: x86_64-apple-darwin
-        - build: macos-arm
-          os: macos-latest
-          rust: stable
-          target: aarch64-apple-darwin
-        - build: win-msvc
-          os: windows-latest
-          rust: stable
-          target: x86_64-pc-windows-msvc
-        - build: win32-msvc
-          os: windows-latest
-          rust: stable
-          target: i686-pc-windows-msvc
 
     steps:
     - name: Checkout repository
