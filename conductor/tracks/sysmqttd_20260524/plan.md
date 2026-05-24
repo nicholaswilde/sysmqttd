@@ -31,14 +31,14 @@ Implement startup retained discovery publishing registering all metrics under a 
 - [x] Task: Verify that discovery payloads are published as `retained` messages on startup.
 - [x] Task: Conductor - User Manual Verification 'Phase 3 Discovery' (Protocol in workflow.md)
 
-## Phase 4: Telemetry Metrics Collection
+## Phase 4: Telemetry Metrics Collection [checkpoint: d3c942b]
 Implement non-blocking telemetry acquisition for CPU Temperature, RAM, and Disk metrics.
 
-- [ ] Task: Configure minimized `sysinfo` features (`default-features = false`, only enabling necessary platform systems) and implement RAM & Disk percent utilization functions.
-- [ ] Task: Implement CPU Temperature query via direct thermal sensor `/sys/class/thermal/thermal_zone0/temp` (default on Raspberry Pi / DietPi) with secondary fallback.
-- [ ] Task: Write unit tests for memory, disk, and temp reader functions with mock values.
-- [ ] Task: Implement the main 60-second telemetry polling and async publish loop.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4 Telemetry' (Protocol in workflow.md)
+- [x] Task: Configure minimized `sysinfo` features (`default-features = false`, only enabling necessary platform systems) and implement RAM & Disk percent utilization functions.
+- [x] Task: Implement CPU Temperature query via direct thermal sensor `/sys/class/thermal/thermal_zone0/temp` (default on Raspberry Pi / DietPi) with secondary fallback.
+- [x] Task: Write unit tests for memory, disk, and temp reader functions with mock values.
+- [x] Task: Implement the main 60-second telemetry polling and async publish loop.
+- [x] Task: Conductor - User Manual Verification 'Phase 4 Telemetry' (Protocol in workflow.md)
 
 ## Phase 5: Size & Resource Optimization
 Optimize binary sizes and runtime memory footprint.
