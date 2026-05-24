@@ -12,7 +12,7 @@ on:
         default: 'test-tag'
 
 env:
-  REGISTRY_IMAGE: nicholaswilde/adguardhome-mcp-rs
+  REGISTRY_IMAGE: nicholaswilde/sysmqttd
 
 permissions:
   contents: read

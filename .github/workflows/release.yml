@@ -162,9 +162,9 @@ jobs:
         echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
         if [[ "${{ matrix.os }}" == windows-* ]]; then
-          bin="target/${{ matrix.target }}/release/adguardhome-mcp-rs.exe"
+          bin="target/${{ matrix.target }}/release/sysmqttd.exe"
         else
-          bin="target/${{ matrix.target }}/release/adguardhome-mcp-rs"
+          bin="target/${{ matrix.target }}/release/sysmqttd"
         fi
         echo "BIN=$bin" >> $GITHUB_ENV
         
@@ -220,19 +220,19 @@ jobs:
       shell: bash
       run: |
         outdir="${{ env.TARGET_DIR }}/release"
-        staging="adguardhome-mcp-rs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}"
+        staging="sysmqttd-${{ needs.create-release.outputs.version }}-${{ matrix.target }}"
         echo "staging is: $staging"
         mkdir -p "$staging"
         
         # Copy binary
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp "$outdir/adguardhome-mcp-rs.exe" "$staging/"
+          cp "$outdir/sysmqttd.exe" "$staging/"
         else
-          cp "$outdir/adguardhome-mcp-rs" "$staging/"
+          cp "$outdir/sysmqttd" "$staging/"
         fi
 
         # Copy other files
-        cp {README.md,LICENSE,config.toml.example} "$staging/"
+        cp {README.md,LICENSE} "$staging/"
         
         # Compress
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
