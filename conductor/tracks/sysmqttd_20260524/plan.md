@@ -2,7 +2,7 @@
 
 This plan breaks down the development of the `sysmqttd` system monitoring daemon into clear, incremental phases. Each phase concludes with automated and manual verification checkpoints.
 
-## Phase 1: Environment Scaffolding & Cargo Setup
+## Phase 1: Environment Scaffolding & Cargo Setup [checkpoint: db5ab4a]
 Set up the workspace, dependency configurations, and cross-compilation target suite.
 
 - [x] Task: Create new Cargo binary project `sysmqttd`.
