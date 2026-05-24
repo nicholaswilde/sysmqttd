@@ -5,12 +5,12 @@ This plan breaks down the development of the `sysmqttd` system monitoring daemon
 ## Phase 1: Environment Scaffolding & Cargo Setup
 Set up the workspace, dependency configurations, and cross-compilation target suite.
 
-- [ ] Task: Create new Cargo binary project `sysmqttd`.
-- [ ] Task: Configure `Cargo.toml` with `sysinfo`, `rumqttc`, `serde`, and `serde_json`.
-- [ ] Task: Set up `Cargo.toml` profiles for Link-Time Optimization (`lto = true`), single codegen unit (`codegen-units = 1`), panic abort (`panic = "abort"`), and size optimizations (`opt-level = "z"`, `strip = true`).
-- [ ] Task: Configure `cross` (Cross-compilation) for target `arm-unknown-linux-gnueabihf` by creating a `Cross.toml` if needed.
-- [ ] Task: Build a minimal "Hello World" binary via `cross` and verify the output binary architecture using `file`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1 Setup' (Protocol in workflow.md)
+- [x] Task: Create new Cargo binary project `sysmqttd`.
+- [x] Task: Configure `Cargo.toml` with `sysinfo`, `rumqttc`, `serde`, and `serde_json`.
+- [x] Task: Set up `Cargo.toml` profiles for Link-Time Optimization (`lto = true`), single codegen unit (`codegen-units = 1`), panic abort (`panic = "abort"`), and size optimizations (`opt-level = "z"`, `strip = true`).
+- [x] Task: Configure `cross` (Cross-compilation) for target `arm-unknown-linux-gnueabihf` by creating a `Cross.toml` if needed.
+- [x] Task: Build a minimal "Hello World" binary via `cross` and verify the output binary architecture using `file`.
+- [x] Task: Conductor - User Manual Verification 'Phase 1 Setup' (Protocol in workflow.md)
 
 ## Phase 2: Configuration & MQTT Client Loop
 Implement configuration loading and the asynchronous MQTT client connection loop.
