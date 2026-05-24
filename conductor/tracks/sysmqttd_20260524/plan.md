@@ -48,10 +48,10 @@ Optimize binary sizes and runtime memory footprint.
 - [x] Task: Run performance profiling or runtime memory monitoring (Valgrind or RSS tracking) if possible to verify RAM consumption target (< 8MB RAM).
 - [x] Task: Conductor - User Manual Verification 'Phase 5 Optimization' (Protocol in workflow.md)
 
-## Phase 6: Systemd Service Installation & Deployment
+## Phase 6: Systemd Service Installation & Deployment [checkpoint: ea5f146]
 Draft systemd unit configuration, service deployment, and installation scripts.
 
-- [ ] Task: Create `sysmqttd.service` systemd service unit template running as a non-root standard user.
-- [ ] Task: Document configuration, target installation directories (e.g. `/usr/bin/sysmqttd` and `/etc/sysmqttd/`), and systemd setup commands.
-- [ ] Task: Run complete automated test suite locally to verify code correctness.
-- [ ] Task: Conductor - User Manual Verification 'Phase 6 Deployment' (Protocol in workflow.md)
+- [x] Task: Create `sysmqttd.service` systemd service unit template running as a non-root standard user.
+- [x] Task: Document configuration, target installation directories (e.g. `/usr/bin/sysmqttd` and `/etc/sysmqttd/`), and systemd setup commands.
+- [x] Task: Run complete automated test suite locally to verify code correctness.
+- [x] Task: Conductor - User Manual Verification 'Phase 6 Deployment' (Protocol in workflow.md)
