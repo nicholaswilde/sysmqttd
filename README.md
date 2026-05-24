@@ -1,4 +1,4 @@
-# sysmqttd
+# :package: sysmqttd
 
 > [!WARNING]
 > **This is a development version at version v0.1.* and details may change at any time.**
@@ -7,7 +7,7 @@
 
 ---
 
-## Features
+## :star: Features
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
 - **Comprehensive Telemetry:** Gathers CPU Temperature, RAM Usage (%), Disk Storage Utilization (%), CPU Load Averages (1m, 5m, 15m), System Uptime, and Real-time Network Bandwidth Rates (RX & TX rate in kB/s).
@@ -18,7 +18,7 @@
 
 ---
 
-## Quick Start & Dev Commands
+## :rocket: Quick Start & Dev Commands
 
 This project uses [go-task](https://taskfile.dev/) as its task runner.
 
@@ -44,7 +44,7 @@ task build-all
 
 ---
 
-## CLI Usage
+## :terminal: CLI Usage
 
 The binary supports the following command-line flags, processed before any configuration loading or MQTT connection is initiated:
 
@@ -53,7 +53,7 @@ The binary supports the following command-line flags, processed before any confi
 
 ---
 
-## Configuration
+## :gear: Configuration
 
 `sysmqttd` supports configuration through a hierarchical, layered structure:
 1. **Environment Variables** (Highest precedence)
@@ -86,7 +86,7 @@ interface = "eth0"
 
 ---
 
-## Systemd Service Setup
+## :wrench: Systemd Service Setup
 
 To run `sysmqttd` as a reliable background service under systemd, you can deploy the secure, sandboxed unit template.
 
@@ -139,7 +139,7 @@ You can interact with the service using standard `systemctl` commands:
 
 ---
 
-## Home Assistant Integration
+## :house: Home Assistant Integration
 
 Once `sysmqttd` starts and establishes a connection, it automatically broadcasts MQTT Discovery payloads to register all sensors under a single parent device based on your device hostname.
 
