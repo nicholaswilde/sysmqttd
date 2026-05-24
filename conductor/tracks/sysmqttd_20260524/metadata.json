@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_20260524",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-24T08:21:00Z",
+  "updated_at": "2026-05-24T08:21:00Z",
+  "description": "Build lightweight native Rust system monitoring daemon sysmqttd for ARMv6 running DietPi"
+}
