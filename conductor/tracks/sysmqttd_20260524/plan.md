@@ -12,15 +12,15 @@ Set up the workspace, dependency configurations, and cross-compilation target su
 - [x] Task: Build a minimal "Hello World" binary via `cross` and verify the output binary architecture using `file`.
 - [x] Task: Conductor - User Manual Verification 'Phase 1 Setup' (Protocol in workflow.md)
 
-## Phase 2: Configuration & MQTT Client Loop
+## Phase 2: Configuration & MQTT Client Loop [checkpoint: 8f483a7]
 Implement configuration loading and the asynchronous MQTT client connection loop.
 
-- [ ] Task: Implement configuration module supporting environment variables and a fallback TOML file.
-- [ ] Task: Write unit tests verifying configuration parser, fallback defaults, and environment overrides.
-- [ ] Task: Implement async connection logic using `rumqttc::AsyncClient` and loop handler.
-- [ ] Task: Incorporate connection backoff and auto-reconnect retry strategies.
-- [ ] Task: Test async client loop connection locally against a Mock MQTT broker.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2 MQTT Loop' (Protocol in workflow.md)
+- [x] Task: Implement configuration module supporting environment variables and a fallback TOML file.
+- [x] Task: Write unit tests verifying configuration parser, fallback defaults, and environment overrides.
+- [x] Task: Implement async connection logic using `rumqttc::AsyncClient` and loop handler.
+- [x] Task: Incorporate connection backoff and auto-reconnect retry strategies.
+- [x] Task: Test async client loop connection locally against a Mock MQTT broker.
+- [x] Task: Conductor - User Manual Verification 'Phase 2 MQTT Loop' (Protocol in workflow.md)
 
 ## Phase 3: Home Assistant MQTT Discovery
 Implement startup retained discovery publishing registering all metrics under a unified parent device.
