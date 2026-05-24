@@ -22,14 +22,14 @@ Implement configuration loading and the asynchronous MQTT client connection loop
 - [x] Task: Test async client loop connection locally against a Mock MQTT broker.
 - [x] Task: Conductor - User Manual Verification 'Phase 2 MQTT Loop' (Protocol in workflow.md)
 
-## Phase 3: Home Assistant MQTT Discovery
+## Phase 3: Home Assistant MQTT Discovery [checkpoint: 0a440d3]
 Implement startup retained discovery publishing registering all metrics under a unified parent device.
 
-- [ ] Task: Model HA Discovery JSON schema structs for CPU Temp, RAM usage, and Disk usage sensors.
-- [ ] Task: Write unit tests validating Discovery struct serialization formats.
-- [ ] Task: Implement hostname retrieval helper and discovery payload publishing logic.
-- [ ] Task: Verify that discovery payloads are published as `retained` messages on startup.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3 Discovery' (Protocol in workflow.md)
+- [x] Task: Model HA Discovery JSON schema structs for CPU Temp, RAM usage, and Disk usage sensors.
+- [x] Task: Write unit tests validating Discovery struct serialization formats.
+- [x] Task: Implement hostname retrieval helper and discovery payload publishing logic.
+- [x] Task: Verify that discovery payloads are published as `retained` messages on startup.
+- [x] Task: Conductor - User Manual Verification 'Phase 3 Discovery' (Protocol in workflow.md)
 
 ## Phase 4: Telemetry Metrics Collection
 Implement non-blocking telemetry acquisition for CPU Temperature, RAM, and Disk metrics.
