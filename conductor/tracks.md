@@ -11,6 +11,9 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 - [ ] **Track: Add GPIO output pin control for switches (e.g. relays, indicators)**
   *Link: [./tracks/sysmqttd_gpio_outputs_20260524/](./tracks/sysmqttd_gpio_outputs_20260524/)*
 
+- [ ] **Track: Add logging verbosity control (verbose mode) via command line switch and environment variables**
+  *Link: [./tracks/sysmqttd_logging_verbosity_20260524/](./tracks/sysmqttd_logging_verbosity_20260524/)*
+
 
 
 
