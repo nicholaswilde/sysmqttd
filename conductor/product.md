@@ -9,5 +9,6 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 ## Key Features
 1.  **Tiny Footprint:** Native compiled Rust binary optimized for size (< 2MB stripped) and memory (< 8MB RAM).
 2.  **Home Assistant Autodiscovery:** Zero-configuration setup in Home Assistant via explicit, retained MQTT discovery payloads published on startup.
-3.  **Core System Telemetry:** 60-second updates of CPU Temperature, RAM percentage, and root disk percentage utilization.
+3.  **Core System Telemetry:** 60-second updates of CPU Temperature, RAM percentage, root disk percentage utilization, and system load averages (1m, 5m, 15m).
 4.  **Robust Async Lifecycle:** Asynchronous client loop that handles system startup, intermittent network dropouts, and broker reconnects gracefully.
+*   **CLI Arguments:** `-h/--help` and `-v/--version` flags for usage and version information.
