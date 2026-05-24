@@ -2,7 +2,7 @@
 
 This plan guides the implementation of command-line argument equivalents for all environment variables.
 
-## Phase 1: Core CLI Argument Parsing & Unit Tests
+## Phase 1: Core CLI Argument Parsing & Unit Tests [checkpoint: 88e6fec]
 Implement expanded CLI parser parameters and verify via unit tests.
 
 - [x] Task: Expand CLI parser parameters in `src/cli.rs`
@@ -16,7 +16,7 @@ Implement expanded CLI parser parameters and verify via unit tests.
 - [x] Task: Write comprehensive unit tests for the CLI parser covering all new parameter flags
 - [x] Task: Conductor - User Manual Verification 'Phase 1: CLI Parsing Core' (Protocol in workflow.md)
 
-## Phase 2: Configuration Loader Integration & Audits
+## Phase 2: Configuration Loader Integration & Audits [checkpoint: 88e6fec]
 Integrate parameter arguments into the configuration loading sequence and verify code coverage.
 
 - [x] Task: Integrate parameter flags in configuration loader sequence inside `src/config.rs` and `src/main.rs`
