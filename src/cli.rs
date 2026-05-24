@@ -17,6 +17,7 @@ pub enum CliAction {
         mqtt_topic_prefix: Option<String>,
         net_interface: Option<String>,
         monitored_services: Option<String>,
+        gpio_inputs: Option<String>,
     },
 }
 
@@ -32,6 +33,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut mqtt_topic_prefix = None;
     let mut net_interface = None;
     let mut monitored_services = None;
+    let mut gpio_inputs = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -107,6 +109,14 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing services after services flag".to_string());
                 }
             }
+            "-g" | "--gpio" | "--gpio-inputs" => {
+                if i + 1 < args.len() {
+                    gpio_inputs = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing GPIO inputs after GPIO flag".to_string());
+                }
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
@@ -121,6 +131,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
         mqtt_topic_prefix,
         net_interface,
         monitored_services,
+        gpio_inputs,
     })
 }
 
@@ -164,6 +175,7 @@ mod tests {
                 mqtt_topic_prefix: None,
                 net_interface: None,
                 monitored_services: None,
+                gpio_inputs: None,
             }
         );
     }
@@ -198,6 +210,7 @@ mod tests {
                 mqtt_topic_prefix: None,
                 net_interface: None,
                 monitored_services: None,
+                gpio_inputs: None,
             }
         );
     }
@@ -232,6 +245,7 @@ mod tests {
                 mqtt_topic_prefix: Some("prefix".to_string()),
                 net_interface: Some("eth0".to_string()),
                 monitored_services: Some("docker,nginx".to_string()),
+                gpio_inputs: None,
             }
         );
     }

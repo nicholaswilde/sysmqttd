@@ -10,6 +10,37 @@ pub struct GpioInputConfig {
     pub device_class: Option<String>,
 }
 
+pub fn parse_gpio_inputs_env(val: &str) -> Vec<GpioInputConfig> {
+    val.split(',')
+        .map(|v| v.trim())
+        .filter(|v| !v.is_empty())
+        .filter_map(|part| {
+            let subparts: Vec<&str> = part.split(':').collect();
+            if subparts.len() >= 2 {
+                if let Ok(pin) = subparts[0].parse::<u32>() {
+                    let name = subparts[1].trim().to_string();
+                    let device_class = if subparts.len() >= 3 {
+                        let dc = subparts[2].trim().to_string();
+                        if dc.is_empty() {
+                            None
+                        } else {
+                            Some(dc)
+                        }
+                    } else {
+                        None
+                    };
+                    return Some(GpioInputConfig {
+                        pin,
+                        name,
+                        device_class,
+                    });
+                }
+            }
+            None
+        })
+        .collect()
+}
+
 pub struct GpioInputListener {
     pub pin: u32,
     pub name: String,
@@ -29,7 +60,12 @@ impl GpioInputListener {
         }
     }
 
-    pub fn with_base_path(pin: u32, name: String, device_class: Option<String>, base_path: PathBuf) -> Self {
+    pub fn with_base_path(
+        pin: u32,
+        name: String,
+        device_class: Option<String>,
+        base_path: PathBuf,
+    ) -> Self {
         Self {
             pin,
             name,
@@ -78,7 +114,10 @@ impl GpioInputListener {
         let val_path = self.pin_dir().join("value");
         let content = fs::read_to_string(&val_path)?;
         let val = content.trim().parse::<u8>().map_err(|e| {
-            io::Error::new(io::ErrorKind::InvalidData, format!("Invalid GPIO value: {}", e))
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid GPIO value: {}", e),
+            )
         })?;
         Ok(val)
     }
@@ -176,5 +215,29 @@ mod tests {
 
         // Clean up
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_parse_gpio_inputs_env() {
+        let env_str = "23:Front Door:door,24:Motion Sensor:motion, 25:Simple Button";
+        let parsed = parse_gpio_inputs_env(env_str);
+        assert_eq!(parsed.len(), 3);
+
+        assert_eq!(parsed[0].pin, 23);
+        assert_eq!(parsed[0].name, "Front Door");
+        assert_eq!(parsed[0].device_class, Some("door".to_string()));
+
+        assert_eq!(parsed[1].pin, 24);
+        assert_eq!(parsed[1].name, "Motion Sensor");
+        assert_eq!(parsed[1].device_class, Some("motion".to_string()));
+
+        assert_eq!(parsed[2].pin, 25);
+        assert_eq!(parsed[2].name, "Simple Button");
+        assert_eq!(parsed[2].device_class, None);
+
+        // Test with empty string / invalid parts
+        assert!(parse_gpio_inputs_env("").is_empty());
+        assert!(parse_gpio_inputs_env("invalid").is_empty());
+        assert!(parse_gpio_inputs_env("abc:name").is_empty());
     }
 }

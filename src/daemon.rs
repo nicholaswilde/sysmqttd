@@ -64,6 +64,88 @@ impl Daemon {
         });
     }
 
+    /// Spawn GPIO input monitoring/polling loop
+    pub fn spawn_gpio_inputs_loop(&self, client: AsyncClient) {
+        if self.config.gpio_inputs.is_empty() {
+            return;
+        }
+
+        let hostname_clone = self.hostname.clone();
+        let prefix_clone = self.config.mqtt_topic_prefix.clone();
+        let mut listeners: Vec<crate::gpio_inputs::GpioInputListener> = self
+            .config
+            .gpio_inputs
+            .iter()
+            .map(|cfg| {
+                crate::gpio_inputs::GpioInputListener::new(
+                    cfg.pin,
+                    cfg.name.clone(),
+                    cfg.device_class.clone(),
+                )
+            })
+            .collect();
+
+        // Run setup and publish initial state for each listener
+        for listener in &mut listeners {
+            if let Err(e) = listener.setup() {
+                eprintln!("Failed to setup GPIO pin {}: {}", listener.pin, e);
+            } else if let Ok(val) = listener.read_value() {
+                let state_topic = format!(
+                    "{}/binary_sensor/sysmqttd_{}_pin{}/state",
+                    prefix_clone, hostname_clone, listener.pin
+                );
+                let state_payload = if val == 1 { "ON" } else { "OFF" };
+                let client_clone = client.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = client_clone
+                        .publish(&state_topic, QoS::AtLeastOnce, true, state_payload)
+                        .await
+                    {
+                        eprintln!(
+                            "GPIO initial state publication error for pin {}: {}",
+                            state_topic, e
+                        );
+                    }
+                });
+            }
+        }
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_millis(100));
+            loop {
+                interval.tick().await;
+                for listener in &mut listeners {
+                    match listener.check_transition() {
+                        Ok(Some(val)) => {
+                            let state_topic = format!(
+                                "{}/binary_sensor/sysmqttd_{}_pin{}/state",
+                                prefix_clone, hostname_clone, listener.pin
+                            );
+                            let state_payload = if val == 1 { "ON" } else { "OFF" };
+                            println!(
+                                "Publishing GPIO state: {} -> {}",
+                                state_topic, state_payload
+                            );
+                            if let Err(e) = client
+                                .publish(&state_topic, QoS::AtLeastOnce, true, state_payload)
+                                .await
+                            {
+                                eprintln!(
+                                    "GPIO state publication error for pin {}: {}",
+                                    listener.pin, e
+                                );
+                            }
+                        }
+                        Ok(None) => {}
+                        Err(e) => {
+                            eprintln!("Error reading GPIO pin {}: {}", listener.pin, e);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     /// Spawn the non-blocking async telemetry polling loop
     pub fn spawn_telemetry_loop(&self, client: AsyncClient) {
         let hostname_clone = self.hostname.clone();
@@ -228,6 +310,29 @@ impl Daemon {
             .publish(net_tx_topic, QoS::AtLeastOnce, true, net_tx_json)
             .await?;
 
+        // 9. GPIO Inputs discovery configurations
+        for pin_config in &self.config.gpio_inputs {
+            let unique_id = format!("sysmqttd_{}_pin{}", self.hostname, pin_config.pin);
+            let discovery_topic = format!(
+                "{}/binary_sensor/sysmqttd_{}_pin{}/config",
+                self.config.mqtt_topic_prefix, self.hostname, pin_config.pin
+            );
+
+            let payload = serde_json::json!({
+                "name": pin_config.name,
+                "state_topic": format!("{}/binary_sensor/sysmqttd_{}_pin{}/state", self.config.mqtt_topic_prefix, self.hostname, pin_config.pin),
+                "unique_id": unique_id,
+                "device_class": pin_config.device_class,
+                "payload_on": "ON",
+                "payload_off": "OFF",
+                "availability_topic": format!("{}/sensor/sysmqttd_{}/availability", self.config.mqtt_topic_prefix, self.hostname),
+            });
+            let payload_bytes = serde_json::to_vec(&payload).unwrap();
+            client
+                .publish(discovery_topic, QoS::AtLeastOnce, true, payload_bytes)
+                .await?;
+        }
+
         println!("Published Home Assistant MQTT Discovery configs successfully.");
         Ok(())
     }
@@ -244,6 +349,8 @@ impl Daemon {
         self.spawn_telemetry_loop(client.clone());
         // Spawn Service Status Loop
         self.spawn_service_status_loop(client.clone());
+        // Spawn GPIO Inputs Polling Loop
+        self.spawn_gpio_inputs_loop(client.clone());
 
         println!("Connecting to MQTT broker...");
         loop {
@@ -299,6 +406,7 @@ impl Daemon {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::gpio_inputs::GpioInputConfig;
 
     #[test]
     fn test_daemon_mqtt_options_mapping() {
@@ -309,6 +417,7 @@ mod tests {
             mqtt_password: Some("my_pass".to_string()),
             mqtt_topic_prefix: "ha_home".to_string(),
             net_interface: "wlan0".to_string(),
+            gpio_inputs: vec![],
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -317,5 +426,26 @@ mod tests {
 
         let client_id = format!("sysmqttd_{}", "pi-zero");
         assert_eq!(options.client_id(), client_id);
+    }
+
+    #[test]
+    fn test_daemon_with_gpio_inputs_config() {
+        let config = Config {
+            mqtt_host: "10.0.0.5".to_string(),
+            mqtt_port: 1883,
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "wlan0".to_string(),
+            gpio_inputs: vec![GpioInputConfig {
+                pin: 23,
+                name: "Front Door".to_string(),
+                device_class: Some("door".to_string()),
+            }],
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+        assert_eq!(daemon.config.gpio_inputs.len(), 1);
+        assert_eq!(daemon.config.gpio_inputs[0].pin, 23);
+        assert_eq!(daemon.config.gpio_inputs[0].name, "Front Door");
     }
 }
