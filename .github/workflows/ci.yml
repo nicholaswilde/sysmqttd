@@ -82,7 +82,19 @@ jobs:
 
     - name: Start Mosquitto broker
       if: matrix.run_docker == true
-      run: docker compose up -d mosquitto
+      shell: bash
+      run: |
+        docker compose up -d mosquitto
+        echo "Waiting for Mosquitto broker to be ready..."
+        for i in {1..20}; do
+          if bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1883' 2>/dev/null; then
+            echo "Mosquitto is ready!"
+            exit 0
+          fi
+          sleep 0.5
+        done
+        echo "Timed out waiting for Mosquitto!"
+        exit 1
 
     - name: Run tests
       run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }} -- --test-threads=1
