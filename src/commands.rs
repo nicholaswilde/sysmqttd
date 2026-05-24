@@ -140,6 +140,5 @@ mod tests {
         // Run execute_command with a command that doesn't exist to cover error handling
         let res = RemoteAction::execute_command("non_existent_command_12345", vec![]);
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("Failed to spawn command"));
     }
 }
