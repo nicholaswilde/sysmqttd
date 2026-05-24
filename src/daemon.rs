@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::discovery;
 use crate::telemetry;
-use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
+use rumqttc::{AsyncClient, Event, LastWill, MqttOptions, Packet, QoS};
 use std::time::Duration;
 use tokio::time;
 
@@ -21,6 +21,15 @@ impl Daemon {
         let mut mqttoptions =
             MqttOptions::new(client_id, &self.config.mqtt_host, self.config.mqtt_port);
         mqttoptions.set_keep_alive(Duration::from_secs(30));
+
+        // Define Last Will
+        let availability_topic = format!(
+            "{}/sensor/sysmqttd_{}/availability",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let last_will = LastWill::new(availability_topic, "offline", QoS::AtLeastOnce, true);
+        mqttoptions.set_last_will(last_will);
+
         if let (Some(user), Some(pass)) = (&self.config.mqtt_user, &self.config.mqtt_password) {
             mqttoptions.set_credentials(user, pass);
         }
@@ -135,12 +144,28 @@ impl Daemon {
             tokio::select! {
                 _ = &mut shutdown_rx => {
                     println!("Shutdown signal received. Exiting daemon event loop.");
+                    // Publish graceful offline message
+                    let availability_topic = format!(
+                        "{}/sensor/sysmqttd_{}/availability",
+                        self.config.mqtt_topic_prefix, self.hostname
+                    );
+                    if let Err(e) = client.publish(&availability_topic, QoS::AtLeastOnce, true, "offline").await {
+                        eprintln!("Failed to publish graceful offline availability state: {}", e);
+                    }
                     break;
                 }
                 notification = eventloop.poll() => {
                     match notification {
                         Ok(Event::Incoming(Packet::ConnAck(connack))) => {
                             println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
+                            // Publish Birth Message
+                            let availability_topic = format!(
+                                "{}/sensor/sysmqttd_{}/availability",
+                                self.config.mqtt_topic_prefix, self.hostname
+                            );
+                            if let Err(e) = client.publish(&availability_topic, QoS::AtLeastOnce, true, "online").await {
+                                eprintln!("Failed to publish online availability state: {}", e);
+                            }
                             if let Err(e) = self.publish_discovery(&client).await {
                                 eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
                             }

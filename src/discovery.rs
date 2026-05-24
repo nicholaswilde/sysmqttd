@@ -18,6 +18,8 @@ pub struct DiscoveryPayload {
     pub name: String,
     #[serde(rename = "stat_t")]
     pub state_topic: String,
+    #[serde(rename = "avty_t")]
+    pub availability_topic: String,
     #[serde(rename = "val_tpl")]
     pub value_template: String,
     #[serde(rename = "unit_of_meas")]
@@ -37,6 +39,7 @@ impl DiscoveryPayload {
         DiscoveryPayload {
             name: "CPU Temperature".to_string(),
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.cpu_temperature }}".to_string(),
             unit_of_measurement: "°C".to_string(),
             device_class: Some("temperature".to_string()),
@@ -50,6 +53,7 @@ impl DiscoveryPayload {
         DiscoveryPayload {
             name: "RAM Usage".to_string(),
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.ram_usage }}".to_string(),
             unit_of_measurement: "%".to_string(),
             device_class: None,
@@ -63,6 +67,7 @@ impl DiscoveryPayload {
         DiscoveryPayload {
             name: "Disk Storage Utilization".to_string(),
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.disk_usage }}".to_string(),
             unit_of_measurement: "%".to_string(),
             device_class: None,
@@ -92,6 +97,8 @@ mod tests {
         // Assertions verifying exact keys and structure
         assert!(serialized.contains(r#""name":"CPU Temperature""#));
         assert!(serialized.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#));
+        assert!(serialized
+            .contains(r#""avty_t":"homeassistant/sensor/sysmqttd_test-host/availability""#));
         assert!(serialized.contains(r#""val_tpl":"{{ value_json.cpu_temperature }}""#));
         assert!(serialized.contains(r#""unit_of_meas":"°C""#));
         assert!(serialized.contains(r#""dev_cla":"temperature""#));
