@@ -13,8 +13,11 @@ This document specifies the technologies, crates, and aggressive optimization pr
     *   **Async Client:** Uses `rumqttc::AsyncClient` and `rumqttc::EventLoop` for a fully non-blocking asynchronous event loop.
 *   **`serde` and `serde_json`:**
     *   Used for generating clean, flat payload structures for Home Assistant Discovery and Telemetry states.
+*   **`toml` and `serde_yaml`:**
+    *   Used for parsing and deserializing TOML, YAML, and JSON configuration files.
 *   **`tokio`:**
     *   Used as the async runtime. Configured with the single-threaded scheduler (`rt` feature only) to keep runtime overhead to an absolute minimum.
+
 
 ## 3. Cargo.toml Optimization Profile
 To achieve our target resource limits (RAM < 8MB RSS, Binary Size < 2MB), the following configuration is defined in `Cargo.toml`:

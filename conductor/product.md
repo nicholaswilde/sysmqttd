@@ -12,5 +12,7 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 3.  **Core System Telemetry:** 60-second updates of CPU Temperature, RAM percentage, root disk percentage utilization, system load averages (1m, 5m, 15m), and network interface bandwidth (RX/TX kB/s rates).
 4.  **Robust Async Lifecycle:** Asynchronous client loop that handles system startup, intermittent network dropouts, and broker reconnects gracefully.
 5.  **Service Status Monitoring:** Real-time checking of whitelisted systemd services (e.g., `docker`, `nginx`) via async polling and registers them as binary sensors.
-*   **CLI Arguments:** `-h/--help` and `-v/--version` flags for usage and version information.
+6.  **Layered Configuration:** Supports multi-format configuration files (TOML, YAML, JSON), custom config path overrides via `-c`/`--config` flags, and high-precedence `SYSMQTTD_` prefixed environment variables.
+*   **CLI Arguments:** `-h/--help`, `-v/--version`, and `-c/--config` flags for configuration, usage, and version information.
+
 
