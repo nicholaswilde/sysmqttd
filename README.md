@@ -50,32 +50,38 @@ The binary supports the following command-line flags, processed before any confi
 
 - `-h`, `--help` – Show usage information and exit.
 - `-v`, `--version` – Show the current version (e.g., `sysmqttd v0.1.0`) and exit.
+- `-c`, `--config <path>` – Specify custom path to a configuration file (TOML, YAML, or JSON).
 
 ---
 
 ## :gear: Configuration
 
-`sysmqttd` supports configuration through a hierarchical, layered structure:
-1. **Environment Variables** (Highest precedence)
-2. **Local Configuration File** (`sysmqttd.toml` in current directory)
-3. **Global Configuration File** (`/etc/sysmqttd/sysmqttd.toml` in global system directory)
+`sysmqttd` supports configuration through a hierarchical, layered structure with the following precedence (from highest to lowest):
+
+1. **Command Line Argument** (`-c` / `--config <path>`)
+2. **Prefixed Environment Variables** (`SYSMQTTD_*`)
+3. **Legacy Environment Variables** (`MQTT_*`)
+4. **Configuration File** (searched in order: TOML, YAML, JSON in the local directory, falling back to `/etc/sysmqttd/`)
+5. **Built-in Defaults**
 
 ### Configuration Reference
 
-| Environment Variable | TOML Key (Alternative Options) | Default Value | Description |
-| :--- | :--- | :--- | :--- |
-| `MQTT_HOST` | `mqtt_host` (`host`) | *Required* | Hostname or IP address of the MQTT broker. |
-| `MQTT_PORT` | `mqtt_port` (`port`) | `1883` | Port for connecting to the MQTT broker. |
-| `MQTT_USER` | `mqtt_user` (`user`, `username`) | *None* | Optional username for broker authentication. |
-| `MQTT_PASSWORD` | `mqtt_password` (`password`, `pass`) | *None* | Optional password for broker authentication. |
-| `MQTT_TOPIC_PREFIX`| `mqtt_topic_prefix` (`prefix`) | `homeassistant` | Discovery prefix for Home Assistant MQTT topics. |
-| `NET_INTERFACE` | `net_interface` (`interface`) | `wlan0` | The network interface to monitor for RX/TX rates. |
-| `MONITORED_SERVICES`| *N/A* (Environment only) | *None* | Comma-separated list of systemd services to monitor. |
+| Prefixed Env Var | Legacy Env Var | File Key (TOML/YAML/JSON) | Default Value | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `SYSMQTTD_MQTT_HOST` | `MQTT_HOST` | `mqtt_host` (`host`) | *Required* | Hostname or IP address of the MQTT broker. |
+| `SYSMQTTD_MQTT_PORT` | `MQTT_PORT` | `mqtt_port` (`port`) | `1883` | Port for connecting to the MQTT broker. |
+| `SYSMQTTD_MQTT_USER` | `MQTT_USER` | `mqtt_user` (`user`, `username`) | *None* | Optional username for broker authentication. |
+| `SYSMQTTD_MQTT_PASSWORD` | `MQTT_PASSWORD` | `mqtt_password` (`password`, `pass`) | *None* | Optional password for broker authentication. |
+| `SYSMQTTD_MQTT_TOPIC_PREFIX`| `MQTT_TOPIC_PREFIX` | `mqtt_topic_prefix` (`prefix`) | `homeassistant` | Discovery prefix for Home Assistant MQTT topics. |
+| `SYSMQTTD_NET_INTERFACE` | `NET_INTERFACE` | `net_interface` (`interface`) | `wlan0` | The network interface to monitor for RX/TX rates. |
+| *N/A* (Environment only) | `MONITORED_SERVICES` | *N/A* (Environment only) | *None* | Comma-separated list of systemd services to monitor. |
 
-### Sample `sysmqttd.toml`
+### Sample Configuration Files
 
+You can write your configuration file in TOML, YAML, or JSON. Here are examples for each supported format:
+
+#### TOML (`sysmqttd.toml`)
 ```toml
-# /etc/sysmqttd/sysmqttd.toml
 host = "192.168.1.50"
 port = 1883
 user = "mqtt_user"
@@ -83,6 +89,29 @@ password = "supersecretpassword"
 prefix = "homeassistant"
 interface = "eth0"
 ```
+
+#### YAML (`sysmqttd.yaml` / `sysmqttd.yml`)
+```yaml
+host: "192.168.1.50"
+port: 1883
+user: "mqtt_user"
+password: "supersecretpassword"
+prefix: "homeassistant"
+interface: "eth0"
+```
+
+#### JSON (`sysmqttd.json`)
+```json
+{
+  "host": "192.168.1.50",
+  "port": 1883,
+  "user": "mqtt_user",
+  "password": "supersecretpassword",
+  "prefix": "homeassistant",
+  "interface": "eth0"
+}
+```
+
 
 ---
 
