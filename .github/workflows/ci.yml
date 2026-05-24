@@ -81,7 +81,7 @@ jobs:
       run: ${{ env.CARGO }} build --verbose --workspace ${{ env.TARGET_FLAGS }}
 
     - name: Run tests
-      run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }}
+      run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }} -- --test-threads=1
       env:
         RUN_DOCKER_TESTS: ${{ matrix.run_docker || 'false' }}
 
