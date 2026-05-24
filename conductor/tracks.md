@@ -4,14 +4,6 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 
 ---
 
-- [x] **Track: Create a track that adds a version and help command line argument to the binary**
-  *Link: [./tracks/sysmqttd_cli_args_20260524/](./tracks/sysmqttd_cli_args_20260524/)*
-
-
-
-- [x] **Track: Add CPU load averages (1m, 5m, 15m) by parsing /proc/loadavg**
-  *Link: [./tracks/sysmqttd_load_avg_20260524/](./tracks/sysmqttd_load_avg_20260524/)*
-
 - [ ] **Track: Add network interface bandwidth (RX/TX rates) by parsing /proc/net/dev**
   *Link: [./tracks/sysmqttd_net_bandwidth_20260524/](./tracks/sysmqttd_net_bandwidth_20260524/)*
 
