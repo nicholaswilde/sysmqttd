@@ -74,3 +74,19 @@ A task is complete when:
 4. Binary size and optimization criteria are verified.
 5. Code changes are committed with conventional commit messages.
 6. The `README.md` at the project root is updated to accurately document any new or changed features, options, and parameters.
+
+## 7. General Project Specifications
+
+*   **Release Compilation Check:** In addition to unit tests, whenever a feature is implemented or modified, the project should be verified in release mode locally to guarantee clean compilation:
+    ```bash
+    cargo build --release
+    ```
+*   **Issue Resolution Protocol:**
+    *   All open issues affected by a change must be reviewed.
+    *   Any regressions introduced by the change must be resolved.
+    *   Changes can be committed and merged only after verifying all tests pass and builds succeed.
+*   **Continuous Integration (CI):** The CI pipeline runs `cargo test` and `cargo build --release` on every pull request. Pull requests failing these checks will be blocked from merging.
+*   **Documentation Standards:**
+    *   Update relevant documentation (e.g., README, module docs) to reflect new functionality.
+    *   Ensure the documentation builds cleanly without errors.
+
