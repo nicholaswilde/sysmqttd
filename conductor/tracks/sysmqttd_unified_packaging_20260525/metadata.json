@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_unified_packaging_20260525",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-25T21:03:00Z",
+  "updated_at": "2026-05-25T21:03:00Z",
+  "description": "Add multi-architecture Debian (DEB) and RedHat (RPM) packaging using FPM in GitHub Actions release workflow"
+}
