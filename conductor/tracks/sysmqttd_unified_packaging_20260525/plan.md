@@ -2,7 +2,7 @@
 
 This plan details the phases for implementing native DEB and RPM packaging using FPM in the `sysmqttd` release workflow.
 
-## Phase 1: Packaging Scripts & Local Verification
+## Phase 1: Packaging Scripts & Local Verification [checkpoint: ae9d4d6]
 
 Build the installation and cleanup scripts and verify them.
 
