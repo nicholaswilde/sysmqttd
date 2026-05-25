@@ -200,6 +200,13 @@ jobs:
           "ghcr.io/cross-rs/${{ matrix.target }}:main" \
           -c "apt-get update && apt-get install -y binutils-arm-linux-gnueabihf && ${{ matrix.strip }} /$BIN"
 
+    - name: Install Packaging Utilities
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rpm ruby-dev build-essential
+        sudo gem install --no-document fpm
+
     - name: Build archive
       shell: bash
       run: |
@@ -231,6 +238,76 @@ jobs:
           echo "ASSET_SUM=$staging.tar.gz.sha256" >> $GITHUB_ENV
         fi
 
+        # Build Debian & RPM packages if on Linux host
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          case "${{ matrix.target }}" in
+            x86_64-*)
+              deb_arch="amd64"
+              rpm_arch="x86_64"
+              ;;
+            aarch64-*)
+              deb_arch="arm64"
+              rpm_arch="aarch64"
+              ;;
+            armv7-*)
+              deb_arch="armhf"
+              rpm_arch="armhfp"
+              ;;
+            arm-*)
+              deb_arch="armel"
+              rpm_arch="armv6hl"
+              ;;
+            *)
+              deb_arch="all"
+              rpm_arch="noarch"
+              ;;
+          esac
+
+          staging_pkg="staging-pkg"
+          mkdir -p "$staging_pkg/usr/bin"
+          mkdir -p "$staging_pkg/etc/sysmqttd"
+          mkdir -p "$staging_pkg/usr/share/sysmqttd"
+
+          cp "$outdir/sysmqttd" "$staging_pkg/usr/bin/"
+          cp sysmqttd.toml.example "$staging_pkg/etc/sysmqttd/sysmqttd.toml.example"
+          cp deployment/sysmqttd.service.template "$staging_pkg/usr/share/sysmqttd/"
+          cp deployment/sysmqttd.sudoers.template "$staging_pkg/usr/share/sysmqttd/"
+
+          version="${{ needs.create-release.outputs.version }}"
+
+          # Build DEB
+          deb_file="sysmqttd-${version}-${matrix.target}.deb"
+          fpm -s dir -t deb \
+            -n sysmqttd \
+            -v "$version" \
+            -a "$deb_arch" \
+            --description "Lightweight MQTT system telemetry daemon for single-board computers" \
+            --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
+            -d "sudo" -d "systemd" \
+            --post-install deployment/post_install.sh \
+            --pre-uninstall deployment/pre_uninstall.sh \
+            -p "$deb_file" \
+            -C "$staging_pkg" .
+
+          shasum -a 256 "$deb_file" > "$deb_file.sha256"
+
+          # Build RPM
+          rpm_file="sysmqttd-${version}-${matrix.target}.rpm"
+          fpm -s dir -t rpm \
+            -n sysmqttd \
+            -v "$version" \
+            -a "$rpm_arch" \
+            --description "Lightweight MQTT system telemetry daemon for single-board computers" \
+            --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
+            -d "sudo" -d "systemd" \
+            --post-install deployment/post_install.sh \
+            --pre-uninstall deployment/pre_uninstall.sh \
+            -p "$rpm_file" \
+            -C "$staging_pkg" .
+
+          shasum -a 256 "$rpm_file" > "$rpm_file.sha256"
+        fi
+
     - name: Upload release archive
       uses: softprops/action-gh-release@v2
       if: github.ref_type == 'tag'
@@ -238,6 +315,11 @@ jobs:
         files: |
           ${{ env.ASSET }}
           ${{ env.ASSET_SUM }}
+          *.deb
+          *.deb.sha256
+          *.rpm
+          *.rpm.sha256
         draft: true
+
 
   
