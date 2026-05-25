@@ -11,11 +11,11 @@ Build the installation and cleanup scripts and verify them.
 - [x] Task: Document local packaging manual verification process (FPM commands)
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Installer Script' (Protocol in workflow.md)
 
-## Phase 2: GitHub Release Integration & Testing
+## Phase 2: GitHub Release Integration & Testing [checkpoint: e15ef74]
 
 Integrate the packaging logic into the GitHub Action release workflow.
 
 - [x] Task: Modify `.github/workflows/release.yml` to install FPM and build `.deb`/`.rpm` packages for all matrix architectures
 - [x] Task: Configure softprops/action-gh-release to upload the new assets and their checksums
 - [x] Task: Verify the workflow parses cleanly
-- [/] Task: Conductor - User Manual Verification 'Phase 2: Workflow Packaging' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Workflow Packaging' (Protocol in workflow.md)
