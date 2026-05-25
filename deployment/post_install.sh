@@ -1,0 +1,67 @@
+#!/bin/sh
+# Distro-agnostic post-installation script for sysmqttd
+set -e
+
+# 1. Create a dedicated system group if it doesn't exist
+if ! getent group sysmqttd >/dev/null; then
+    if command -v groupadd >/dev/null; then
+        groupadd -r sysmqttd
+    else
+        addgroup --system sysmqttd
+    fi
+fi
+
+# 2. Create a dedicated system user if it doesn't exist
+if ! getent passwd sysmqttd >/dev/null; then
+    if command -v useradd >/dev/null; then
+        useradd -r -g sysmqttd -d /var/lib/sysmqttd -s /sbin/nologin -c "sysmqttd daemon" sysmqttd
+    else
+        adduser --system --ingroup sysmqttd --no-create-home --home /var/lib/sysmqttd --shell /usr/sbin/nologin sysmqttd
+    fi
+fi
+
+# 3. Secure configuration & state directories
+mkdir -p /etc/sysmqttd /var/lib/sysmqttd
+chown -R sysmqttd:sysmqttd /etc/sysmqttd /var/lib/sysmqttd
+chmod 750 /etc/sysmqttd /var/lib/sysmqttd
+
+# 4. Create initial config from example if not already present
+if [ ! -f /etc/sysmqttd/sysmqttd.toml ]; then
+    if [ -f /etc/sysmqttd/sysmqttd.toml.example ]; then
+        cp /etc/sysmqttd/sysmqttd.toml.example /etc/sysmqttd/sysmqttd.toml
+        chown sysmqttd:sysmqttd /etc/sysmqttd/sysmqttd.toml
+        chmod 640 /etc/sysmqttd/sysmqttd.toml
+    fi
+fi
+
+# 5. Determine correct systemd system directory
+# (RedHat/CentOS/Fedora uses /usr/lib/systemd/system, Debian/Ubuntu uses /lib/systemd/system)
+SYSTEMD_DIR=""
+if [ -d /usr/lib/systemd/system ]; then
+    SYSTEMD_DIR="/usr/lib/systemd/system"
+elif [ -d /lib/systemd/system ]; then
+    SYSTEMD_DIR="/lib/systemd/system"
+else
+    # Fallback to standard location
+    SYSTEMD_DIR="/lib/systemd/system"
+    mkdir -p "$SYSTEMD_DIR"
+fi
+
+# 6. Instantiate active systemd service file from the template
+if [ -f /usr/share/sysmqttd/sysmqttd.service.template ]; then
+    sed -e 's|{{SYSMQTTD_USER}}|sysmqttd|g' \
+        -e 's|{{SYSMQTTD_GROUP}}|sysmqttd|g' \
+        -e 's|{{SYSMQTTD_VAR_DIR}}|/var/lib/sysmqttd|g' \
+        -e 's|{{SYSMQTTD_BIN}}|/usr/bin/sysmqttd|g' \
+        -e 's|{{SYSMQTTD_CONF_FILE}}|/etc/sysmqttd/sysmqttd.toml|g' \
+        /usr/share/sysmqttd/sysmqttd.service.template > "$SYSTEMD_DIR/sysmqttd.service"
+    
+    chmod 644 "$SYSTEMD_DIR/sysmqttd.service"
+fi
+
+# 7. Reload systemd daemon if running
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+
+exit 0

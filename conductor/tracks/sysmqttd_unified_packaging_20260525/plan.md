@@ -6,10 +6,10 @@ This plan details the phases for implementing native DEB and RPM packaging using
 
 Build the installation and cleanup scripts and verify them.
 
-- [ ] Task: Create cross-platform post-install installer `deployment/post_install.sh`
-- [ ] Task: Create pre-uninstall cleanup hook `deployment/pre_uninstall.sh`
-- [ ] Task: Document local packaging manual verification process (FPM commands)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Installer Script' (Protocol in workflow.md)
+- [x] Task: Create cross-platform post-install installer `deployment/post_install.sh`
+- [x] Task: Create pre-uninstall cleanup hook `deployment/pre_uninstall.sh`
+- [x] Task: Document local packaging manual verification process (FPM commands)
+- [/] Task: Conductor - User Manual Verification 'Phase 1: Installer Script' (Protocol in workflow.md)
 
 ## Phase 2: GitHub Release Integration & Testing
 

@@ -142,3 +142,68 @@ journalctl -u sysmqttd.service -f
 ```bash
 sudo systemctl restart sysmqttd.service
 ```
+
+---
+
+## 5. Local Packaging & Manual Verification (FPM)
+
+For testing and local package generation, you can build `.deb` and `.rpm` files using **FPM (Effing Package Management)**.
+
+### Prerequisites
+On Debian/Ubuntu, install `ruby`, `rpm`, and `fpm`:
+```bash
+sudo apt-get update
+sudo apt-get install -y ruby-dev rpm build-essential
+sudo gem install --no-document fpm
+```
+
+### Staging the Files
+Compile the binary for your target or host architecture:
+```bash
+cargo build --release
+```
+
+Create a staging directory mirroring the final system path layout:
+```bash
+staging="staging-pkg"
+mkdir -p "$staging/usr/bin"
+mkdir -p "$staging/etc/sysmqttd"
+mkdir -p "$staging/usr/share/sysmqttd"
+
+# Copy binary, configs, and systemd templates into staging
+cp target/release/sysmqttd "$staging/usr/bin/sysmqttd"
+cp sysmqttd.toml.example "$staging/etc/sysmqttd/sysmqttd.toml.example"
+cp deployment/sysmqttd.service.template "$staging/usr/share/sysmqttd/sysmqttd.service.template"
+cp deployment/sysmqttd.sudoers.template "$staging/usr/share/sysmqttd/sysmqttd.sudoers.template"
+```
+
+### Build DEB Package
+```bash
+fpm -s dir -t deb \
+  -n sysmqttd \
+  -v "0.1.0" \
+  -a "amd64" \
+  --description "Lightweight MQTT system telemetry daemon for single-board computers" \
+  --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
+  -d "sudo" -d "systemd" \
+  --post-install deployment/post_install.sh \
+  --pre-uninstall deployment/pre_uninstall.sh \
+  -p "sysmqttd-0.1.0-amd64.deb" \
+  -C "$staging" .
+```
+
+### Build RPM Package
+```bash
+fpm -s dir -t rpm \
+  -n sysmqttd \
+  -v "0.1.0" \
+  -a "x86_64" \
+  --description "Lightweight MQTT system telemetry daemon for single-board computers" \
+  --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
+  -d "sudo" -d "systemd" \
+  --post-install deployment/post_install.sh \
+  --pre-uninstall deployment/pre_uninstall.sh \
+  -p "sysmqttd-0.1.0-x86_64.rpm" \
+  -C "$staging" .
+```
+
