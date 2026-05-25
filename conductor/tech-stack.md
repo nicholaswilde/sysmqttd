@@ -48,3 +48,8 @@ To build the ARMv6 binary on x86_64 development machines:
     ```bash
     cross build --target arm-unknown-linux-gnueabihf --release
     ```
+
+## 5. Deployment & Packaging
+*   **FPM (Effing Package Management):** Used inside the GitHub release workflow to package the precompiled and stripped binaries into `.deb` and `.rpm` files for all target architectures.
+*   **Distro-Agnostic Installer Scripts:** Custom scripts (`post_install.sh` and `pre_uninstall.sh`) are run by the host package managers to automate the creation of the system user (`sysmqttd`), secure file storage (`/var/lib/sysmqttd` and `/etc/sysmqttd`), copy default configuration templates, and cleanly register and enable the active systemd service units.
+

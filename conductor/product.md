@@ -17,6 +17,8 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 7.  **GPIO Input Monitoring:** Monitors physical state transitions of system GPIO pins configured as inputs (e.g., buttons, magnetic contact door sensors) and publishes changes instantly as Home Assistant binary sensors (`binary_sensor`) with customizable device classes.
 8.  **GPIO Output Control:** Actuates physical output devices (like relays, status LEDs, and buzzers) connected to configured GPIO pins via incoming MQTT switch commands, registering them as standard Home Assistant switch entities.
 9.  **Safe Remote Commands:** Accepts authorized and whitelisted remote system commands (`reboot`, `shutdown`, `restart_service`) via a secure MQTT subscription, executing them safely and cleanly under non-root privileges.
+10. **Native Packaging:** Available as native multi-architecture Debian (`.deb`) and RedHat (`.rpm`) packages for all supported platforms (`x86_64`, `arm64`, `armhf`, `armel`), featuring automatic systemd service provisioning, dedicated non-root execution user setups, and zero-configuration defaults.
+
 
 
 
