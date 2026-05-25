@@ -47,7 +47,7 @@ task build-all
 
 ---
 
-## :terminal: CLI Usage
+## :computer: CLI Usage
 
 The binary supports the following command-line flags, processed before any configuration loading or MQTT connection is initiated:
 
@@ -292,3 +292,24 @@ For every metric and monitored service, discovery configurations are published s
   `homeassistant/binary_sensor/sysmqttd_<hostname>_service_nginx/config`
 
 Each discovery payload specifies the JSON extraction path via the `"value_template"` configuration (e.g. `"{{ value_json.cpu_temperature }}"`), ensuring zero custom YAML configuration is required on the Home Assistant side.
+
+### :bar_chart: Coverage
+
+The project uses `cargo-llvm-cov` for code coverage analysis.
+
+```bash
+# Show coverage summary in console
+task coverage
+```
+
+## :handshake: Contributing
+
+Contributions are welcome! Please follow standard Rust coding conventions and ensure all tests pass (`task test:ci`) before submitting features.
+
+## :balance_scale: License
+
+[Apache License 2.0](LICENSE)
+
+## :writing_hand: Author
+
+This project was started in 2026 by [Nicholas Wilde](https://github.com/nicholaswilde/).
