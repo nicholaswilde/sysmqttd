@@ -276,7 +276,7 @@ jobs:
           version="${{ needs.create-release.outputs.version }}"
 
           # Build DEB
-          deb_file="sysmqttd-${version}-${matrix.target}.deb"
+          deb_file="sysmqttd-${version}-${{ matrix.target }}.deb"
           fpm -s dir -t deb \
             -n sysmqttd \
             -v "$version" \
@@ -292,7 +292,7 @@ jobs:
           shasum -a 256 "$deb_file" > "$deb_file.sha256"
 
           # Build RPM
-          rpm_file="sysmqttd-${version}-${matrix.target}.rpm"
+          rpm_file="sysmqttd-${version}-${{ matrix.target }}.rpm"
           fpm -s dir -t rpm \
             -n sysmqttd \
             -v "$version" \
