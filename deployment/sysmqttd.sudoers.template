@@ -1,0 +1,16 @@
+# Sudoers configuration for sysmqttd
+#
+# This file allows the non-root sysmqttd system user to safely execute 
+# ONLY the specific commands required for remote actions (reboot, shutdown,
+# and restarting the daemon) without requiring a password.
+#
+# To install:
+# 1. Copy this file to /etc/sudoers.d/sysmqttd
+#    sudo cp deployment/sysmqttd.sudoers.template /etc/sudoers.d/sysmqttd
+# 2. Replace {{SYSMQTTD_USER}} with your daemon user (e.g. dietpi, sysmqttd, pi).
+# 3. Secure the file permissions (critical, systemd/sudo will ignore it otherwise):
+#    sudo chmod 0440 /etc/sudoers.d/sysmqttd
+#    sudo chown root:root /etc/sudoers.d/sysmqttd
+
+# Whitelist safe, non-interactive system commands for the daemon user
+{{SYSMQTTD_USER}} ALL=(ALL) NOPASSWD: /sbin/reboot, /usr/sbin/reboot, /sbin/poweroff, /usr/sbin/poweroff, /bin/systemctl restart sysmqttd, /usr/bin/systemctl restart sysmqttd

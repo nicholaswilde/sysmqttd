@@ -1,34 +1,51 @@
 # Deployment Guide: `sysmqttd`
 
-This guide explains how to install, configure, and manage the `sysmqttd` system monitoring daemon on target ARMv6 single-board computers (specifically Raspberry Pi Zero W running DietPi).
+This guide explains how to install, configure, and manage the `sysmqttd` system monitoring daemon on Linux systems (such as ARM single-board computers running DietPi, Raspberry Pi OS, Debian, or Ubuntu).
+
+---
 
 ## 1. Installation Requirements
-Ensure the following directories are set up and owned by the deployment user (e.g. `dietpi`):
-*   Binary location: `/usr/bin/sysmqttd`
-*   Configuration folder: `/etc/sysmqttd`
-*   Working directory (for local TOML checks): `/var/lib/sysmqttd`
+
+To run securely, `sysmqttd` should execute under its own non-root system user and have limited write permissions.
+
+### Create the system user and directories:
+On the target system, run:
+```bash
+# 1. Create a dedicated system user (no login shell)
+sudo useradd -r -s /usr/sbin/nologin sysmqttd
+
+# 2. Create the necessary configuration and state directories
+sudo mkdir -p /etc/sysmqttd /var/lib/sysmqttd
+
+# 3. Restrict ownership of these directories to the daemon user
+sudo chown -R sysmqttd:sysmqttd /etc/sysmqttd /var/lib/sysmqttd
+sudo chmod 750 /etc/sysmqttd /var/lib/sysmqttd
+```
+
+---
 
 ## 2. Step-by-Step Installation
 
-### Step 2.1: Transfer the Binary
-Cross-compile the optimized release binary on the development workstation:
+### Step 2.1: Build and Transfer the Binary
+Cross-compile the optimized release binary on your development workstation:
 ```bash
+# Example for Raspberry Pi Zero W (ARMv6)
 cross build --target arm-unknown-linux-gnueabihf --release
 ```
-Transfer the compiled binary (`target/arm-unknown-linux-gnueabihf/release/sysmqttd`) to your target board's `/usr/bin/sysmqttd` path using `scp` or `rsync`:
+Transfer the compiled binary (`target/arm-unknown-linux-gnueabihf/release/sysmqttd`) to your target board:
 ```bash
-scp target/arm-unknown-linux-gnueabihf/release/sysmqttd dietpi@<board-ip>:/tmp/
+scp target/arm-unknown-linux-gnueabihf/release/sysmqttd pi@<board-ip>:/tmp/
 ```
-On the target board, move the binary to its final location and make it executable:
+On the target board, move the binary to `/usr/bin/` and make it executable:
 ```bash
 sudo mv /tmp/sysmqttd /usr/bin/sysmqttd
 sudo chmod +x /usr/bin/sysmqttd
+sudo chown root:root /usr/bin/sysmqttd
 ```
 
-### Step 2.2: Setup Configuration
-Create the configuration folder and draft a `sysmqttd.toml` file:
+### Step 2.2: Set Up Configuration
+Create a config file in `/etc/sysmqttd/sysmqttd.toml`:
 ```bash
-sudo mkdir -p /etc/sysmqttd
 sudo nano /etc/sysmqttd/sysmqttd.toml
 ```
 Insert your MQTT broker details:
@@ -39,8 +56,15 @@ port = 1883
 user = "your_mqtt_username"
 password = "your_mqtt_password"
 prefix = "homeassistant"
+interface = "wlan0"
 ```
-Or set up environment variables in `/etc/default/sysmqttd`:
+Ensure the daemon user can read the config file:
+```bash
+sudo chown root:sysmqttd /etc/sysmqttd/sysmqttd.toml
+sudo chmod 640 /etc/sysmqttd/sysmqttd.toml
+```
+
+Alternatively, you can configure using environment variables in `/etc/default/sysmqttd`:
 ```bash
 sudo nano /etc/default/sysmqttd
 ```
@@ -51,27 +75,58 @@ MQTT_PORT=1883
 MQTT_USER=your_mqtt_username
 MQTT_PASSWORD=your_mqtt_password
 MQTT_TOPIC_PREFIX=homeassistant
+NET_INTERFACE=wlan0
+MONITORED_SERVICES=docker,nginx,ssh
 ```
 
-### Step 2.3: Set Up systemd Service
-Copy the systemd unit file:
+### Step 2.3: Set Up the systemd Service
+Generate your active systemd service file from the provided template:
+
 ```bash
-sudo cp deployment/sysmqttd.service /etc/systemd/system/sysmqttd.service
+# Replace placeholders to target the 'sysmqttd' user
+sed -e 's|{{SYSMQTTD_USER}}|sysmqttd|g' \
+    -e 's|{{SYSMQTTD_GROUP}}|sysmqttd|g' \
+    -e 's|{{SYSMQTTD_VAR_DIR}}|/var/lib/sysmqttd|g' \
+    -e 's|{{SYSMQTTD_BIN}}|/usr/bin/sysmqttd|g' \
+    -e 's|{{SYSMQTTD_CONF_FILE}}|/etc/sysmqttd/sysmqttd.toml|g' \
+    deployment/sysmqttd.service.template | sudo tee /etc/systemd/system/sysmqttd.service
 ```
-Reload the systemd daemon to pick up the new service:
+
+Reload the systemd daemon, enable, and start the service:
 ```bash
 sudo systemctl daemon-reload
-```
-Enable the service to start automatically on system boot:
-```bash
 sudo systemctl enable sysmqttd.service
-```
-Start the service immediately:
-```bash
 sudo systemctl start sysmqttd.service
 ```
 
-## 3. Operations & Maintenance
+---
+
+## 3. Remote Action Setup (Optional)
+
+If you wish to allow remote commands (e.g. `reboot`, `shutdown`, `restart_service`) via MQTT, the non-root daemon user must be permitted to execute specific system commands via `sudo` without entering a password.
+
+### Step 3.1: Configure passwordless sudo for sysmqttd
+Copy the sudoers template and replace the `{{SYSMQTTD_USER}}` placeholder:
+```bash
+sed 's|{{SYSMQTTD_USER}}|sysmqttd|g' deployment/sysmqttd.sudoers.template | sudo tee /etc/sudoers.d/sysmqttd
+```
+
+Secure the file permissions (critical; systemd and sudo will ignore this file if permissions are too broad):
+```bash
+sudo chmod 0440 /etc/sudoers.d/sysmqttd
+sudo chown root:root /etc/sudoers.d/sysmqttd
+```
+
+### Step 3.2: Verify systemd Sandbox Capabilities
+Make sure Case A in `/etc/systemd/system/sysmqttd.service` is active (which is the default in the template) so that systemd does not strip the setuid capability needed by `sudo`:
+```ini
+NoNewPrivileges=false
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID
+```
+
+---
+
+## 4. Operations & Maintenance
 
 ### Check Service Status
 ```bash

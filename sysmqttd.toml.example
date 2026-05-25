@@ -1,0 +1,94 @@
+# ==============================================================================
+# sysmqttd.toml.example
+# ==============================================================================
+# This is a sample configuration file for sysmqttd, a lightweight native Rust 
+# system monitoring daemon optimized for single-board computers.
+#
+# To use:
+# 1. Copy this file to a valid search location:
+#    - Inside the local working directory as `sysmqttd.toml`
+#    - Under `/etc/sysmqttd/sysmqttd.toml` (recommended for systemd services)
+#
+#    Example:
+#    cp sysmqttd.toml.example /etc/sysmqttd/sysmqttd.toml
+#
+# 2. Update the host, authentication credentials, and optional GPIO pins below.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# MQTT Broker Configuration (Required)
+# ------------------------------------------------------------------------------
+
+# Hostname or IP address of the Home Assistant MQTT Broker.
+host = "192.168.1.50"
+
+# Port number for connecting to the MQTT Broker (Default: 1883).
+port = 1883
+
+# Optional: Username for broker authentication. 
+# Comment out or omit if your broker does not require authentication.
+user = "mqtt_user"
+
+# Optional: Password for broker authentication. 
+# Comment out or omit if your broker does not require authentication.
+# WARNING: NEVER commit this file to git/public repositories with secrets!
+password = "supersecretpassword"
+
+# ------------------------------------------------------------------------------
+# System & Discovery Configuration (Optional)
+# ------------------------------------------------------------------------------
+
+# Discovery prefix for Home Assistant MQTT Auto-Discovery (Default: "homeassistant").
+prefix = "homeassistant"
+
+# The network interface card to monitor for RX & TX rates (Default: "wlan0").
+# Use `ip link` or `ifconfig` to find your target network interface name.
+interface = "eth0"
+
+# Enable verbose logging for detailed payloads, events, and transitions (Default: false).
+verbose = false
+
+# ------------------------------------------------------------------------------
+# GPIO Input Monitoring (Optional)
+# ------------------------------------------------------------------------------
+# Monitors physical state transitions of configured GPIO input pins (e.g., buttons, 
+# door sensors) and publishes changes to Home Assistant as binary sensors.
+#
+# Each entry requires:
+# - `pin`: The physical GPIO pin number (BCM numbering).
+# - `name`: A user-friendly name displayed in Home Assistant.
+# - `device_class`: Optional Home Assistant binary sensor device class.
+#   Valid classes: "door", "window", "motion", "connectivity", "safety", "smoke", 
+#                  "gas", "moisture", "light", "plug", "power", "problem", etc.
+#
+# Uncomment the block below to configure:
+#
+# [[gpio_inputs]]
+# pin = 23
+# name = "Front Door"
+# device_class = "door"
+#
+# [[gpio_inputs]]
+# pin = 18
+# name = "Motion Sensor"
+# device_class = "motion"
+
+# ------------------------------------------------------------------------------
+# GPIO Output Actuation Control (Optional)
+# ------------------------------------------------------------------------------
+# Drives physical output devices (e.g., relays, indicators) connected to whitelisted
+# GPIO pins via incoming MQTT switch commands.
+#
+# Each entry requires:
+# - `pin`: The physical GPIO pin number (BCM numbering).
+# - `name`: A user-friendly name displayed in Home Assistant as a switch.
+#
+# Uncomment the block below to configure:
+#
+# [[gpio_outputs]]
+# pin = 24
+# name = "Relay 1"
+#
+# [[gpio_outputs]]
+# pin = 25
+# name = "Status LED"

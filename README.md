@@ -91,8 +91,13 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_GPIO_INPUTS`   | `GPIO_INPUTS`   | `gpio_inputs` | *None* | Whitelist of GPIO input pins in `pin:name[:device_class]` format. |
 | `SYSMQTTD_GPIO_OUTPUTS`  | `GPIO_OUTPUTS`  | `gpio_outputs` | *None* | Whitelist of GPIO output pins in `pin:name` format. |
 | `SYSMQTTD_VERBOSE`       | *N/A*           | `verbose` | `false` | Enable verbose logging (detailed payloads, events, and transitions). |
-
 ### Sample Configuration Files
+
+A fully documented, production-ready configuration template is available in the root of the repository as [sysmqttd.toml.example](file:///home/nicholas/git/nicholaswilde/sysmqttd/sysmqttd.toml.example). You can copy this file to get started quickly:
+
+```bash
+cp sysmqttd.toml.example sysmqttd.toml
+```
 
 You can write your configuration file in TOML, YAML, or JSON. Here are examples for each supported format:
 

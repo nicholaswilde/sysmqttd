@@ -1,0 +1,57 @@
+[Unit]
+Description=sysmqttd Lightweight System Monitoring Daemon
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Run as a non-root standard user (e.g. dietpi, sysmqttd, or pi)
+# Replace placeholders with your desired execution user and group.
+User={{SYSMQTTD_USER}}
+Group={{SYSMQTTD_GROUP}}
+
+# Environment variable loading or fallback configuration
+EnvironmentFile=-/etc/default/sysmqttd
+WorkingDirectory={{SYSMQTTD_VAR_DIR}}
+ExecStart={{SYSMQTTD_BIN}} --config {{SYSMQTTD_CONF_FILE}}
+
+# Logging & Resource bounds
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=10s
+
+# ==============================================================================
+# Security Hardening & Sandboxing (Linux Security Hardening)
+# ==============================================================================
+
+# Protect system directories (read-only for most of filesystem)
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+# Only allow write operations to the daemon's persistent working directory
+ReadWritePaths={{SYSMQTTD_VAR_DIR}}
+
+# ------------------------------------------------------------------------------
+# Remote Action Capabilities Configuration:
+#
+# If you enable remote actions (e.g., reboot, shutdown, restart_service via MQTT),
+# sysmqttd executes "sudo" commands. For sudo to function under systemd:
+# 1. NoNewPrivileges must be set to "false" (otherwise setuid binaries like sudo cannot escalate).
+# 2. CapabilityBoundingSet must permit CAP_SETUID and CAP_SETGID.
+# 3. You must install the sudoers template file (/etc/sudoers.d/sysmqttd).
+# ------------------------------------------------------------------------------
+
+# CASE A: If remote commands are ENABLED:
+NoNewPrivileges=false
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID
+
+# CASE B: If remote commands are DISABLED (maximum strict sandboxing):
+# NoNewPrivileges=true
+# CapabilityBoundingSet=
+# ==============================================================================
+
+[Install]
+WantedBy=multi-user.target
