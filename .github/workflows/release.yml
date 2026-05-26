@@ -254,7 +254,7 @@ jobs:
               rpm_arch="armhfp"
               ;;
             arm-*)
-              deb_arch="armel"
+              deb_arch="armhf"
               rpm_arch="armv6hl"
               ;;
             *)
