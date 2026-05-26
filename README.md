@@ -215,7 +215,7 @@ You can interact with the service using standard `systemctl` commands:
 
 ## :house: Home Assistant Integration
 
-Once `sysmqttd` starts and establishes a connection, it automatically broadcasts MQTT Discovery payloads to register all sensors under a single parent device based on your device hostname.
+Once `sysmqttd` starts and establishes a connection, it automatically broadcasts MQTT Discovery payloads to register all sensors under a single parent device, which will show up in Home Assistant as **`sysmqtt <hostname>`**.
 
 ### Availability Topic & Last Will
 
