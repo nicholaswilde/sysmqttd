@@ -234,7 +234,7 @@ impl Daemon {
         let device = discovery::DeviceInfo {
             identifiers: vec![format!("sysmqttd_{}", self.hostname)],
             name: format!("sysmqttd {}", self.hostname),
-            model: "Raspberry Pi Zero W Monitor".to_string(),
+            model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
 

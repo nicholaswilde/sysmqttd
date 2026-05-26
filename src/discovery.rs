@@ -158,7 +158,7 @@ mod tests {
         let device = DeviceInfo {
             identifiers: vec!["sysmqttd_test-host".to_string()],
             name: "sysmqttd test-host".to_string(),
-            model: "Raspberry Pi Zero W Monitor".to_string(),
+            model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
         let payload = DiscoveryPayload::new_cpu_temp("homeassistant", "test-host", device);
@@ -174,7 +174,7 @@ mod tests {
         assert!(serialized.contains(r#""dev_cla":"temperature""#));
         assert!(serialized.contains(r#""state_class":"measurement""#));
         assert!(serialized.contains(r#""uniq_id":"sysmqttd_test-host_cpu_temp""#));
-        assert!(serialized.contains(r#""dev":{"ids":["sysmqttd_test-host"],"name":"sysmqttd test-host","mdl":"Raspberry Pi Zero W Monitor","mf":"sysmqttd"}"#));
+        assert!(serialized.contains(r#""dev":{"ids":["sysmqttd_test-host"],"name":"sysmqttd test-host","mdl":"System Monitor","mf":"sysmqttd"}"#));
     }
 
     #[test]
@@ -182,7 +182,7 @@ mod tests {
         let device = DeviceInfo {
             identifiers: vec!["sysmqttd_test-host".to_string()],
             name: "sysmqttd test-host".to_string(),
-            model: "Raspberry Pi Zero W Monitor".to_string(),
+            model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
         let payload_1m =
@@ -213,7 +213,7 @@ mod tests {
         let device = DeviceInfo {
             identifiers: vec!["sysmqttd_test-host".to_string()],
             name: "sysmqttd test-host".to_string(),
-            model: "Raspberry Pi Zero W Monitor".to_string(),
+            model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
         let payload_rx =
