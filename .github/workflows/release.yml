@@ -223,7 +223,9 @@ jobs:
         fi
 
         # Copy other files
-        cp {README.md,LICENSE} "$staging/"
+        cp {README.md,LICENSE,sysmqttd.toml.example} "$staging/"
+        mkdir -p "$staging/deployment"
+        cp deployment/{sysmqttd.service.template,sysmqttd.sudoers.template} "$staging/deployment/"
         
         # Compress
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
