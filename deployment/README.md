@@ -24,9 +24,50 @@ sudo chmod 750 /etc/sysmqttd /var/lib/sysmqttd
 
 ---
 
-## 2. Step-by-Step Installation
+## 2. Package Installation (.deb / .rpm) - Recommended
 
-### Step 2.1: Build and Transfer the Binary
+Native Debian (`.deb`) and RedHat (`.rpm`) packages are automatically compiled and published for all supported architectures on every release. Using the package manager is the highly recommended installation path as it automates system user configuration, folder permissions, and systemd service generation securely out of the box.
+
+### Step 2.1: Install the Package
+Download the correct package matching your system architecture from the repository releases and install it:
+
+**For Debian-based systems (Ubuntu, Raspberry Pi OS, Debian):**
+```bash
+# Example for Raspberry Pi 2/3 (ARMv7)
+sudo dpkg -i sysmqttd-0.1.3-armv7-unknown-linux-musleabihf.deb
+```
+
+**For RedHat-based systems (Rocky Linux, Fedora, CentOS):**
+```bash
+sudo rpm -i sysmqttd-0.1.3-x86_64-unknown-linux-gnu.rpm
+```
+
+*Note: Upon successful package installation, the daemon system user, secured directories, configuration files, and systemd services are completely initialized. By default, the service is installed in a **disabled and inactive** state. This is intentional so you can set your broker credentials before launching it.*
+
+### Step 2.2: Configure the Broker
+Open the newly created configuration file:
+```bash
+sudo nano /etc/sysmqttd/sysmqttd.toml
+```
+Update it with your actual Home Assistant MQTT broker IP, port, and credentials.
+
+### Step 2.3: Enable and Start the Service
+Once configured, enable the service to start automatically on system boot and launch it immediately:
+```bash
+sudo systemctl enable --now sysmqttd.service
+```
+
+### Step 2.4: Verify Operation
+Read the real-time logs in the systemd journal to verify a successful connection:
+```bash
+journalctl -u sysmqttd.service -f
+```
+
+---
+
+## 3. Manual Step-by-Step Installation
+
+### Step 3.1: Build and Transfer the Binary
 Cross-compile the optimized release binary on your development workstation:
 ```bash
 # Example for Raspberry Pi Zero W (ARMv6)
@@ -43,7 +84,7 @@ sudo chmod +x /usr/bin/sysmqttd
 sudo chown root:root /usr/bin/sysmqttd
 ```
 
-### Step 2.2: Set Up Configuration
+### Step 3.2: Set Up Configuration
 Create a config file in `/etc/sysmqttd/sysmqttd.toml`:
 ```bash
 sudo nano /etc/sysmqttd/sysmqttd.toml
@@ -79,7 +120,7 @@ NET_INTERFACE=wlan0
 MONITORED_SERVICES=docker,nginx,ssh
 ```
 
-### Step 2.3: Set Up the systemd Service
+### Step 3.3: Set Up the systemd Service
 Generate your active systemd service file from the provided template:
 
 ```bash
@@ -101,11 +142,11 @@ sudo systemctl start sysmqttd.service
 
 ---
 
-## 3. Remote Action Setup (Optional)
+## 4. Remote Action Setup (Optional)
 
 If you wish to allow remote commands (e.g. `reboot`, `shutdown`, `restart_service`) via MQTT, the non-root daemon user must be permitted to execute specific system commands via `sudo` without entering a password.
 
-### Step 3.1: Configure passwordless sudo for sysmqttd
+### Step 4.1: Configure passwordless sudo for sysmqttd
 Copy the sudoers template and replace the `{{SYSMQTTD_USER}}` placeholder:
 ```bash
 sed 's|{{SYSMQTTD_USER}}|sysmqttd|g' deployment/sysmqttd.sudoers.template | sudo tee /etc/sudoers.d/sysmqttd
@@ -117,7 +158,7 @@ sudo chmod 0440 /etc/sudoers.d/sysmqttd
 sudo chown root:root /etc/sudoers.d/sysmqttd
 ```
 
-### Step 3.2: Verify systemd Sandbox Capabilities
+### Step 4.2: Verify systemd Sandbox Capabilities
 Make sure Case A in `/etc/systemd/system/sysmqttd.service` is active (which is the default in the template) so that systemd does not strip the setuid capability needed by `sudo`:
 ```ini
 NoNewPrivileges=false
@@ -126,7 +167,7 @@ CapabilityBoundingSet=CAP_SETUID CAP_SETGID
 
 ---
 
-## 4. Operations & Maintenance
+## 5. Operations & Maintenance
 
 ### Check Service Status
 ```bash
@@ -145,7 +186,7 @@ sudo systemctl restart sysmqttd.service
 
 ---
 
-## 5. Local Packaging & Manual Verification (FPM)
+## 6. Local Packaging & Manual Verification (FPM)
 
 For testing and local package generation, you can build `.deb` and `.rpm` files using **FPM (Effing Package Management)**.
 
