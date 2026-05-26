@@ -311,17 +311,19 @@ jobs:
         fi
 
     - name: Upload release archive
-      uses: softprops/action-gh-release@v2
       if: github.ref_type == 'tag'
-      with:
-        files: |
-          ${{ env.ASSET }}
-          ${{ env.ASSET_SUM }}
-          *.deb
-          *.deb.sha256
-          *.rpm
-          *.rpm.sha256
-        draft: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        files_to_upload=()
+        files_to_upload+=("${{ env.ASSET }}")
+        files_to_upload+=("${{ env.ASSET_SUM }}")
+        for f in *.deb *.deb.sha256 *.rpm *.rpm.sha256; do
+          if [ -f "$f" ]; then
+            files_to_upload+=("$f")
+          fi
+        done
+        gh release upload ${{ github.ref_name }} "${files_to_upload[@]}" --clobber
 
 
   
