@@ -68,11 +68,20 @@ async fn test_integration_daemon_discovery_and_publish() {
                 break;
             }
             notification = eventloop.poll() => {
-                if let Ok(Event::Incoming(Packet::Publish(publish))) = notification {
-                    if publish.topic.contains("sysmqttd_integration-tester_cpu_temp/config") {
+                match notification {
+                    Ok(Event::Incoming(Packet::Publish(publish)))
+                        if publish
+                            .topic
+                            .contains("sysmqttd_integration-tester_cpu_temp/config") =>
+                    {
                         pub_received = true;
                         break;
                     }
+                    Err(e) => {
+                        eprintln!("Integration test eventloop poll error: {:?}", e);
+                        time::sleep(Duration::from_millis(100)).await;
+                    }
+                    _ => {}
                 }
             }
         }
