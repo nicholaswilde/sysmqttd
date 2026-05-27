@@ -14,7 +14,7 @@
 ## :star: Features
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
-- **Comprehensive Telemetry:** Gathers CPU Temperature, RAM Usage (%), Disk Storage Utilization (%), CPU Load Averages (1m, 5m, 15m), System Uptime, and Real-time Network Bandwidth Rates (RX & TX rate in kB/s).
+- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%), Disk Storage Utilization (%), CPU Load Averages (1m, 5m, 15m), System Uptime, and Real-time Network Bandwidth Rates (RX & TX rate in kB/s).
 - **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
@@ -241,6 +241,7 @@ System telemetry metrics are parsed and published every **60 seconds** in a sing
     "cpu_temperature": 43.5,
     "ram_usage": 14.8,
     "disk_usage": 32.4,
+    "cpu_usage": 12.5,
     "load_1m": 0.05,
     "load_5m": 0.12,
     "load_15m": 0.08,
@@ -290,6 +291,10 @@ For every metric and monitored service, discovery configurations are published s
 
 - **CPU Temperature Discovery Config Topic:**
   `homeassistant/sensor/sysmqttd_<hostname>_cpu_temp/config`
+- **CPU Usage Discovery Config Topic:**
+  `homeassistant/sensor/sysmqttd_<hostname>_cpu_usage/config`
+- **System Uptime Discovery Config Topic:**
+  `homeassistant/sensor/sysmqttd_<hostname>_uptime/config`
 - **Network RX Rate Discovery Config Topic:**
   `homeassistant/sensor/sysmqttd_<hostname>_net_rx_rate/config`
 - **Monitored Service (e.g. `nginx`) Discovery Config Topic:**

@@ -2,7 +2,9 @@
 # sysmqttd.toml.example
 # ==============================================================================
 # This is a sample configuration file for sysmqttd, a lightweight native Rust 
-# system monitoring daemon optimized for single-board computers.
+# system monitoring daemon optimized for single-board computers. It gathers detailed
+# telemetry (CPU Temp, CPU Usage %, RAM/Disk utilization, system load averages,
+# network interface bandwidth, and uptime) and sends it over MQTT to Home Assistant.
 #
 # To use:
 # 1. Copy this file to a valid search location:
