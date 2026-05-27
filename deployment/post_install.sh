@@ -64,4 +64,19 @@ if [ -d /run/systemd/system ]; then
     systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
+# 8. Print completion summary & startup instructions
+echo ""
+echo "=============================================================================="
+echo " 🎉 sysmqttd post-installation complete!"
+echo "=============================================================================="
+echo " • System user 'sysmqttd' and folders (/etc/sysmqttd, /var/lib/sysmqttd) secured."
+echo " • systemd service unit re-generated and reloaded."
+echo ""
+echo " ⚠️  IMPORTANT:"
+echo " The sysmqttd service is currently STOPPED and DISABLED."
+echo " To start the monitoring service and enable it to run automatically at boot, run:"
+echo "   sudo systemctl enable --now sysmqttd.service"
+echo "=============================================================================="
+echo ""
+
 exit 0
