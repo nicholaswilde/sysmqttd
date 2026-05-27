@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_network_diagnostics_20260526",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-26T20:54:00Z",
+  "updated_at": "2026-05-26T20:54:00Z",
+  "description": "Monitor and publish primary IP/MAC address and Wi-Fi signal strength RSSI"
+}

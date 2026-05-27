@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_advanced_diagnostics_20260526",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-26T20:54:00Z",
+  "updated_at": "2026-05-26T20:54:00Z",
+  "description": "Monitor and publish pending system updates and top resource-consuming processes"
+}

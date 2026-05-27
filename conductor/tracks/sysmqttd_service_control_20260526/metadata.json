@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_service_control_20260526",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-26T20:54:00Z",
+  "updated_at": "2026-05-26T20:54:00Z",
+  "description": "Implement dynamic systemd service controls and HA button/switch entities"
+}
