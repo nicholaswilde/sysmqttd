@@ -1,5 +1,9 @@
 # :package: sysmqttd
 
+[![Coveralls](https://img.shields.io/coveralls/github/nicholaswilde/sysmqttd/main?style=for-the-badge&logo=coveralls)](https://coveralls.io/github/nicholaswilde/sysmqttd?branch=main)
+[![task](https://img.shields.io/badge/Task-Enabled-brightgreen?style=for-the-badge&logo=task&logoColor=white)](https://taskfile.dev/#/)
+[![ci](https://img.shields.io/github/actions/workflow/status/nicholaswilde/sysmqttd/ci.yml?label=ci&style=for-the-badge&branch=main&logo=github-actions)](https://github.com/nicholaswilde/sysmqttd/actions/workflows/ci.yml)
+
 > [!WARNING]
 > **This is a development version at version v0.1.8 and details may change at any time.**
 

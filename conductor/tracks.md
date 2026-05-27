@@ -4,7 +4,6 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 
 ---
 
-- [~] [System Uptime Discovery Registration](./tracks/sysmqttd_uptime_discovery_20260526/index.md)
 - [ ] [Active CPU Usage Percentage Telemetry](./tracks/sysmqttd_cpu_usage_20260526/index.md)
 - [ ] [Absolute RAM and Disk Usage Telemetry](./tracks/sysmqttd_absolute_telemetry_20260526/index.md)
 - [ ] [SBC Hardware Health Diagnostics](./tracks/sysmqttd_sbc_health_20260526/index.md)

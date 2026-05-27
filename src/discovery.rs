@@ -146,6 +146,20 @@ impl DiscoveryPayload {
             device,
         }
     }
+
+    pub fn new_uptime(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Uptime".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.uptime_seconds }}".to_string(),
+            unit_of_measurement: "s".to_string(),
+            device_class: Some("duration".to_string()),
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_uptime", hostname),
+            device,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -232,5 +246,23 @@ mod tests {
         assert!(s_tx.contains(r#""val_tpl":"{{ value_json.net_tx_rate }}""#));
         assert!(s_tx.contains(r#""unit_of_meas":"kB/s""#));
         assert!(s_tx.contains(r#""uniq_id":"sysmqttd_test-host_net_tx_rate""#));
+    }
+
+    #[test]
+    fn test_uptime_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload = DiscoveryPayload::new_uptime("homeassistant", "test-host", device);
+        let s = serde_json::to_string(&payload).unwrap();
+
+        assert!(s.contains(r#""name":"Uptime""#));
+        assert!(s.contains(r#""val_tpl":"{{ value_json.uptime_seconds }}""#));
+        assert!(s.contains(r#""unit_of_meas":"s""#));
+        assert!(s.contains(r#""dev_cla":"duration""#));
+        assert!(s.contains(r#""uniq_id":"sysmqttd_test-host_uptime""#));
     }
 }

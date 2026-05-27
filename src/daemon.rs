@@ -347,7 +347,7 @@ impl Daemon {
         let net_tx_payload = discovery::DiscoveryPayload::new_net_tx_rate(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let net_tx_topic = format!(
             "{}/sensor/sysmqttd_{}_net_tx_rate/config",
@@ -356,6 +356,21 @@ impl Daemon {
         let net_tx_json = serde_json::to_vec(&net_tx_payload).unwrap();
         client
             .publish(net_tx_topic, QoS::AtLeastOnce, true, net_tx_json)
+            .await?;
+
+        // 8.5. System Uptime Discovery configuration
+        let uptime_payload = discovery::DiscoveryPayload::new_uptime(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let uptime_topic = format!(
+            "{}/sensor/sysmqttd_{}_uptime/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let uptime_json = serde_json::to_vec(&uptime_payload).unwrap();
+        client
+            .publish(uptime_topic, QoS::AtLeastOnce, true, uptime_json)
             .await?;
 
         // 9. GPIO Inputs discovery configurations
