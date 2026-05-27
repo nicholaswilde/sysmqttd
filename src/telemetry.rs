@@ -9,6 +9,10 @@ pub struct TelemetryState {
     pub ram_usage: f64,
     pub disk_usage: f64,
     pub cpu_usage: f64,
+    pub ram_used_mb: f64,
+    pub ram_free_mb: f64,
+    pub disk_used_gb: f64,
+    pub disk_free_gb: f64,
     #[serde(rename = "load_1m")]
     pub load_average_1: f64,
     #[serde(rename = "load_5m")]
@@ -139,34 +143,58 @@ impl TelemetryCollector {
             interface
         ))
     }
-    /// Read RAM usage percentage utilizing minimized sysinfo features
-    pub fn get_ram_usage(&mut self) -> f64 {
+    /// Read RAM statistics: (percentage, used_mb, free_mb)
+    pub fn get_ram_stats(&mut self) -> (f64, f64, f64) {
         self.sys.refresh_memory();
         let total = self.sys.total_memory();
         let used = self.sys.used_memory();
         if total == 0 {
-            return 0.0;
+            return (0.0, 0.0, 0.0);
         }
         let ram_pct = (used as f64 / total as f64) * 100.0;
-        (ram_pct * 10.0).round() / 10.0
+        let used_mb = used as f64 / (1024.0 * 1024.0);
+        let free = total.saturating_sub(used);
+        let free_mb = free as f64 / (1024.0 * 1024.0);
+
+        (
+            (ram_pct * 10.0).round() / 10.0,
+            (used_mb * 10.0).round() / 10.0,
+            (free_mb * 10.0).round() / 10.0,
+        )
     }
 
-    /// Read Disk utilization percentage for the root directory '/'
-    pub fn get_disk_usage(&self) -> f64 {
+    /// Read RAM usage percentage utilizing minimized sysinfo features
+    pub fn get_ram_usage(&mut self) -> f64 {
+        self.get_ram_stats().0
+    }
+
+    /// Read root disk statistics: (percentage, used_gb, free_gb)
+    pub fn get_disk_stats(&self) -> (f64, f64, f64) {
         let disks = Disks::new_with_refreshed_list();
         for disk in &disks {
             if disk.mount_point() == Path::new("/") {
                 let total = disk.total_space();
                 let available = disk.available_space();
                 if total == 0 {
-                    return 0.0;
+                    return (0.0, 0.0, 0.0);
                 }
                 let used = total.saturating_sub(available);
                 let disk_pct = (used as f64 / total as f64) * 100.0;
-                return (disk_pct * 10.0).round() / 10.0;
+                let used_gb = used as f64 / (1024.0 * 1024.0 * 1024.0);
+                let free_gb = available as f64 / (1024.0 * 1024.0 * 1024.0);
+                return (
+                    (disk_pct * 10.0).round() / 10.0,
+                    (used_gb * 10.0).round() / 10.0,
+                    (free_gb * 10.0).round() / 10.0,
+                );
             }
         }
-        0.0
+        (0.0, 0.0, 0.0)
+    }
+
+    /// Read Disk utilization percentage for the root directory '/'
+    pub fn get_disk_usage(&self) -> f64 {
+        self.get_disk_stats().0
     }
 
     /// Read CPU utilization percentage
@@ -203,11 +231,18 @@ impl TelemetryCollector {
             self.prev_time = Some(now);
         }
 
+        let (ram_usage, ram_used_mb, ram_free_mb) = self.get_ram_stats();
+        let (disk_usage, disk_used_gb, disk_free_gb) = self.get_disk_stats();
+
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
-            ram_usage: self.get_ram_usage(),
-            disk_usage: self.get_disk_usage(),
+            ram_usage,
+            disk_usage,
             cpu_usage: self.get_cpu_usage(),
+            ram_used_mb,
+            ram_free_mb,
+            disk_used_gb,
+            disk_free_gb,
             load_average_1: load1,
             load_average_5: load5,
             load_average_15: load15,
@@ -425,5 +460,28 @@ mod tests {
         // Clean up
         let _ = std::fs::remove_file(net_dev_file);
         let _ = std::fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_ram_and_disk_stats() {
+        let mut collector = TelemetryCollector::new();
+
+        let (ram_pct, ram_used_mb, ram_free_mb) = collector.get_ram_stats();
+        assert!(ram_pct >= 0.0 && ram_pct <= 100.0);
+        assert!(ram_used_mb >= 0.0);
+        assert!(ram_free_mb >= 0.0);
+
+        let (disk_pct, disk_used_gb, disk_free_gb) = collector.get_disk_stats();
+        assert!(disk_pct >= 0.0 && disk_pct <= 100.0);
+        assert!(disk_used_gb >= 0.0);
+        assert!(disk_free_gb >= 0.0);
+
+        let state = collector.collect("wlan0");
+        assert_eq!(state.ram_usage, ram_pct);
+        assert_eq!(state.ram_used_mb, ram_used_mb);
+        assert_eq!(state.ram_free_mb, ram_free_mb);
+        assert_eq!(state.disk_usage, disk_pct);
+        assert_eq!(state.disk_used_gb, disk_used_gb);
+        assert_eq!(state.disk_free_gb, disk_free_gb);
     }
 }
