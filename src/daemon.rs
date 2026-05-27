@@ -253,6 +253,21 @@ impl Daemon {
             .publish(cpu_topic, QoS::AtLeastOnce, true, cpu_json)
             .await?;
 
+        // 1.5. CPU Usage Discovery configuration
+        let cpu_usage_payload = discovery::DiscoveryPayload::new_cpu_usage(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let cpu_usage_topic = format!(
+            "{}/sensor/sysmqttd_{}_cpu_usage/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let cpu_usage_json = serde_json::to_vec(&cpu_usage_payload).unwrap();
+        client
+            .publish(cpu_usage_topic, QoS::AtLeastOnce, true, cpu_usage_json)
+            .await?;
+
         // 2. RAM Usage Discovery configuration
         let ram_payload = discovery::DiscoveryPayload::new_ram_usage(
             &self.config.mqtt_topic_prefix,

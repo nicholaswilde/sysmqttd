@@ -49,6 +49,20 @@ impl DiscoveryPayload {
         }
     }
 
+    pub fn new_cpu_usage(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "CPU Usage".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.cpu_usage }}".to_string(),
+            unit_of_measurement: "%".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_cpu_usage", hostname),
+            device,
+        }
+    }
+
     pub fn new_ram_usage(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
         DiscoveryPayload {
             name: "RAM Usage".to_string(),
@@ -264,5 +278,22 @@ mod tests {
         assert!(s.contains(r#""unit_of_meas":"s""#));
         assert!(s.contains(r#""dev_cla":"duration""#));
         assert!(s.contains(r#""uniq_id":"sysmqttd_test-host_uptime""#));
+    }
+
+    #[test]
+    fn test_cpu_usage_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload = DiscoveryPayload::new_cpu_usage("homeassistant", "test-host", device);
+        let s = serde_json::to_string(&payload).unwrap();
+
+        assert!(s.contains(r#""name":"CPU Usage""#));
+        assert!(s.contains(r#""val_tpl":"{{ value_json.cpu_usage }}""#));
+        assert!(s.contains(r#""unit_of_meas":"%""#));
+        assert!(s.contains(r#""uniq_id":"sysmqttd_test-host_cpu_usage""#));
     }
 }
