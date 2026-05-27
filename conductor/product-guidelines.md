@@ -32,5 +32,5 @@ This document defines the guidelines and standards for the `sysmqttd` daemon's t
     *   **Verbose Mode:** Enabled via `--verbose` CLI parameter or `SYSMQTTD_VERBOSE=true` environment variable. In this mode, the daemon logs detailed telemetry payloads before publication, exact incoming and outgoing MQTT packets (such as ConnAck, Publish, etc.) inside the async event loop, and all initial states/transitions for systemd services and GPIO inputs.
 
 ## 4. Documentation Standards
-*   **README.md Updates**: The project `README.md` at the repository root must be updated each time a feature is added, changed, or refined. This guarantees that deployment guides, CLI usage flags, and configuration examples are always accurate and synchronised with the executable.
+*   **README.md and sysmqttd.toml.example Updates**: The project `README.md` and `sysmqttd.toml.example` at the repository root must be updated each time a feature is added, changed, or refined. This guarantees that deployment guides, CLI usage flags, default values, configuration references, and example files are always accurate and synchronised with the executable.
 
