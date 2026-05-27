@@ -19,7 +19,9 @@ This document defines the guidelines and standards for the `sysmqttd` daemon's t
 *   **Numerical Precision:**
     *   CPU Temperature: Float rounded to 1 decimal place (e.g., `45.2`).
     *   RAM Usage: Float rounded to 1 decimal place (e.g., `12.5`).
+    *   RAM Capacity (Used & Free): Float in MB rounded to 1 decimal place (e.g., `151.6`).
     *   Disk Usage: Float rounded to 1 decimal place (e.g., `32.1`).
+    *   Disk Capacity (Used & Free): Float in GB rounded to 1 decimal place (e.g., `4.8`).
 
 ## 3. Logging & Diagnostics
 *   Logs must be written to standard output (`stdout`/`stderr`) using standard Rust logging crates (e.g., `env_logger` or `tracing` configured for simple outputs) so that systemd can capture them in the journal.
