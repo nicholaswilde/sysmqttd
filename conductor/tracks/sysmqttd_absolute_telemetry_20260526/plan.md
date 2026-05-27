@@ -13,7 +13,7 @@ Expose raw telemetry fields.
 ## Phase 2: Discovery & Validation
 Integrate with discovery and verify.
 
-- [ ] Task: Implement discovery configuration helpers in `discovery.rs`
-- [ ] Task: Publish config payloads in `daemon.rs`
-- [ ] Task: Verify that all standard tests and code linters pass successfully
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Discovery Integration'
+- [x] Task: Implement discovery configuration helpers in `discovery.rs`
+- [x] Task: Publish config payloads in `daemon.rs`
+- [x] Task: Verify that all standard tests and code linters pass successfully
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Discovery Integration'

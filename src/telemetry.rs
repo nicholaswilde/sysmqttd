@@ -467,12 +467,12 @@ mod tests {
         let mut collector = TelemetryCollector::new();
 
         let (ram_pct, ram_used_mb, ram_free_mb) = collector.get_ram_stats();
-        assert!(ram_pct >= 0.0 && ram_pct <= 100.0);
+        assert!((0.0..=100.0).contains(&ram_pct));
         assert!(ram_used_mb >= 0.0);
         assert!(ram_free_mb >= 0.0);
 
         let (disk_pct, disk_used_gb, disk_free_gb) = collector.get_disk_stats();
-        assert!(disk_pct >= 0.0 && disk_pct <= 100.0);
+        assert!((0.0..=100.0).contains(&disk_pct));
         assert!(disk_used_gb >= 0.0);
         assert!(disk_free_gb >= 0.0);
 
