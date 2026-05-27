@@ -5,14 +5,25 @@ use rumqttc::{AsyncClient, Event, LastWill, MqttOptions, Packet, QoS};
 use std::time::Duration;
 use tokio::time;
 
+#[derive(Clone)]
 pub struct Daemon {
     pub config: Config,
     pub hostname: String,
+    pub gpio_base_path: std::path::PathBuf,
 }
 
 impl Daemon {
     pub fn new(config: Config, hostname: String) -> Self {
-        Daemon { config, hostname }
+        Daemon {
+            config,
+            hostname,
+            gpio_base_path: std::path::PathBuf::from("/sys/class/gpio"),
+        }
+    }
+
+    pub fn with_gpio_base_path(mut self, path: std::path::PathBuf) -> Self {
+        self.gpio_base_path = path;
+        self
     }
 
     /// Set up MqttOptions for client
@@ -77,10 +88,11 @@ impl Daemon {
             .gpio_inputs
             .iter()
             .map(|cfg| {
-                crate::gpio_inputs::GpioInputListener::new(
+                crate::gpio_inputs::GpioInputListener::with_base_path(
                     cfg.pin,
                     cfg.name.clone(),
                     cfg.device_class.clone(),
+                    self.gpio_base_path.clone(),
                 )
             })
             .collect();
@@ -161,7 +173,13 @@ impl Daemon {
             .config
             .gpio_outputs
             .iter()
-            .map(|cfg| crate::gpio_outputs::GpioOutputController::new(cfg.pin, cfg.name.clone()))
+            .map(|cfg| {
+                crate::gpio_outputs::GpioOutputController::with_base_path(
+                    cfg.pin,
+                    cfg.name.clone(),
+                    self.gpio_base_path.clone(),
+                )
+            })
             .collect();
 
         for controller in controllers {
@@ -504,7 +522,7 @@ impl Daemon {
         mut shutdown_rx: tokio::sync::oneshot::Receiver<()>,
     ) -> Result<(), String> {
         let mqttoptions = self.get_mqtt_options();
-        let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
+        let (client, mut eventloop) = AsyncClient::new(mqttoptions, 100);
 
         // Spawn Telemetry Loop
         self.spawn_telemetry_loop(client.clone());
@@ -544,12 +562,16 @@ impl Daemon {
                                         "{}/sensor/sysmqttd_{}/availability",
                                         self.config.mqtt_topic_prefix, self.hostname
                                     );
-                                    if let Err(e) = client.publish(&availability_topic, QoS::AtLeastOnce, true, "online").await {
-                                        eprintln!("Failed to publish online availability state: {}", e);
-                                    }
-                                    if let Err(e) = self.publish_discovery(&client).await {
-                                        eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
-                                    }
+                                    let client_clone = client.clone();
+                                    let self_clone = self.clone();
+                                    tokio::spawn(async move {
+                                        if let Err(e) = client_clone.publish(&availability_topic, QoS::AtLeastOnce, true, "online").await {
+                                            eprintln!("Failed to publish online availability state: {}", e);
+                                        }
+                                        if let Err(e) = self_clone.publish_discovery(&client_clone).await {
+                                            eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
+                                        }
+                                    });
                                     // Subscribe to GPIO output command topics
                                     for pin_config in &self.config.gpio_outputs {
                                          let cmd_topic = format!(
@@ -607,9 +629,10 @@ impl Daemon {
                                                 }
                                             };
                                             if let Some(v) = val {
-                                                let controller = crate::gpio_outputs::GpioOutputController::new(
+                                                let controller = crate::gpio_outputs::GpioOutputController::with_base_path(
                                                     pin_config.pin,
                                                     pin_config.name.clone(),
+                                                    self.gpio_base_path.clone(),
                                                 );
                                                 if let Err(e) = controller.write_value(v) {
                                                     eprintln!("Failed to write GPIO output pin {}: {}", pin_config.pin, e);
