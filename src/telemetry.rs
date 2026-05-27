@@ -8,6 +8,7 @@ pub struct TelemetryState {
     pub cpu_temperature: f64,
     pub ram_usage: f64,
     pub disk_usage: f64,
+    pub cpu_usage: f64,
     #[serde(rename = "load_1m")]
     pub load_average_1: f64,
     #[serde(rename = "load_5m")]
@@ -168,6 +169,13 @@ impl TelemetryCollector {
         0.0
     }
 
+    /// Read CPU utilization percentage
+    pub fn get_cpu_usage(&mut self) -> f64 {
+        self.sys.refresh_cpu();
+        let cpu_usage = self.sys.global_cpu_info().cpu_usage();
+        (cpu_usage as f64 * 10.0).round() / 10.0
+    }
+
     /// Collect all metrics
     pub fn collect(&mut self, interface: &str) -> TelemetryState {
         let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
@@ -199,6 +207,7 @@ impl TelemetryCollector {
             cpu_temperature: self.get_cpu_temperature(),
             ram_usage: self.get_ram_usage(),
             disk_usage: self.get_disk_usage(),
+            cpu_usage: self.get_cpu_usage(),
             load_average_1: load1,
             load_average_5: load5,
             load_average_15: load15,
@@ -222,6 +231,7 @@ mod tests {
         assert!(state.cpu_temperature >= -40.0 && state.cpu_temperature <= 120.0);
         assert!(state.ram_usage >= 0.0 && state.ram_usage <= 100.0);
         assert!(state.disk_usage >= 0.0 && state.disk_usage <= 100.0);
+        assert!(state.cpu_usage >= 0.0 && state.cpu_usage <= 100.0);
     }
 
     #[test]
