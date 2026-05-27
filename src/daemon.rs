@@ -283,6 +283,36 @@ impl Daemon {
             .publish(ram_topic, QoS::AtLeastOnce, true, ram_json)
             .await?;
 
+        // 2.1. RAM Used Discovery configuration
+        let ram_used_payload = discovery::DiscoveryPayload::new_ram_used(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let ram_used_topic = format!(
+            "{}/sensor/sysmqttd_{}_ram_used/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let ram_used_json = serde_json::to_vec(&ram_used_payload).unwrap();
+        client
+            .publish(ram_used_topic, QoS::AtLeastOnce, true, ram_used_json)
+            .await?;
+
+        // 2.2. RAM Free Discovery configuration
+        let ram_free_payload = discovery::DiscoveryPayload::new_ram_free(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let ram_free_topic = format!(
+            "{}/sensor/sysmqttd_{}_ram_free/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let ram_free_json = serde_json::to_vec(&ram_free_payload).unwrap();
+        client
+            .publish(ram_free_topic, QoS::AtLeastOnce, true, ram_free_json)
+            .await?;
+
         // 3. Disk Usage Discovery configuration
         let disk_payload = discovery::DiscoveryPayload::new_disk_usage(
             &self.config.mqtt_topic_prefix,
@@ -296,6 +326,36 @@ impl Daemon {
         let disk_json = serde_json::to_vec(&disk_payload).unwrap();
         client
             .publish(disk_topic, QoS::AtLeastOnce, true, disk_json)
+            .await?;
+
+        // 3.1. Disk Used Discovery configuration
+        let disk_used_payload = discovery::DiscoveryPayload::new_disk_used(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let disk_used_topic = format!(
+            "{}/sensor/sysmqttd_{}_disk_used/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let disk_used_json = serde_json::to_vec(&disk_used_payload).unwrap();
+        client
+            .publish(disk_used_topic, QoS::AtLeastOnce, true, disk_used_json)
+            .await?;
+
+        // 3.2. Disk Free Discovery configuration
+        let disk_free_payload = discovery::DiscoveryPayload::new_disk_free(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let disk_free_topic = format!(
+            "{}/sensor/sysmqttd_{}_disk_free/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let disk_free_json = serde_json::to_vec(&disk_free_payload).unwrap();
+        client
+            .publish(disk_free_topic, QoS::AtLeastOnce, true, disk_free_json)
             .await?;
 
         // 4. Load Avg (1m) Discovery configuration

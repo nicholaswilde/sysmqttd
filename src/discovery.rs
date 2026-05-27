@@ -77,6 +77,34 @@ impl DiscoveryPayload {
         }
     }
 
+    pub fn new_ram_used(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "RAM Used".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.ram_used_mb }}".to_string(),
+            unit_of_measurement: "MB".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_ram_used", hostname),
+            device,
+        }
+    }
+
+    pub fn new_ram_free(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "RAM Free".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.ram_free_mb }}".to_string(),
+            unit_of_measurement: "MB".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_ram_free", hostname),
+            device,
+        }
+    }
+
     pub fn new_disk_usage(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
         DiscoveryPayload {
             name: "Disk Storage Utilization".to_string(),
@@ -87,6 +115,34 @@ impl DiscoveryPayload {
             device_class: None,
             state_class: "measurement".to_string(),
             unique_id: format!("sysmqttd_{}_disk_usage", hostname),
+            device,
+        }
+    }
+
+    pub fn new_disk_used(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Disk Used".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.disk_used_gb }}".to_string(),
+            unit_of_measurement: "GB".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_disk_used", hostname),
+            device,
+        }
+    }
+
+    pub fn new_disk_free(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Disk Free".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.disk_free_gb }}".to_string(),
+            unit_of_measurement: "GB".to_string(),
+            device_class: None,
+            state_class: "measurement".to_string(),
+            unique_id: format!("sysmqttd_{}_disk_free", hostname),
             device,
         }
     }
@@ -295,5 +351,46 @@ mod tests {
         assert!(s.contains(r#""val_tpl":"{{ value_json.cpu_usage }}""#));
         assert!(s.contains(r#""unit_of_meas":"%""#));
         assert!(s.contains(r#""uniq_id":"sysmqttd_test-host_cpu_usage""#));
+    }
+
+    #[test]
+    fn test_absolute_telemetry_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+
+        let ram_used = DiscoveryPayload::new_ram_used("homeassistant", "test-host", device.clone());
+        let ram_free = DiscoveryPayload::new_ram_free("homeassistant", "test-host", device.clone());
+        let disk_used =
+            DiscoveryPayload::new_disk_used("homeassistant", "test-host", device.clone());
+        let disk_free = DiscoveryPayload::new_disk_free("homeassistant", "test-host", device);
+
+        let s_ru = serde_json::to_string(&ram_used).unwrap();
+        let s_rf = serde_json::to_string(&ram_free).unwrap();
+        let s_du = serde_json::to_string(&disk_used).unwrap();
+        let s_df = serde_json::to_string(&disk_free).unwrap();
+
+        assert!(s_ru.contains(r#""name":"RAM Used""#));
+        assert!(s_ru.contains(r#""val_tpl":"{{ value_json.ram_used_mb }}""#));
+        assert!(s_ru.contains(r#""unit_of_meas":"MB""#));
+        assert!(s_ru.contains(r#""uniq_id":"sysmqttd_test-host_ram_used""#));
+
+        assert!(s_rf.contains(r#""name":"RAM Free""#));
+        assert!(s_rf.contains(r#""val_tpl":"{{ value_json.ram_free_mb }}""#));
+        assert!(s_rf.contains(r#""unit_of_meas":"MB""#));
+        assert!(s_rf.contains(r#""uniq_id":"sysmqttd_test-host_ram_free""#));
+
+        assert!(s_du.contains(r#""name":"Disk Used""#));
+        assert!(s_du.contains(r#""val_tpl":"{{ value_json.disk_used_gb }}""#));
+        assert!(s_du.contains(r#""unit_of_meas":"GB""#));
+        assert!(s_du.contains(r#""uniq_id":"sysmqttd_test-host_disk_used""#));
+
+        assert!(s_df.contains(r#""name":"Disk Free""#));
+        assert!(s_df.contains(r#""val_tpl":"{{ value_json.disk_free_gb }}""#));
+        assert!(s_df.contains(r#""unit_of_meas":"GB""#));
+        assert!(s_df.contains(r#""uniq_id":"sysmqttd_test-host_disk_free""#));
     }
 }
