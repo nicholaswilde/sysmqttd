@@ -5,7 +5,7 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/nicholaswilde/sysmqttd/ci.yml?label=ci&style=for-the-badge&branch=main&logo=github-actions)](https://github.com/nicholaswilde/sysmqttd/actions/workflows/ci.yml)
 
 > [!WARNING]
-> **This is a development version at version v0.1.8 and details may change at any time.**
+> **This is a development version at version v0.1.9 and details may change at any time.**
 
 `sysmqttd` is a lightweight, native Rust system monitoring daemon optimized aggressively for low-resource single-board computers (specifically the Raspberry Pi Zero W running DietPi/Linux). It collects detailed system telemetry and monitors the status of whitelisted systemd services, then streams them to a Home Assistant MQTT broker using Home Assistant MQTT Discovery on startup for seamless, zero-configuration integration.
 
