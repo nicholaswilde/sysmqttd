@@ -13,6 +13,6 @@ Retrieve network info.
 ## Phase 2: Discovery Integration
 Expose to Home Assistant.
 
-- [ ] Task: Add discovery payloads for the diagnostic network sensors
-- [ ] Task: Test and formatting validation
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Network Discovery'
+- [x] Task: Add discovery payloads for the diagnostic network sensors
+- [x] Task: Test and formatting validation
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Network Discovery'
