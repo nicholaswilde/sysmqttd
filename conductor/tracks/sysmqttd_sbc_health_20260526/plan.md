@@ -10,9 +10,9 @@ Implement sysfs parsing.
 - [x] Task: Add test suite using mock system layout
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Hardware Health Core'
 
-## Phase 2: Discovery Configuration
+## Phase 2: Discovery Configuration [checkpoint: 1fefea9]
 Add discovery configuration and run static validation.
 
-- [ ] Task: Implement auto-discovery for both binary sensors in `discovery.rs` and `daemon.rs`
-- [ ] Task: Run clippy and cross-compile checks
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Discovery Integration'
+- [x] Task: Implement auto-discovery for both binary sensors in `discovery.rs` and `daemon.rs`
+- [x] Task: Run clippy and cross-compile checks
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Discovery Integration'

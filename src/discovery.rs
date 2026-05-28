@@ -22,12 +22,12 @@ pub struct DiscoveryPayload {
     pub availability_topic: String,
     #[serde(rename = "val_tpl")]
     pub value_template: String,
-    #[serde(rename = "unit_of_meas")]
-    pub unit_of_measurement: String,
+    #[serde(rename = "unit_of_meas", skip_serializing_if = "Option::is_none")]
+    pub unit_of_measurement: Option<String>,
     #[serde(rename = "dev_cla", skip_serializing_if = "Option::is_none")]
     pub device_class: Option<String>,
-    #[serde(rename = "state_class")]
-    pub state_class: String,
+    #[serde(rename = "state_class", skip_serializing_if = "Option::is_none")]
+    pub state_class: Option<String>,
     #[serde(rename = "uniq_id")]
     pub unique_id: String,
     #[serde(rename = "dev")]
@@ -41,9 +41,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.cpu_temperature }}".to_string(),
-            unit_of_measurement: "°C".to_string(),
+            unit_of_measurement: Some("°C".to_string()),
             device_class: Some("temperature".to_string()),
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_cpu_temp", hostname),
             device,
         }
@@ -55,9 +55,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.cpu_usage }}".to_string(),
-            unit_of_measurement: "%".to_string(),
+            unit_of_measurement: Some("%".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_cpu_usage", hostname),
             device,
         }
@@ -69,9 +69,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.ram_usage }}".to_string(),
-            unit_of_measurement: "%".to_string(),
+            unit_of_measurement: Some("%".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_usage", hostname),
             device,
         }
@@ -83,9 +83,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.ram_used_mb }}".to_string(),
-            unit_of_measurement: "MB".to_string(),
+            unit_of_measurement: Some("MB".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_used", hostname),
             device,
         }
@@ -97,9 +97,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.ram_free_mb }}".to_string(),
-            unit_of_measurement: "MB".to_string(),
+            unit_of_measurement: Some("MB".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_free", hostname),
             device,
         }
@@ -111,9 +111,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.disk_usage }}".to_string(),
-            unit_of_measurement: "%".to_string(),
+            unit_of_measurement: Some("%".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_usage", hostname),
             device,
         }
@@ -125,9 +125,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.disk_used_gb }}".to_string(),
-            unit_of_measurement: "GB".to_string(),
+            unit_of_measurement: Some("GB".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_used", hostname),
             device,
         }
@@ -139,9 +139,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.disk_free_gb }}".to_string(),
-            unit_of_measurement: "GB".to_string(),
+            unit_of_measurement: Some("GB".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_free", hostname),
             device,
         }
@@ -153,9 +153,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.load_1m }}".to_string(),
-            unit_of_measurement: "".to_string(),
+            unit_of_measurement: Some("".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_1m", hostname),
             device,
         }
@@ -167,9 +167,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.load_5m }}".to_string(),
-            unit_of_measurement: "".to_string(),
+            unit_of_measurement: Some("".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_5m", hostname),
             device,
         }
@@ -181,9 +181,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.load_15m }}".to_string(),
-            unit_of_measurement: "".to_string(),
+            unit_of_measurement: Some("".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_15m", hostname),
             device,
         }
@@ -195,9 +195,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.net_rx_rate }}".to_string(),
-            unit_of_measurement: "kB/s".to_string(),
+            unit_of_measurement: Some("kB/s".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_net_rx_rate", hostname),
             device,
         }
@@ -209,9 +209,9 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.net_tx_rate }}".to_string(),
-            unit_of_measurement: "kB/s".to_string(),
+            unit_of_measurement: Some("kB/s".to_string()),
             device_class: None,
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_net_tx_rate", hostname),
             device,
         }
@@ -223,10 +223,38 @@ impl DiscoveryPayload {
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.uptime_seconds }}".to_string(),
-            unit_of_measurement: "s".to_string(),
+            unit_of_measurement: Some("s".to_string()),
             device_class: Some("duration".to_string()),
-            state_class: "measurement".to_string(),
+            state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_uptime", hostname),
+            device,
+        }
+    }
+
+    pub fn new_undervoltage(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Under-voltage Detected".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ 'ON' if value_json.undervoltage_detected else 'OFF' }}".to_string(),
+            unit_of_measurement: None,
+            device_class: Some("problem".to_string()),
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_undervoltage", hostname),
+            device,
+        }
+    }
+
+    pub fn new_throttled(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Throttled".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ 'ON' if value_json.throttled else 'OFF' }}".to_string(),
+            unit_of_measurement: None,
+            device_class: Some("problem".to_string()),
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_throttled", hostname),
             device,
         }
     }
@@ -392,5 +420,37 @@ mod tests {
         assert!(s_df.contains(r#""val_tpl":"{{ value_json.disk_free_gb }}""#));
         assert!(s_df.contains(r#""unit_of_meas":"GB""#));
         assert!(s_df.contains(r#""uniq_id":"sysmqttd_test-host_disk_free""#));
+    }
+
+    #[test]
+    fn test_binary_sensor_discovery_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+
+        let uv_payload = DiscoveryPayload::new_undervoltage("homeassistant", "test-host", device.clone());
+        let thr_payload = DiscoveryPayload::new_throttled("homeassistant", "test-host", device);
+
+        let s_uv = serde_json::to_string(&uv_payload).unwrap();
+        let s_thr = serde_json::to_string(&thr_payload).unwrap();
+
+        // Under-voltage Detected
+        assert!(s_uv.contains(r#""name":"Under-voltage Detected""#));
+        assert!(s_uv.contains(r#""val_tpl":"{{ 'ON' if value_json.undervoltage_detected else 'OFF' }}""#));
+        assert!(s_uv.contains(r#""dev_cla":"problem""#));
+        assert!(s_uv.contains(r#""uniq_id":"sysmqttd_test-host_undervoltage""#));
+        assert!(!s_uv.contains("unit_of_meas"));
+        assert!(!s_uv.contains("state_class"));
+
+        // Throttled
+        assert!(s_thr.contains(r#""name":"Throttled""#));
+        assert!(s_thr.contains(r#""val_tpl":"{{ 'ON' if value_json.throttled else 'OFF' }}""#));
+        assert!(s_thr.contains(r#""dev_cla":"problem""#));
+        assert!(s_thr.contains(r#""uniq_id":"sysmqttd_test-host_throttled""#));
+        assert!(!s_thr.contains("unit_of_meas"));
+        assert!(!s_thr.contains("state_class"));
     }
 }

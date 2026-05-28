@@ -455,7 +455,7 @@ impl Daemon {
         let uptime_payload = discovery::DiscoveryPayload::new_uptime(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let uptime_topic = format!(
             "{}/sensor/sysmqttd_{}_uptime/config",
@@ -464,6 +464,36 @@ impl Daemon {
         let uptime_json = serde_json::to_vec(&uptime_payload).unwrap();
         client
             .publish(uptime_topic, QoS::AtLeastOnce, true, uptime_json)
+            .await?;
+
+        // 8.6. Under-voltage Discovery configuration
+        let undervoltage_payload = discovery::DiscoveryPayload::new_undervoltage(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let undervoltage_topic = format!(
+            "{}/binary_sensor/sysmqttd_{}_undervoltage/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let undervoltage_json = serde_json::to_vec(&undervoltage_payload).unwrap();
+        client
+            .publish(undervoltage_topic, QoS::AtLeastOnce, true, undervoltage_json)
+            .await?;
+
+        // 8.7. Throttled Discovery configuration
+        let throttled_payload = discovery::DiscoveryPayload::new_throttled(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let throttled_topic = format!(
+            "{}/binary_sensor/sysmqttd_{}_throttled/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let throttled_json = serde_json::to_vec(&throttled_payload).unwrap();
+        client
+            .publish(throttled_topic, QoS::AtLeastOnce, true, throttled_json)
             .await?;
 
         // 9. GPIO Inputs discovery configurations
