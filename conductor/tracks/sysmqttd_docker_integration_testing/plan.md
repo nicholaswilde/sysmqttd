@@ -6,10 +6,10 @@ This plan outlines the phases to implement fully isolated, container-driven inte
 
 Introduce `testcontainers` dev-dependencies and establish container startup boilerplate.
 
-- [ ] Task: Add `testcontainers` with `tokio` feature as a dev-dependency in `Cargo.toml`
-- [ ] Task: Implement container orchestration helper in a new integration test module or in `tests/integration_test.rs`
-- [ ] Task: Dynamically resolve port mappings to prevent port binding conflicts
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Container Integration Boilerplate'
+- [x] Task: Add `testcontainers` with `tokio` feature as a dev-dependency in `Cargo.toml`
+- [x] Task: Implement container orchestration helper in a new integration test module or in `tests/integration_test.rs`
+- [x] Task: Dynamically resolve port mappings to prevent port binding conflicts
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Container Integration Boilerplate'
 
 ## Phase 2: Telemetry & Discovery Validation Assertions
 

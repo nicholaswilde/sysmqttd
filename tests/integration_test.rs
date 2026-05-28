@@ -4,6 +4,11 @@ use std::time::Duration;
 use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
 use tokio::time;
+use testcontainers::{
+    core::{IntoContainerPort, WaitFor},
+    runners::AsyncRunner,
+    GenericImage, ImageExt,
+};
 
 #[tokio::test]
 async fn test_integration_daemon_discovery_and_publish() {
@@ -15,13 +20,24 @@ async fn test_integration_daemon_discovery_and_publish() {
         return;
     }
 
+    // Start a Mosquitto container dynamically using testcontainers
+    let mosquitto_container = GenericImage::new("eclipse-mosquitto", "latest")
+        .with_wait_for(WaitFor::message_on_stderr("running"))
+        .with_exposed_port(1883.tcp())
+        .with_cmd(["mosquitto", "-c", "/mosquitto-no-auth.conf"])
+        .start()
+        .await
+        .expect("Failed to start Mosquitto container");
+
+    let mqtt_port = mosquitto_container.get_host_port_ipv4(1883).await.unwrap();
+
     // Set environment variable for service monitoring
     std::env::set_var("MONITORED_SERVICES", "nginx");
 
     // 1. Establish connection options to our local docker broker
     let config = Config {
         mqtt_host: "127.0.0.1".to_string(),
-        mqtt_port: 1883,
+        mqtt_port,
         mqtt_user: None,
         mqtt_password: None,
         mqtt_topic_prefix: "homeassistant_test".to_string(),
@@ -82,7 +98,7 @@ async fn test_integration_daemon_discovery_and_publish() {
 
     // 6. Verify that discovery retained payloads were successfully published by subscribing to them
     let client_id = "verifier_client".to_string();
-    let mut mqttoptions = MqttOptions::new(client_id, "127.0.0.1", 1883);
+    let mut mqttoptions = MqttOptions::new(client_id, "127.0.0.1", mqtt_port);
     mqttoptions.set_keep_alive(Duration::from_secs(30));
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 100);
 
