@@ -10,7 +10,7 @@ Retrieve network info.
 - [x] Task: Update `TelemetryState` struct
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Network Core'
 
-## Phase 2: Discovery Integration
+## Phase 2: Discovery Integration [checkpoint: 0f56c61]
 Expose to Home Assistant.
 
 - [x] Task: Add discovery payloads for the diagnostic network sensors
