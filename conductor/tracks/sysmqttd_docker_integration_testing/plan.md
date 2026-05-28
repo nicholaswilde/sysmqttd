@@ -15,11 +15,11 @@ Introduce `testcontainers` dev-dependencies and establish container startup boil
 
 Migrate existing test cases to the dynamic broker and add strict assertions verifying product specifications.
 
-- [ ] Task: Refactor `tests/integration_test.rs` to run against the dynamic Mosquitto container
-- [ ] Task: Implement assertions verifying MQTT Client ID conforms to `sysmqttd_<hostname>`
-- [ ] Task: Implement assertions verifying state payload formats (flat JSON, numeric, and boolean flags)
-- [ ] Task: Implement assertions verifying Home Assistant Discovery payloads (device class, templates, components)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Assertions and Core Validation'
+- [x] Task: Refactor `tests/integration_test.rs` to run against the dynamic Mosquitto container
+- [x] Task: Implement assertions verifying MQTT Client ID conforms to `sysmqttd_<hostname>`
+- [x] Task: Implement assertions verifying state payload formats (flat JSON, numeric, and boolean flags)
+- [x] Task: Implement assertions verifying Home Assistant Discovery payloads (device class, templates, components)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Assertions and Core Validation'
 
 ## Phase 3: CI/CD Pipeline & Taskfile Streamlining
 

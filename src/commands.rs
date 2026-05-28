@@ -40,7 +40,7 @@ impl RemoteAction {
 
     /// Helper to execute the system command, running "echo" instead under tests.
     fn execute_command(cmd: &str, args: Vec<&str>) -> Result<(), String> {
-        let actual_cmd = if cfg!(test) {
+        let actual_cmd = if cfg!(test) || std::env::var("SYSMQTTD_TEST_ENV").is_ok() {
             if cmd == "non_existent_command_12345" {
                 cmd
             } else {
