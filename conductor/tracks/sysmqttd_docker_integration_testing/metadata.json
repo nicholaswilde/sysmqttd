@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_docker_integration_testing",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-27T20:48:00Z",
+  "updated_at": "2026-05-27T20:48:00Z",
+  "description": "Implement isolated, container-driven integration tests using testcontainers"
+}
