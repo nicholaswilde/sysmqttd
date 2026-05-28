@@ -11,7 +11,7 @@ Introduce `testcontainers` dev-dependencies and establish container startup boil
 - [x] Task: Dynamically resolve port mappings to prevent port binding conflicts
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Container Integration Boilerplate'
 
-## Phase 2: Telemetry & Discovery Validation Assertions
+## Phase 2: Telemetry & Discovery Validation Assertions [checkpoint: 3b9cf5b]
 
 Migrate existing test cases to the dynamic broker and add strict assertions verifying product specifications.
 
