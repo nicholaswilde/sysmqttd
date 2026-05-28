@@ -25,6 +25,28 @@
 
 ---
 
+## :arrow_down: Installation
+
+### Homebrew
+
+You can install `sysmqttd` using [Homebrew](https://brew.sh/) via the [nicholaswilde/homebrew-tap](https://github.com/nicholaswilde/homebrew-tap) tap:
+
+```bash
+# Add the Homebrew tap
+brew tap nicholaswilde/tap
+
+# Install sysmqttd
+brew install sysmqttd
+```
+
+Alternatively, you can install it directly with:
+
+```bash
+brew install nicholaswilde/tap/sysmqttd
+```
+
+---
+
 ## :rocket: Quick Start & Dev Commands
 
 This project uses [go-task](https://taskfile.dev/) as its task runner.

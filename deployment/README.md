@@ -42,7 +42,15 @@ sudo dpkg -i sysmqttd-0.1.3-armv7-unknown-linux-musleabihf.deb
 sudo rpm -i sysmqttd-0.1.3-x86_64-unknown-linux-gnu.rpm
 ```
 
-*Note: Upon successful package installation, the daemon system user, secured directories, configuration files, and systemd services are completely initialized. By default, the service is installed in a **disabled and inactive** state. This is intentional so you can set your broker credentials before launching it.*
+> [!NOTE]
+> Upon successful package installation, the daemon system user, secured directories, configuration files, and systemd services are completely initialized. By default, the service is installed in a **disabled and inactive** state. This is intentional so you can set your broker credentials before launching it.
+
+> [!WARNING]
+> **Package Upgrades/Updates:**
+> When upgrading or updating the package via a `.deb` or `.rpm` file, the pre-uninstallation hooks will unconditionally stop and disable the running `sysmqttd` service. You will need to manually enable and start the service again after the upgrade completes:
+> ```bash
+> sudo systemctl enable --now sysmqttd.service
+> ```
 
 ### Step 2.2: Configure the Broker
 Open the newly created configuration file:
