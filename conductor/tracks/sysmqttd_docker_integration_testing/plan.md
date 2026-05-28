@@ -21,7 +21,7 @@ Migrate existing test cases to the dynamic broker and add strict assertions veri
 - [x] Task: Implement assertions verifying Home Assistant Discovery payloads (device class, templates, components)
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Assertions and Core Validation'
 
-## Phase 3: CI/CD Pipeline & Taskfile Streamlining
+## Phase 3: CI/CD Pipeline & Taskfile Streamlining [checkpoint: 72e1e79]
 
 Integrate and validate the new test suite across local environments and remote workflows.
 
