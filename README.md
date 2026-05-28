@@ -277,6 +277,35 @@ System telemetry metrics are parsed and published every **60 seconds** in a sing
   }
   ```
 
+### Uptime Telemetry & Home Assistant Conversion
+
+The `uptime_seconds` metric is published as a raw float representing the total system uptime in seconds (e.g., `154320.0`). 
+
+By default, Home Assistant will display this as a raw number of seconds. If you want to convert this into a human-readable duration (e.g., days, hours, minutes) or a relative time, you can create a **Template Sensor** in your Home Assistant `configuration.yaml` file:
+
+```yaml
+template:
+  - sensor:
+      - name: "Pi Zero Uptime Readable"
+        state: >
+          {% set uptime = states('sensor.sysmqttd_<hostname>_uptime') | float(0) %}
+          {% set days = (uptime / 86400) | int %}
+          {% set hours = ((uptime % 86400) / 3600) | int %}
+          {% set minutes = ((uptime % 3600) / 60) | int %}
+          {{ days }}d {{ hours }}h {{ minutes }}m
+```
+
+Alternatively, you can convert it to an absolute boot timestamp to display it as a relative time in the Home Assistant UI:
+
+```yaml
+template:
+  - sensor:
+      - name: "Pi Zero Last Boot Time"
+        device_class: timestamp
+        state: >
+          {{ (as_timestamp(now()) - (states('sensor.sysmqttd_<hostname>_uptime') | float(0))) | timestamp_custom('%Y-%m-%dT%H:%M:%S+00:00', false) }}
+```
+
 ### Monitored Services Topics
 
 Monitored systemd services are registered as individual binary sensors of the `connectivity` class. Their states are published on a distinct topic path:
