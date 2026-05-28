@@ -25,6 +25,7 @@ This skill retrieves the git commit logs for a specified range (or defaults to t
      - ### ✨ **Improvements** (for commits starting with `refactor`, `perf`, `style`)
      - ### 📝 **Documentation** (for commits starting with `docs`)
    - Clean up the commit messages:
+     - Exclude any commit messages related to `conductor` or `checkpoint` tasks (e.g., commits containing `conductor` or `checkpoint` in their type, scope, or message body).
      - Strip the type prefix (e.g. "feat:", "fix:").
      - If a scope is present (e.g., "auth:"), keep it (e.g., `auth: add token validation` -> `auth: Add token validation`).
      - Ensure the first letter of each bullet is capitalized.
