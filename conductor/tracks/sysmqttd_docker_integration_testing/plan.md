@@ -2,7 +2,7 @@
 
 This plan outlines the phases to implement fully isolated, container-driven integration tests using `testcontainers`.
 
-## Phase 1: Dependency Injection & Boilerplate Setup
+## Phase 1: Dependency Injection & Boilerplate Setup [checkpoint: 663266b]
 
 Introduce `testcontainers` dev-dependencies and establish container startup boilerplate.
 
