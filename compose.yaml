@@ -1,7 +1,7 @@
 services:
   # The local MQTT broker container
   mosquitto:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0.18
     container_name: sysmqttd-mosquitto
     ports:
       - "1883:1883"

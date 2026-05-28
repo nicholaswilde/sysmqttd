@@ -21,7 +21,7 @@ async fn test_integration_daemon_discovery_and_publish() {
     }
 
     // Start a Mosquitto container dynamically using testcontainers
-    let mosquitto_container = GenericImage::new("eclipse-mosquitto", "latest")
+    let mosquitto_container = GenericImage::new("eclipse-mosquitto", "2.0.18")
         .with_wait_for(WaitFor::message_on_stderr("running"))
         .with_exposed_port(1883.tcp())
         .with_cmd(["mosquitto", "-c", "/mosquitto-no-auth.conf"])
