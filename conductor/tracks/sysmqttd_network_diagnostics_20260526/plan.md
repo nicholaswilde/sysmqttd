@@ -2,7 +2,7 @@
 
 This plan guides the implementation of interface addresses and signal telemetry.
 
-## Phase 1: Query API & Parse Proc
+## Phase 1: Query API & Parse Proc [checkpoint: b32f969]
 Retrieve network info.
 
 - [x] Task: Implement interface IP/MAC discovery helper in `telemetry.rs`
