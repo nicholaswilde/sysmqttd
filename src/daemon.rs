@@ -478,7 +478,12 @@ impl Daemon {
         );
         let undervoltage_json = serde_json::to_vec(&undervoltage_payload).unwrap();
         client
-            .publish(undervoltage_topic, QoS::AtLeastOnce, true, undervoltage_json)
+            .publish(
+                undervoltage_topic,
+                QoS::AtLeastOnce,
+                true,
+                undervoltage_json,
+            )
             .await?;
 
         // 8.7. Throttled Discovery configuration

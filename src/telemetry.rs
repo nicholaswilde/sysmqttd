@@ -215,13 +215,15 @@ impl TelemetryCollector {
         if throttled_path.exists() {
             if let Ok(content) = fs::read_to_string(&throttled_path) {
                 let content_trimmed = content.trim();
-                let parsed_val = if content_trimmed.starts_with("0x") || content_trimmed.starts_with("0X") {
-                    u32::from_str_radix(&content_trimmed[2..], 16).ok()
-                } else {
-                    content_trimmed.parse::<u32>().ok().or_else(|| {
-                        u32::from_str_radix(content_trimmed, 16).ok()
-                    })
-                };
+                let parsed_val =
+                    if content_trimmed.starts_with("0x") || content_trimmed.starts_with("0X") {
+                        u32::from_str_radix(&content_trimmed[2..], 16).ok()
+                    } else {
+                        content_trimmed
+                            .parse::<u32>()
+                            .ok()
+                            .or_else(|| u32::from_str_radix(content_trimmed, 16).ok())
+                    };
 
                 if let Some(val) = parsed_val {
                     // Bit 0: Under-voltage active

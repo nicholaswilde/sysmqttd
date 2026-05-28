@@ -431,7 +431,8 @@ mod tests {
             manufacturer: "sysmqttd".to_string(),
         };
 
-        let uv_payload = DiscoveryPayload::new_undervoltage("homeassistant", "test-host", device.clone());
+        let uv_payload =
+            DiscoveryPayload::new_undervoltage("homeassistant", "test-host", device.clone());
         let thr_payload = DiscoveryPayload::new_throttled("homeassistant", "test-host", device);
 
         let s_uv = serde_json::to_string(&uv_payload).unwrap();
@@ -439,7 +440,8 @@ mod tests {
 
         // Under-voltage Detected
         assert!(s_uv.contains(r#""name":"Under-voltage Detected""#));
-        assert!(s_uv.contains(r#""val_tpl":"{{ 'ON' if value_json.undervoltage_detected else 'OFF' }}""#));
+        assert!(s_uv
+            .contains(r#""val_tpl":"{{ 'ON' if value_json.undervoltage_detected else 'OFF' }}""#));
         assert!(s_uv.contains(r#""dev_cla":"problem""#));
         assert!(s_uv.contains(r#""uniq_id":"sysmqttd_test-host_undervoltage""#));
         assert!(!s_uv.contains("unit_of_meas"));
