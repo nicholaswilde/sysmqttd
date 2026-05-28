@@ -53,3 +53,7 @@ To build the ARMv6 binary on x86_64 development machines:
 *   **FPM (Effing Package Management):** Used inside the GitHub release workflow to package the precompiled and stripped binaries into `.deb` and `.rpm` files for all target architectures.
 *   **Distro-Agnostic Installer Scripts:** Custom scripts (`post_install.sh` and `pre_uninstall.sh`) are run by the host package managers to automate the creation of the system user (`sysmqttd`), secure file storage (`/var/lib/sysmqttd` and `/etc/sysmqttd`), copy default configuration templates, and cleanly register and enable the active systemd service units.
 
+## 6. Testing & CI Stack
+*   **`testcontainers`:** Async Rust container orchestration, dynamically spinning up transient, authentication-free `eclipse-mosquitto` container instances inside integration tests to avoid port binding conflicts.
+*   **`cargo-llvm-cov`:** Source-based code coverage tool for Rust, enforcing a strict 90% line gate in the CI/CD pipeline.
+
