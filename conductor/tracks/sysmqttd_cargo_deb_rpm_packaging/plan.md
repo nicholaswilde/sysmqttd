@@ -10,6 +10,7 @@ Configure package metadata and test local package builds.
 - [ ] Task: Add rpm packaging metadata/attributes in `Cargo.toml` or configure arguments for `cargo-generate-rpm`
 - [ ] Task: Test generation of deb packages locally using `cargo deb`
 - [ ] Task: Test generation of rpm packages locally using `cargo generate-rpm`
+- [ ] Task: Configure packaging scripts to handle service stop, update, and restart during upgrades without post-upgrade messages
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Local Packaging Configs'
 
 ## Phase 2: Workflow Refactoring & Cross Compilation

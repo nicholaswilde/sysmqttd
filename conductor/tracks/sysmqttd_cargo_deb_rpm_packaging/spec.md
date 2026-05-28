@@ -16,8 +16,12 @@ Currently, the `release.yml` workflow installs Ruby, `rpm` tools, and `fpm` to g
    - Clean up FPM installation actions.
    - Install `cargo-deb` and `cargo-generate-rpm` inside the build matrix.
    - Multi-arch support matching the target platforms (`x86_64`, `aarch64`, `armv7`, `armv6`).
+4. **Update/Upgrade Lifecycle Behavior**:
+   - When upgrading/updating the app using `.deb` and `.rpm` files, the daemon service must be cleanly stopped, the binary updated, and the daemon service restarted.
+   - No diagnostic or success messages should be displayed to the console/user after the upgrade occurs.
 
 ## Acceptance Criteria
 - Releases successfully build correct `.deb` and `.rpm` files for all architectures.
+- Upgrade processes stop, update, and restart the service without printing post-upgrade messages.
 - The packaging scripts (`post_install.sh` and `pre_uninstall.sh`) are executed properly upon package install/uninstall.
 - Eliminate dependency on Ruby and FPM from the release workflow.
