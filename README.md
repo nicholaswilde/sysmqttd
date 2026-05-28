@@ -14,7 +14,7 @@
 ## :star: Features
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
-- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, and Real-time Network Bandwidth Rates (RX & TX rate in kB/s).
+- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, and Wi-Fi Signal Strength (RSSI in dBm).
 - **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
