@@ -490,7 +490,7 @@ impl Daemon {
         let throttled_payload = discovery::DiscoveryPayload::new_throttled(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let throttled_topic = format!(
             "{}/binary_sensor/sysmqttd_{}_throttled/config",
@@ -499,6 +499,51 @@ impl Daemon {
         let throttled_json = serde_json::to_vec(&throttled_payload).unwrap();
         client
             .publish(throttled_topic, QoS::AtLeastOnce, true, throttled_json)
+            .await?;
+
+        // 8.8. IP Address Discovery configuration
+        let ip_payload = discovery::DiscoveryPayload::new_ip_address(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let ip_topic = format!(
+            "{}/sensor/sysmqttd_{}_ip_address/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let ip_json = serde_json::to_vec(&ip_payload).unwrap();
+        client
+            .publish(ip_topic, QoS::AtLeastOnce, true, ip_json)
+            .await?;
+
+        // 8.9. MAC Address Discovery configuration
+        let mac_payload = discovery::DiscoveryPayload::new_mac_address(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let mac_topic = format!(
+            "{}/sensor/sysmqttd_{}_mac_address/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let mac_json = serde_json::to_vec(&mac_payload).unwrap();
+        client
+            .publish(mac_topic, QoS::AtLeastOnce, true, mac_json)
+            .await?;
+
+        // 8.10. Wi-Fi RSSI Discovery configuration
+        let rssi_payload = discovery::DiscoveryPayload::new_wifi_rssi(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let rssi_topic = format!(
+            "{}/sensor/sysmqttd_{}_wifi_rssi/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let rssi_json = serde_json::to_vec(&rssi_payload).unwrap();
+        client
+            .publish(rssi_topic, QoS::AtLeastOnce, true, rssi_json)
             .await?;
 
         // 9. GPIO Inputs discovery configurations

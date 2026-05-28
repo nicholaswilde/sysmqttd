@@ -26,6 +26,10 @@ pub struct TelemetryState {
     pub net_tx_rate: f64,
     pub undervoltage_detected: bool,
     pub throttled: bool,
+    pub ip_address: String,
+    pub mac_address: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wifi_rssi: Option<i32>,
 }
 
 pub struct TelemetryCollector {
@@ -257,6 +261,79 @@ impl TelemetryCollector {
         (false, false)
     }
 
+    pub fn get_interface_ip(&self, interface: &str) -> String {
+        if self.sysfs_root != Path::new("/") {
+            let mock_path = self.sysfs_root.join(format!("mock_ip_{}", interface));
+            if let Ok(ip) = fs::read_to_string(&mock_path) {
+                return ip.trim().to_string();
+            }
+            return "127.0.0.1".to_string();
+        }
+
+        if let Ok(output) = std::process::Command::new("ip")
+            .args(["-o", "-4", "addr", "show", "dev", interface])
+            .output()
+        {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                for line in stdout.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(pos) = parts.iter().position(|&x| x == "inet") {
+                        if pos + 1 < parts.len() {
+                            let ip_cidr = parts[pos + 1];
+                            if let Some(ip) = ip_cidr.split('/').next() {
+                                return ip.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Ok(socket) = std::net::UdpSocket::bind("0.0.0.0:0") {
+            if socket.connect("8.8.8.8:80").is_ok() {
+                if let Ok(local_addr) = socket.local_addr() {
+                    return local_addr.ip().to_string();
+                }
+            }
+        }
+
+        "0.0.0.0".to_string()
+    }
+
+    pub fn get_interface_mac(&self, interface: &str) -> String {
+        let mac_path = self
+            .sysfs_root
+            .join(format!("sys/class/net/{}/address", interface));
+        if mac_path.exists() {
+            if let Ok(content) = fs::read_to_string(&mac_path) {
+                return content.trim().to_string();
+            }
+        }
+        "00:00:00:00:00:00".to_string()
+    }
+
+    pub fn get_wifi_rssi(&self, interface: &str) -> Option<i32> {
+        let wireless_path = self.sysfs_root.join("proc/net/wireless");
+        if wireless_path.exists() {
+            if let Ok(content) = fs::read_to_string(&wireless_path) {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with(interface) {
+                        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                        if parts.len() > 3 {
+                            let rssi_str = parts[3].trim_end_matches('.');
+                            if let Ok(rssi) = rssi_str.parse::<i32>() {
+                                return Some(rssi);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
     /// Collect all metrics
     pub fn collect(&mut self, interface: &str) -> TelemetryState {
         let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
@@ -287,6 +364,9 @@ impl TelemetryCollector {
         let (ram_usage, ram_used_mb, ram_free_mb) = self.get_ram_stats();
         let (disk_usage, disk_used_gb, disk_free_gb) = self.get_disk_stats();
         let (undervoltage_detected, throttled) = self.get_sbc_health();
+        let ip_address = self.get_interface_ip(interface);
+        let mac_address = self.get_interface_mac(interface);
+        let wifi_rssi = self.get_wifi_rssi(interface);
 
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
@@ -305,6 +385,9 @@ impl TelemetryCollector {
             net_tx_rate,
             undervoltage_detected,
             throttled,
+            ip_address,
+            mac_address,
+            wifi_rssi,
         }
     }
 }
@@ -625,5 +708,36 @@ mod tests {
         let (uv, thr) = collector.get_sbc_health();
         assert!(!uv);
         assert!(!thr);
+    }
+
+    #[test]
+    fn test_network_diagnostics_mock() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_net_diag");
+        let sys_net_wlan = test_dir.join("sys/class/net/wlan0");
+        fs::create_dir_all(&sys_net_wlan).unwrap();
+
+        let address_file = sys_net_wlan.join("address");
+        fs::write(&address_file, "aa:bb:cc:dd:ee:ff\n").unwrap();
+
+        let mock_ip_file = test_dir.join("mock_ip_wlan0");
+        fs::write(&mock_ip_file, "192.168.1.150\n").unwrap();
+
+        let proc_dir = test_dir.join("proc");
+        fs::create_dir_all(&proc_dir).unwrap();
+        let wireless_file = proc_dir.join("net/wireless");
+        fs::create_dir_all(wireless_file.parent().unwrap()).unwrap();
+        fs::write(&wireless_file, "Inter-| sta-| Quality        | Discarded packets               | Missed | WE\n face |tus | link level noise | nwid crypt frag retry misc | beacon | %d\n  wlan0: 0000   45.  -65.  -256.        0      0     0      0      0      0        0\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let ip = collector.get_interface_ip("wlan0");
+        let mac = collector.get_interface_mac("wlan0");
+        let rssi = collector.get_wifi_rssi("wlan0");
+
+        assert_eq!(ip, "192.168.1.150");
+        assert_eq!(mac, "aa:bb:cc:dd:ee:ff");
+        assert_eq!(rssi, Some(-65));
+
+        // Clean up
+        let _ = fs::remove_dir_all(test_dir);
     }
 }

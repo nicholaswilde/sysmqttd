@@ -32,6 +32,8 @@ pub struct DiscoveryPayload {
     pub unique_id: String,
     #[serde(rename = "dev")]
     pub device: DeviceInfo,
+    #[serde(rename = "ent_cat", skip_serializing_if = "Option::is_none")]
+    pub entity_category: Option<String>,
 }
 
 impl DiscoveryPayload {
@@ -46,6 +48,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_cpu_temp", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -60,6 +63,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_cpu_usage", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -74,6 +78,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_usage", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -88,6 +93,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_used", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -102,6 +108,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_ram_free", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -116,6 +123,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_usage", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -130,6 +138,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_used", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -144,6 +153,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_disk_free", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -158,6 +168,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_1m", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -172,6 +183,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_5m", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -186,6 +198,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_load_15m", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -200,6 +213,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_net_rx_rate", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -214,6 +228,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_net_tx_rate", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -228,6 +243,7 @@ impl DiscoveryPayload {
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_uptime", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -242,6 +258,7 @@ impl DiscoveryPayload {
             state_class: None,
             unique_id: format!("sysmqttd_{}_undervoltage", hostname),
             device,
+            entity_category: None,
         }
     }
 
@@ -256,6 +273,52 @@ impl DiscoveryPayload {
             state_class: None,
             unique_id: format!("sysmqttd_{}_throttled", hostname),
             device,
+            entity_category: None,
+        }
+    }
+
+    pub fn new_ip_address(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "IP Address".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.ip_address }}".to_string(),
+            unit_of_measurement: None,
+            device_class: None,
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_ip_address", hostname),
+            device,
+            entity_category: Some("diagnostic".to_string()),
+        }
+    }
+
+    pub fn new_mac_address(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "MAC Address".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.mac_address }}".to_string(),
+            unit_of_measurement: None,
+            device_class: None,
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_mac_address", hostname),
+            device,
+            entity_category: Some("diagnostic".to_string()),
+        }
+    }
+
+    pub fn new_wifi_rssi(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Wi-Fi RSSI".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.wifi_rssi }}".to_string(),
+            unit_of_measurement: Some("dBm".to_string()),
+            device_class: Some("signal_strength".to_string()),
+            state_class: Some("measurement".to_string()),
+            unique_id: format!("sysmqttd_{}_wifi_rssi", hostname),
+            device,
+            entity_category: Some("diagnostic".to_string()),
         }
     }
 }
@@ -454,5 +517,46 @@ mod tests {
         assert!(s_thr.contains(r#""uniq_id":"sysmqttd_test-host_throttled""#));
         assert!(!s_thr.contains("unit_of_meas"));
         assert!(!s_thr.contains("state_class"));
+    }
+
+    #[test]
+    fn test_network_discovery_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+
+        let ip_payload =
+            DiscoveryPayload::new_ip_address("homeassistant", "test-host", device.clone());
+        let mac_payload =
+            DiscoveryPayload::new_mac_address("homeassistant", "test-host", device.clone());
+        let rssi_payload = DiscoveryPayload::new_wifi_rssi("homeassistant", "test-host", device);
+
+        let s_ip = serde_json::to_string(&ip_payload).unwrap();
+        let s_mac = serde_json::to_string(&mac_payload).unwrap();
+        let s_rssi = serde_json::to_string(&rssi_payload).unwrap();
+
+        // IP Address
+        assert!(s_ip.contains(r#""name":"IP Address""#));
+        assert!(s_ip.contains(r#""val_tpl":"{{ value_json.ip_address }}""#));
+        assert!(s_ip.contains(r#""uniq_id":"sysmqttd_test-host_ip_address""#));
+        assert!(s_ip.contains(r#""ent_cat":"diagnostic""#));
+
+        // MAC Address
+        assert!(s_mac.contains(r#""name":"MAC Address""#));
+        assert!(s_mac.contains(r#""val_tpl":"{{ value_json.mac_address }}""#));
+        assert!(s_mac.contains(r#""uniq_id":"sysmqttd_test-host_mac_address""#));
+        assert!(s_mac.contains(r#""ent_cat":"diagnostic""#));
+
+        // Wi-Fi RSSI
+        assert!(s_rssi.contains(r#""name":"Wi-Fi RSSI""#));
+        assert!(s_rssi.contains(r#""val_tpl":"{{ value_json.wifi_rssi }}""#));
+        assert!(s_rssi.contains(r#""unit_of_meas":"dBm""#));
+        assert!(s_rssi.contains(r#""dev_cla":"signal_strength""#));
+        assert!(s_rssi.contains(r#""state_class":"measurement""#));
+        assert!(s_rssi.contains(r#""uniq_id":"sysmqttd_test-host_wifi_rssi""#));
+        assert!(s_rssi.contains(r#""ent_cat":"diagnostic""#));
     }
 }
