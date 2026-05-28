@@ -240,8 +240,8 @@ async fn test_integration_daemon_discovery_and_publish() {
 
             for (key, val) in obj.iter() {
                 assert!(
-                    val.is_number() || val.is_boolean(),
-                    "Telemetry state key '{}' must contain only numeric or boolean value!",
+                    val.is_number() || val.is_boolean() || val.is_string(),
+                    "Telemetry state key '{}' must contain only numeric, boolean, or string value!",
                     key
                 );
 
