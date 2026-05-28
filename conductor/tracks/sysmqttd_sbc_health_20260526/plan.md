@@ -2,13 +2,13 @@
 
 This plan guides the implementation of hardware power and thermal warning sensors.
 
-## Phase 1: Kernel Interface & Mock Tests
+## Phase 1: Kernel Interface & Mock Tests [checkpoint: 0746e44]
 Implement sysfs parsing.
 
-- [ ] Task: Implement robust sysfs parser in `telemetry.rs` for under-voltage and throttle flags
-- [ ] Task: Update `TelemetryState` to include `undervoltage_detected` and `throttled`
-- [ ] Task: Add test suite using mock system layout
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Hardware Health Core'
+- [x] Task: Implement robust sysfs parser in `telemetry.rs` for under-voltage and throttle flags
+- [x] Task: Update `TelemetryState` to include `undervoltage_detected` and `throttled`
+- [x] Task: Add test suite using mock system layout
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Hardware Health Core'
 
 ## Phase 2: Discovery Configuration
 Add discovery configuration and run static validation.

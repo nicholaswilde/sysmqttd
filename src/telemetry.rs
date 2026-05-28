@@ -24,6 +24,8 @@ pub struct TelemetryState {
     pub net_rx_rate: f64,
     #[serde(rename = "net_tx_rate")]
     pub net_tx_rate: f64,
+    pub undervoltage_detected: bool,
+    pub throttled: bool,
 }
 
 pub struct TelemetryCollector {
@@ -204,6 +206,55 @@ impl TelemetryCollector {
         (cpu_usage as f64 * 10.0).round() / 10.0
     }
 
+    /// Read SBC hardware health flags: under-voltage and thermal throttling
+    pub fn get_sbc_health(&self) -> (bool, bool) {
+        // Primary source: Raspberry Pi throttled bitmask
+        let throttled_path = self
+            .sysfs_root
+            .join("sys/devices/platform/soc/soc:firmware/get_throttled");
+        if throttled_path.exists() {
+            if let Ok(content) = fs::read_to_string(&throttled_path) {
+                let content_trimmed = content.trim();
+                let parsed_val = if content_trimmed.starts_with("0x") || content_trimmed.starts_with("0X") {
+                    u32::from_str_radix(&content_trimmed[2..], 16).ok()
+                } else {
+                    content_trimmed.parse::<u32>().ok().or_else(|| {
+                        u32::from_str_radix(content_trimmed, 16).ok()
+                    })
+                };
+
+                if let Some(val) = parsed_val {
+                    // Bit 0: Under-voltage active
+                    let undervoltage = (val & 0x1) != 0;
+                    // Bit 2: Currently throttled (active thermal throttling)
+                    let throttled = (val & 0x4) != 0;
+                    return (undervoltage, throttled);
+                }
+            }
+        }
+
+        // Fallback for non-Pi Linux systems: check /sys/class/power_supply
+        let power_supply_dir = self.sysfs_root.join("sys/class/power_supply");
+        if power_supply_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&power_supply_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let health_path = path.join("health");
+                    if health_path.exists() {
+                        if let Ok(health) = fs::read_to_string(&health_path) {
+                            let health_trimmed = health.trim().to_lowercase();
+                            if health_trimmed == "overheat" {
+                                return (false, true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        (false, false)
+    }
+
     /// Collect all metrics
     pub fn collect(&mut self, interface: &str) -> TelemetryState {
         let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
@@ -233,6 +284,7 @@ impl TelemetryCollector {
 
         let (ram_usage, ram_used_mb, ram_free_mb) = self.get_ram_stats();
         let (disk_usage, disk_used_gb, disk_free_gb) = self.get_disk_stats();
+        let (undervoltage_detected, throttled) = self.get_sbc_health();
 
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
@@ -249,6 +301,8 @@ impl TelemetryCollector {
             uptime_seconds: self.read_uptime().unwrap_or(0.0),
             net_rx_rate,
             net_tx_rate,
+            undervoltage_detected,
+            throttled,
         }
     }
 }
@@ -483,5 +537,91 @@ mod tests {
         assert!((0.0..=100.0).contains(&state.disk_usage));
         assert!(state.disk_used_gb >= 0.0);
         assert!(state.disk_free_gb >= 0.0);
+    }
+
+    #[test]
+    fn test_sbc_health_pi_hex() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_sbc_hex");
+        let fw_dir = test_dir.join("sys/devices/platform/soc/soc:firmware");
+        fs::create_dir_all(&fw_dir).unwrap();
+
+        let throttled_file = fw_dir.join("get_throttled");
+        // Active under-voltage (bit 0) and active throttled (bit 2) -> 0x5
+        fs::write(&throttled_file, "0x5\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (uv, thr) = collector.get_sbc_health();
+        assert!(uv);
+        assert!(thr);
+
+        // Neither active -> 0x50000 (past undervoltage/throttling but not active)
+        fs::write(&throttled_file, "0x50000\n").unwrap();
+        let (uv2, thr2) = collector.get_sbc_health();
+        assert!(!uv2);
+        assert!(!thr2);
+
+        // Clean up
+        let _ = fs::remove_file(throttled_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_sbc_health_pi_decimal() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_sbc_dec");
+        let fw_dir = test_dir.join("sys/devices/platform/soc/soc:firmware");
+        fs::create_dir_all(&fw_dir).unwrap();
+
+        let throttled_file = fw_dir.join("get_throttled");
+        // Active under-voltage (bit 0) -> 1
+        fs::write(&throttled_file, "1\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (uv, thr) = collector.get_sbc_health();
+        assert!(uv);
+        assert!(!thr);
+
+        // Active throttled (bit 2) -> 4
+        fs::write(&throttled_file, "4\n").unwrap();
+        let (uv2, thr2) = collector.get_sbc_health();
+        assert!(!uv2);
+        assert!(thr2);
+
+        // Clean up
+        let _ = fs::remove_file(throttled_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_sbc_health_non_pi_fallback() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_sbc_non_pi");
+        let power_supply_ac = test_dir.join("sys/class/power_supply/AC");
+        fs::create_dir_all(&power_supply_ac).unwrap();
+
+        let health_file = power_supply_ac.join("health");
+        fs::write(&health_file, "Overheat\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (uv, thr) = collector.get_sbc_health();
+        assert!(!uv);
+        assert!(thr);
+
+        // Standard healthy battery/AC -> health is "Good" or "Normal"
+        fs::write(&health_file, "Good\n").unwrap();
+        let (uv2, thr2) = collector.get_sbc_health();
+        assert!(!uv2);
+        assert!(!thr2);
+
+        // Clean up
+        let _ = fs::remove_file(health_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_sbc_health_fallback_clean() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_sbc_clean");
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let (uv, thr) = collector.get_sbc_health();
+        assert!(!uv);
+        assert!(!thr);
     }
 }
