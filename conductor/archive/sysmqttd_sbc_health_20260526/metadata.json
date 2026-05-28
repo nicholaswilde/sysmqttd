@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_sbc_health_20260526",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-26T20:54:00Z",
+  "updated_at": "2026-05-26T20:54:00Z",
+  "description": "Monitor and publish Raspberry Pi/SBC under-voltage and thermal throttling states"
+}
