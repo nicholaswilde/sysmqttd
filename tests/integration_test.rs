@@ -3,12 +3,12 @@ use std::fs;
 use std::time::Duration;
 use sysmqttd::config::Config;
 use sysmqttd::daemon::Daemon;
-use tokio::time;
 use testcontainers::{
     core::{IntoContainerPort, WaitFor},
     runners::AsyncRunner,
     GenericImage, ImageExt,
 };
+use tokio::time;
 
 #[tokio::test]
 async fn test_integration_daemon_discovery_and_publish() {
@@ -183,29 +183,30 @@ async fn test_integration_daemon_discovery_and_publish() {
         );
 
         // Availability validation
-        if topic == "homeassistant_test/sensor/sysmqttd_integration-tester/availability" {
-            if payload_str == "online" {
-                availability_online = true;
-            }
+        if topic == "homeassistant_test/sensor/sysmqttd_integration-tester/availability"
+            && payload_str == "online"
+        {
+            availability_online = true;
         }
 
         // Home Assistant Discovery Payload assertions
         if topic.ends_with("/config") {
             discovery_configs_count += 1;
-            let json: serde_json::Value = serde_json::from_str(payload_str)
-                .expect("Discovery payload is not valid JSON!");
+            let json: serde_json::Value =
+                serde_json::from_str(payload_str).expect("Discovery payload is not valid JSON!");
             assert!(json.is_object(), "Discovery payload is not a JSON object!");
 
             // Check if it is a binary_sensor config
             if topic.contains("/binary_sensor/") {
                 if topic.contains("_undervoltage") || topic.contains("_throttled") {
-                    let dev_cla = json.get("dev_cla")
+                    let dev_cla = json
+                        .get("dev_cla")
                         .expect("System binary sensor missing device class!")
                         .as_str()
                         .expect("dev_cla is not a string!");
                     assert_eq!(dev_cla, "problem", "Device class must be 'problem'!");
                 }
-                
+
                 // Verify binary mapping mapping true to "ON" and false to "OFF"
                 if topic.contains("_undervoltage") {
                     let val_tpl = json.get("val_tpl").unwrap().as_str().unwrap();
@@ -233,7 +234,9 @@ async fn test_integration_daemon_discovery_and_publish() {
             core_state_received = true;
             let json: serde_json::Value = serde_json::from_str(payload_str)
                 .expect("Telemetry state payload is not valid JSON!");
-            let obj = json.as_object().expect("Telemetry state is not a flat JSON object!");
+            let obj = json
+                .as_object()
+                .expect("Telemetry state is not a flat JSON object!");
 
             for (key, val) in obj.iter() {
                 assert!(
@@ -258,9 +261,18 @@ async fn test_integration_daemon_discovery_and_publish() {
         }
     }
 
-    assert!(availability_online, "Expected to receive 'online' availability payload!");
-    assert!(core_state_received, "Expected to receive core telemetry state payload!");
-    assert!(discovery_configs_count > 0, "Expected to receive Home Assistant discovery configs!");
+    assert!(
+        availability_online,
+        "Expected to receive 'online' availability payload!"
+    );
+    assert!(
+        core_state_received,
+        "Expected to receive core telemetry state payload!"
+    );
+    assert!(
+        discovery_configs_count > 0,
+        "Expected to receive Home Assistant discovery configs!"
+    );
 
     // Clean up environment variables
     std::env::remove_var("MONITORED_SERVICES");

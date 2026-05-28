@@ -25,7 +25,7 @@ Migrate existing test cases to the dynamic broker and add strict assertions veri
 
 Integrate and validate the new test suite across local environments and remote workflows.
 
-- [ ] Task: Clean up external docker commands from `Taskfile.yml` `test` tasks
-- [ ] Task: Verify that `cargo test` runs successfully without manual broker orchestration
-- [ ] Task: Run clippy and cross-compilation checks to ensure build hygiene
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: CI/CD & Pipeline Streamlining'
+- [x] Task: Clean up external docker commands from `Taskfile.yml` `test` tasks
+- [x] Task: Verify that `cargo test` runs successfully without manual broker orchestration
+- [x] Task: Run clippy and cross-compilation checks to ensure build hygiene
+- [x] Task: Conductor - User Manual Verification 'Phase 3: CI/CD & Pipeline Streamlining'
