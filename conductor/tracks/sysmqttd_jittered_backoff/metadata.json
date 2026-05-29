@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_jittered_backoff",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-28T20:12:00Z",
+  "updated_at": "2026-05-28T20:12:00Z",
+  "description": "Jittered exponential reconnection backoff to handle network and broker dropouts gracefully"
+}
