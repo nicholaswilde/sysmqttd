@@ -321,12 +321,79 @@ impl DiscoveryPayload {
             entity_category: Some("diagnostic".to_string()),
         }
     }
+
+    pub fn new_upgradable_packages(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Upgradable Packages".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.upgradable_packages }}".to_string(),
+            unit_of_measurement: Some("packages".to_string()),
+            device_class: None,
+            state_class: Some("measurement".to_string()),
+            unique_id: format!("sysmqttd_{}_upgradable_packages", hostname),
+            device,
+            entity_category: Some("diagnostic".to_string()),
+        }
+    }
+
+    pub fn new_top_process(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "Top Process".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ value_json.top_process }}".to_string(),
+            unit_of_measurement: None,
+            device_class: None,
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_top_process", hostname),
+            device,
+            entity_category: Some("diagnostic".to_string()),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json;
+
+    #[test]
+    fn test_upgradable_packages_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload = DiscoveryPayload::new_upgradable_packages("homeassistant", "test-host", device);
+        let serialized = serde_json::to_string(&payload).unwrap();
+
+        assert!(serialized.contains(r#""name":"Upgradable Packages""#));
+        assert!(serialized.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#));
+        assert!(serialized.contains(r#""val_tpl":"{{ value_json.upgradable_packages }}""#));
+        assert!(serialized.contains(r#""unit_of_meas":"packages""#));
+        assert!(serialized.contains(r#""state_class":"measurement""#));
+        assert!(serialized.contains(r#""ent_cat":"diagnostic""#));
+    }
+
+    #[test]
+    fn test_top_process_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+        let payload = DiscoveryPayload::new_top_process("homeassistant", "test-host", device);
+        let serialized = serde_json::to_string(&payload).unwrap();
+
+        assert!(serialized.contains(r#""name":"Top Process""#));
+        assert!(serialized.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#));
+        assert!(serialized.contains(r#""val_tpl":"{{ value_json.top_process }}""#));
+        assert!(serialized.contains(r#""ent_cat":"diagnostic""#));
+    }
+
 
     #[test]
     fn test_cpu_temp_serialization() {

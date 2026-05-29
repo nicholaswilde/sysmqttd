@@ -9,9 +9,9 @@ Fetch package counts and top process data.
 - [x] Task: Implement process list parser in `telemetry.rs` for top resource consumers
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics Core'
 
-## Phase 2: Home Assistant Exposure
+## Phase 2: Home Assistant Exposure [checkpoint: 7c30939]
 Add discovery and verify.
 
-- [ ] Task: Create discovery definitions in `discovery.rs`
-- [ ] Task: Bind to discovery cycle in `daemon.rs`
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Diagnostics Integration'
+- [x] Task: Create discovery definitions in `discovery.rs`
+- [x] Task: Bind to discovery cycle in `daemon.rs`
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Diagnostics Integration'

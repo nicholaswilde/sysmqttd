@@ -535,7 +535,7 @@ impl Daemon {
         let rssi_payload = discovery::DiscoveryPayload::new_wifi_rssi(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let rssi_topic = format!(
             "{}/sensor/sysmqttd_{}_wifi_rssi/config",
@@ -544,6 +544,36 @@ impl Daemon {
         let rssi_json = serde_json::to_vec(&rssi_payload).unwrap();
         client
             .publish(rssi_topic, QoS::AtLeastOnce, true, rssi_json)
+            .await?;
+
+        // 8.11. Upgradable Packages Discovery configuration
+        let pkgs_payload = discovery::DiscoveryPayload::new_upgradable_packages(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let pkgs_topic = format!(
+            "{}/sensor/sysmqttd_{}_upgradable_packages/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let pkgs_json = serde_json::to_vec(&pkgs_payload).unwrap();
+        client
+            .publish(pkgs_topic, QoS::AtLeastOnce, true, pkgs_json)
+            .await?;
+
+        // 8.12. Top Process Discovery configuration
+        let top_proc_payload = discovery::DiscoveryPayload::new_top_process(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device,
+        );
+        let top_proc_topic = format!(
+            "{}/sensor/sysmqttd_{}_top_process/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let top_proc_json = serde_json::to_vec(&top_proc_payload).unwrap();
+        client
+            .publish(top_proc_topic, QoS::AtLeastOnce, true, top_proc_json)
             .await?;
 
         // 9. GPIO Inputs discovery configurations
