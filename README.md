@@ -230,12 +230,12 @@ sudo nano /etc/default/sysmqttd
 
 Provide the required variable assignments (note that `MONITORED_SERVICES` allows you to monitor whitelisted services):
 ```bash
-MQTT_HOST=192.168.1.50
-MQTT_PORT=1883
-MQTT_USER=mqtt_user
-MQTT_PASSWORD=supersecretpassword
-MQTT_TOPIC_PREFIX=homeassistant
-NET_INTERFACE=eth0
+SYSMQTTD_MQTT_HOST=192.168.1.50
+SYSMQTTD_MQTT_PORT=1883
+SYSMQTTD_MQTT_USER=mqtt_user
+SYSMQTTD_MQTT_PASSWORD=supersecretpassword
+SYSMQTTD_MQTT_TOPIC_PREFIX=homeassistant
+SYSMQTTD_NET_INTERFACE=eth0
 MONITORED_SERVICES=docker,nginx,ssh
 ```
 

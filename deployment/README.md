@@ -119,12 +119,12 @@ sudo nano /etc/default/sysmqttd
 ```
 Insert environment variables:
 ```bash
-MQTT_HOST=192.168.1.50
-MQTT_PORT=1883
-MQTT_USER=your_mqtt_username
-MQTT_PASSWORD=your_mqtt_password
-MQTT_TOPIC_PREFIX=homeassistant
-NET_INTERFACE=wlan0
+SYSMQTTD_MQTT_HOST=192.168.1.50
+SYSMQTTD_MQTT_PORT=1883
+SYSMQTTD_MQTT_USER=your_mqtt_username
+SYSMQTTD_MQTT_PASSWORD=your_mqtt_password
+SYSMQTTD_MQTT_TOPIC_PREFIX=homeassistant
+SYSMQTTD_NET_INTERFACE=wlan0
 MONITORED_SERVICES=docker,nginx,ssh
 ```
 
