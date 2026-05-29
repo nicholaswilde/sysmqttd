@@ -96,3 +96,16 @@ verbose = false
 # [[gpio_outputs]]
 # pin = 25
 # name = "Status LED"
+
+# ------------------------------------------------------------------------------
+# Systemd Service Monitoring and Control (Optional)
+# ------------------------------------------------------------------------------
+# Note: Whitelisted systemd services are currently configured via the 
+# MONITORED_SERVICES environment variable (e.g., in /etc/default/sysmqttd)
+# or using the CLI flag: `--services "nginx,docker,ssh"`.
+#
+# For each monitored service, sysmqttd will:
+# 1. Register a binary sensor (connectivity class) indicating its running state (active/inactive).
+# 2. Register a dynamic switch entity in Home Assistant, allowing you to securely
+#    Start ("ON"), Stop ("OFF"), or Restart ("RESTART") the service from the dashboard.
+

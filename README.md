@@ -15,10 +15,10 @@
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
 - **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, Wi-Fi Signal Strength (RSSI in dBm), pending system package upgrades (upgradable package count), and active top resource-consuming process details.
-- **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
+- **Service Status & Control Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class) and registering corresponding dynamic switch entities for remote control (Start, Stop, Restart).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
-- **Safe Remote Commands:** Securely executes whitelisted system controls (`reboot`, `shutdown`, `restart_service`) via a dedicated MQTT subscription topic.
+- **Native Buttons & Safe Remote Commands:** Registers dedicated native Home Assistant Button entities for system `reboot` and `shutdown` for seamless dashboard interaction, and securely executes whitelisted system controls (`reboot`, `shutdown`, `restart_service`) via a dedicated MQTT subscription topic.
 - **Zero-Configuration Auto-Discovery:** Registers all collected telemetry and monitored services/pins under a single parent device in Home Assistant using standard MQTT Discovery.
 - **Asynchronous Loop:** Built on the Tokio runtime, featuring isolated, non-blocking telemetry and service monitoring loops.
 - **Hardened Deployment:** Comes with a secure systemd unit template utilizing Linux sandboxing technologies for tight security constraints.
@@ -315,6 +315,11 @@ Monitored systemd services are registered as individual binary sensors of the `c
 - **Service State Topic:** `<MQTT_TOPIC_PREFIX>/binary_sensor/sysmqttd_<hostname>/service_<service_name>/state`
 - **Values:** `"on"` (service is running/active) or `"off"` (service is inactive/dead).
 
+Additionally, a dynamic switch entity is created in Home Assistant to control the service's power state:
+
+- **Service Command Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_service_<service_name>/set`
+- **Values:** `"ON"` (starts the systemd service), `"OFF"` (stops the systemd service), or `"RESTART"` (restarts the systemd service). When a command payload is received, the daemon executes the corresponding command (`systemctl start/stop/restart`) and publishes the updated state back to the service state topic.
+
 ### GPIO Input Topics
 
 Monitored GPIO input pins are registered as binary sensors:
@@ -330,14 +335,14 @@ Monitored GPIO output pins are registered as switch entities:
 - **GPIO Output State Topic:** `<MQTT_TOPIC_PREFIX>/switch/sysmqttd_<hostname>_pin<pin_number>/state`
 - **Values:** `"ON"` or `"OFF"`. When a command payload is received, the daemon actuates the pin and confirms the updated state.
 
-### Remote Commands Topic
+### Remote Commands & Buttons
 
-The daemon subscribes to a dedicated command topic to receive and securely process whitelisted system instructions:
+The daemon registers native Home Assistant **Button** entities for system Reboot and Shutdown, allowing one-click control directly from the HA UI. It also subscribes to a dedicated command topic to receive and securely process whitelisted system instructions:
 
 - **Remote Command Topic:** `<MQTT_TOPIC_PREFIX>/sensor/sysmqttd_<hostname>/command`
-- **Supported Payloads:** 
-  - `"reboot"` – Reboots the host system (executes `sudo reboot`).
-  - `"shutdown"` – Powers off the host system (executes `sudo poweroff`).
+- **Supported Command Payloads:** 
+  - `"reboot"` – Reboots the host system (executes `sudo reboot`). Triggered by the Reboot button.
+  - `"shutdown"` – Powers off the host system (executes `sudo poweroff`). Triggered by the Shutdown button.
   - `"restart_service"` – Restarts the `sysmqttd` daemon itself (executes `sudo systemctl restart sysmqttd`).
 
 *Note: All other command strings, arguments, or shell flags are completely ignored and discarded to prevent command injection.*
@@ -364,6 +369,12 @@ For every metric and monitored service, discovery configurations are published s
   `homeassistant/sensor/sysmqttd_<hostname>_top_process/config`
 - **Monitored Service (e.g. `nginx`) Discovery Config Topic:**
   `homeassistant/binary_sensor/sysmqttd_<hostname>_service_nginx/config`
+- **Reboot Button Discovery Config Topic:**
+  `homeassistant/button/sysmqttd_<hostname>_reboot/config`
+- **Shutdown Button Discovery Config Topic:**
+  `homeassistant/button/sysmqttd_<hostname>_shutdown/config`
+- **Service Control Switch (e.g. `nginx`) Discovery Config Topic:**
+  `homeassistant/switch/sysmqttd_<hostname>_service_nginx/config`
 
 Each discovery payload specifies the JSON extraction path via the `"value_template"` configuration (e.g. `"{{ value_json.cpu_temperature }}"`), ensuring zero custom YAML configuration is required on the Home Assistant side.
 
