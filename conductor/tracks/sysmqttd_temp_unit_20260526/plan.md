@@ -2,18 +2,18 @@
 
 This plan guides the implementation of the temperature unit selection configuration and conversion logic.
 
-## Phase 1: Configuration and CLI Parsing
+## Phase 1: Configuration and CLI Parsing [checkpoint: ca46dfa]
 Implement the config file and command-line option parsing with unit tests.
 
-- [ ] Task: Add `temperature_unit` to configuration structures in `src/config.rs` and `src/cli.rs`
-    - [ ] Update `Config` struct to hold unit value
-    - [ ] Add `-u` / `--unit` / `--temperature-unit` CLI parser flags
-    - [ ] Set unit default to Fahrenheit (`"F"`) when not configured
-- [ ] Task: Write TDD unit tests in `src/config.rs` and `src/cli.rs`
-    - [ ] Test config parsing from TOML
-    - [ ] Test CLI flag overrides
-    - [ ] Test environment variable `SYSMQTTD_TEMPERATURE_UNIT` overrides
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI' (Protocol in workflow.md)
+- [x] Task: Add `temperature_unit` to configuration structures in `src/config.rs` and `src/cli.rs`
+    - [x] Update `Config` struct to hold unit value
+    - [x] Add `-u` / `--unit` / `--temperature-unit` CLI parser flags
+    - [x] Set unit default to Fahrenheit (`"F"`) when not configured
+- [x] Task: Write TDD unit tests in `src/config.rs` and `src/cli.rs`
+    - [x] Test config parsing from TOML
+    - [x] Test CLI flag overrides
+    - [x] Test environment variable `SYSMQTTD_TEMPERATURE_UNIT` overrides
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI' (Protocol in workflow.md)
 
 ## Phase 2: Conversion and Discovery Integration
 Implement C-to-F conversion, adjust discovery registration, and run automated verification checks.
