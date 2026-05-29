@@ -215,10 +215,12 @@ impl Daemon {
         let prefix_clone = self.config.mqtt_topic_prefix.clone();
         let interface_clone = self.config.net_interface.clone();
 
+        let unit_clone = self.config.temperature_unit.clone();
         let verbose_clone = self.config.verbose;
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
             let mut collector = telemetry::TelemetryCollector::new();
+            collector.temperature_unit = unit_clone;
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
 
             loop {
@@ -260,6 +262,7 @@ impl Daemon {
         let cpu_payload = discovery::DiscoveryPayload::new_cpu_temp(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
+            &self.config.temperature_unit,
             device.clone(),
         );
         let cpu_topic = format!(

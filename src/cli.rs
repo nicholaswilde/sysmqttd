@@ -367,11 +367,7 @@ mod tests {
 
     #[test]
     fn test_temperature_unit_flag_valid() {
-        let args1 = vec![
-            "sysmqttd".to_string(),
-            "-T".to_string(),
-            "C".to_string(),
-        ];
+        let args1 = vec!["sysmqttd".to_string(), "-T".to_string(), "C".to_string()];
         assert_eq!(
             parse_arguments(args1).unwrap(),
             CliAction::Boot {

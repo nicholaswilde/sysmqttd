@@ -37,13 +37,14 @@ pub struct DiscoveryPayload {
 }
 
 impl DiscoveryPayload {
-    pub fn new_cpu_temp(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+    pub fn new_cpu_temp(prefix: &str, hostname: &str, unit: &str, device: DeviceInfo) -> Self {
+        let unit_str = if unit == "F" { "°F" } else { "°C" };
         DiscoveryPayload {
             name: "CPU Temperature".to_string(),
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
             availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
             value_template: "{{ value_json.cpu_temperature }}".to_string(),
-            unit_of_measurement: Some("°C".to_string()),
+            unit_of_measurement: Some(unit_str.to_string()),
             device_class: Some("temperature".to_string()),
             state_class: Some("measurement".to_string()),
             unique_id: format!("sysmqttd_{}_cpu_temp", hostname),
@@ -403,20 +404,28 @@ mod tests {
             model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
-        let payload = DiscoveryPayload::new_cpu_temp("homeassistant", "test-host", device);
-        let serialized = serde_json::to_string(&payload).unwrap();
+        let payload_c =
+            DiscoveryPayload::new_cpu_temp("homeassistant", "test-host", "C", device.clone());
+        let serialized_c = serde_json::to_string(&payload_c).unwrap();
 
         // Assertions verifying exact keys and structure
-        assert!(serialized.contains(r#""name":"CPU Temperature""#));
-        assert!(serialized.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#));
-        assert!(serialized
+        assert!(serialized_c.contains(r#""name":"CPU Temperature""#));
+        assert!(
+            serialized_c.contains(r#""stat_t":"homeassistant/sensor/sysmqttd_test-host/state""#)
+        );
+        assert!(serialized_c
             .contains(r#""avty_t":"homeassistant/sensor/sysmqttd_test-host/availability""#));
-        assert!(serialized.contains(r#""val_tpl":"{{ value_json.cpu_temperature }}""#));
-        assert!(serialized.contains(r#""unit_of_meas":"°C""#));
-        assert!(serialized.contains(r#""dev_cla":"temperature""#));
-        assert!(serialized.contains(r#""state_class":"measurement""#));
-        assert!(serialized.contains(r#""uniq_id":"sysmqttd_test-host_cpu_temp""#));
-        assert!(serialized.contains(r#""dev":{"ids":["sysmqttd_test-host"],"name":"sysmqttd test-host","mdl":"System Monitor","mf":"sysmqttd"}"#));
+        assert!(serialized_c.contains(r#""val_tpl":"{{ value_json.cpu_temperature }}""#));
+        assert!(serialized_c.contains(r#""unit_of_meas":"°C""#));
+        assert!(serialized_c.contains(r#""dev_cla":"temperature""#));
+        assert!(serialized_c.contains(r#""state_class":"measurement""#));
+        assert!(serialized_c.contains(r#""uniq_id":"sysmqttd_test-host_cpu_temp""#));
+        assert!(serialized_c.contains(r#""dev":{"ids":["sysmqttd_test-host"],"name":"sysmqttd test-host","mdl":"System Monitor","mf":"sysmqttd"}"#));
+
+        // Fahrenheit test
+        let payload_f = DiscoveryPayload::new_cpu_temp("homeassistant", "test-host", "F", device);
+        let serialized_f = serde_json::to_string(&payload_f).unwrap();
+        assert!(serialized_f.contains(r#""unit_of_meas":"°F""#));
     }
 
     #[test]

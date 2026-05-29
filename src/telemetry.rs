@@ -42,6 +42,7 @@ pub struct TelemetryCollector {
     prev_time: Option<std::time::Instant>,
     last_package_check: Option<std::time::Instant>,
     cached_package_count: u32,
+    pub temperature_unit: String,
 }
 
 impl Default for TelemetryCollector {
@@ -62,6 +63,7 @@ impl TelemetryCollector {
             prev_time: None,
             last_package_check: None,
             cached_package_count: 0,
+            temperature_unit: "C".to_string(),
         }
     }
 
@@ -77,11 +79,13 @@ impl TelemetryCollector {
             prev_time: None,
             last_package_check: None,
             cached_package_count: 0,
+            temperature_unit: "C".to_string(),
         }
     }
 
     /// Read CPU temperature from Linux sysfs with fallback options
-    pub fn get_cpu_temperature(&self) -> f64 {
+    /// Read CPU temperature from Linux sysfs in Celsius with fallback options
+    fn get_cpu_temperature_celsius(&self) -> f64 {
         // Primary source: Raspberry Pi/DietPi CPU thermal zone
         let thermal_path = self.sysfs_root.join("sys/class/thermal/thermal_zone0/temp");
         if thermal_path.exists() {
@@ -108,6 +112,17 @@ impl TelemetryCollector {
 
         // Fallback mock value for local non-Linux or VM environments
         42.0
+    }
+
+    /// Read CPU temperature from Linux sysfs and convert it if Fahrenheit is active
+    pub fn get_cpu_temperature(&self) -> f64 {
+        let celsius = self.get_cpu_temperature_celsius();
+        if self.temperature_unit == "F" {
+            let f = celsius * 1.8 + 32.0;
+            (f * 10.0).round() / 10.0
+        } else {
+            celsius
+        }
     }
 
     /// Read system uptime in seconds from /proc/uptime
@@ -601,6 +616,38 @@ mod tests {
         let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
         let temp = collector.get_cpu_temperature();
         assert_eq!(temp, 42.0); // should fallback to 42.0
+
+        // Clean up
+        let _ = fs::remove_file(temp_file);
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_cpu_temp_celsius_to_fahrenheit_conversion() {
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_temp_conv");
+        let hwmon_dir = test_dir.join("sys/class/hwmon/hwmon3");
+        fs::create_dir_all(&hwmon_dir).unwrap();
+
+        let temp_file = hwmon_dir.join("temp1_input");
+        // 25.0 °C in millidegrees is 25000
+        fs::write(&temp_file, "25000\n").unwrap();
+
+        // 1. With "C" (Celsius) active
+        let mut collector_c = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        collector_c.temperature_unit = "C".to_string();
+        let temp_c = collector_c.get_cpu_temperature();
+        assert_eq!(temp_c, 25.0);
+
+        // 2. With "F" (Fahrenheit) active (25.0 * 1.8 + 32 = 77.0)
+        let mut collector_f = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        collector_f.temperature_unit = "F".to_string();
+        let temp_f = collector_f.get_cpu_temperature();
+        assert_eq!(temp_f, 77.0);
+
+        // 3. Rounding test: 22.4 °C (22400 millidegrees) * 1.8 + 32 = 72.32 °F, rounded to 72.3 °F
+        fs::write(&temp_file, "22400\n").unwrap();
+        let temp_f_rounded = collector_f.get_cpu_temperature();
+        assert_eq!(temp_f_rounded, 72.3);
 
         // Clean up
         let _ = fs::remove_file(temp_file);
