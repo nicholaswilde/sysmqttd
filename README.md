@@ -351,7 +351,8 @@ The daemon registers native Home Assistant **Button** entities for system Reboot
   - `"shutdown"` – Powers off the host system (executes `sudo poweroff`). Triggered by the Shutdown button.
   - `"restart_service"` – Restarts the `sysmqttd` daemon itself (executes `sudo systemctl restart sysmqttd`).
 
-*Note: All other command strings, arguments, or shell flags are completely ignored and discarded to prevent command injection.*
+> [!NOTE]
+> **All other command strings, arguments, or shell flags are completely ignored and discarded to prevent command injection.**
 
 ### Auto-Discovery Topics
 

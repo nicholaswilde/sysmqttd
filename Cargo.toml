@@ -2,6 +2,10 @@
 name = "sysmqttd"
 version = "0.1.16"
 edition = "2021"
+description = "Lightweight MQTT system telemetry daemon for single-board computers"
+authors = ["Nicholas Wilde <https://github.com/nicholaswilde/>"]
+license = "Apache-2.0"
+
 
 [dependencies]
 sysinfo = { version = "0.30", default-features = false }
@@ -28,3 +32,45 @@ strip = true
 inherits = "dev"
 incremental = false # Disable incremental compilation for CI
 debug = 0 # No debug info needed for basic CI checks
+
+[package.metadata.deb]
+maintainer = "Nicholas Wilde <https://github.com/nicholaswilde/>"
+depends = "sudo, systemd"
+maintainer-scripts = "deployment"
+assets = [
+    ["target/release/sysmqttd", "usr/bin/sysmqttd", "755"],
+    ["sysmqttd.toml.example", "etc/sysmqttd/sysmqttd.toml.example", "644"],
+    ["deployment/sysmqttd.service.template", "usr/share/sysmqttd/sysmqttd.service.template", "644"],
+    ["deployment/sysmqttd.sudoers.template", "usr/share/sysmqttd/sysmqttd.sudoers.template", "644"]
+]
+
+
+[package.metadata.generate-rpm]
+release = "1"
+post_install_script = "deployment/post_install.sh"
+pre_uninstall_script = "deployment/pre_uninstall.sh"
+
+[package.metadata.generate-rpm.requires]
+sudo = "*"
+systemd = "*"
+
+[[package.metadata.generate-rpm.assets]]
+source = "target/release/sysmqttd"
+dest = "/usr/bin/sysmqttd"
+mode = "0755"
+
+[[package.metadata.generate-rpm.assets]]
+source = "sysmqttd.toml.example"
+dest = "/etc/sysmqttd/sysmqttd.toml.example"
+mode = "0644"
+
+[[package.metadata.generate-rpm.assets]]
+source = "deployment/sysmqttd.service.template"
+dest = "/usr/share/sysmqttd/sysmqttd.service.template"
+mode = "0644"
+
+[[package.metadata.generate-rpm.assets]]
+source = "deployment/sysmqttd.sudoers.template"
+dest = "/usr/share/sysmqttd/sysmqttd.sudoers.template"
+mode = "0644"
+
