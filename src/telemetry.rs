@@ -30,6 +30,8 @@ pub struct TelemetryState {
     pub mac_address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wifi_rssi: Option<i32>,
+    pub upgradable_packages: u32,
+    pub top_process: String,
 }
 
 pub struct TelemetryCollector {
@@ -38,7 +40,10 @@ pub struct TelemetryCollector {
     prev_rx_bytes: Option<u64>,
     prev_tx_bytes: Option<u64>,
     prev_time: Option<std::time::Instant>,
+    last_package_check: Option<std::time::Instant>,
+    cached_package_count: u32,
 }
+
 
 impl Default for TelemetryCollector {
     fn default() -> Self {
@@ -56,6 +61,8 @@ impl TelemetryCollector {
             prev_rx_bytes: None,
             prev_tx_bytes: None,
             prev_time: None,
+            last_package_check: None,
+            cached_package_count: 0,
         }
     }
 
@@ -69,6 +76,8 @@ impl TelemetryCollector {
             prev_rx_bytes: None,
             prev_tx_bytes: None,
             prev_time: None,
+            last_package_check: None,
+            cached_package_count: 0,
         }
     }
 
@@ -334,6 +343,66 @@ impl TelemetryCollector {
         None
     }
 
+    pub fn get_upgradable_packages(&self) -> u32 {
+        if self.sysfs_root != Path::new("/") {
+            return 3;
+        }
+
+        if let Ok(output) = std::process::Command::new("apt-get")
+            .args(["-s", "upgrade"])
+            .output()
+        {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let count = stdout.lines().filter(|line| line.starts_with("Inst ")).count();
+                return count as u32;
+            }
+        }
+        0
+    }
+
+    pub fn get_top_process(&mut self) -> String {
+        self.sys.refresh_processes();
+        let mut top_proc: Option<(&sysinfo::Process, f32)> = None;
+
+        for (_pid, proc) in self.sys.processes() {
+            let cpu = proc.cpu_usage();
+            if let Some((_, top_cpu)) = top_proc {
+                if cpu > top_cpu {
+                    top_proc = Some((proc, cpu));
+                }
+            } else {
+                top_proc = Some((proc, cpu));
+            }
+        }
+
+        if let Some((proc, cpu)) = top_proc {
+            if cpu > 0.1 {
+                let mem_mb = proc.memory() as f64 / (1024.0 * 1024.0);
+                return format!("{} ({}) - {:.1}% CPU, {:.1} MB RAM", proc.name(), proc.pid(), cpu, mem_mb);
+            }
+        }
+
+        // Fallback to top memory consumer if CPU is very low/zero
+        let mut top_mem_proc: Option<&sysinfo::Process> = None;
+        for (_pid, proc) in self.sys.processes() {
+            if let Some(top_mem) = top_mem_proc {
+                if proc.memory() > top_mem.memory() {
+                    top_mem_proc = Some(proc);
+                }
+            } else {
+                top_mem_proc = Some(proc);
+            }
+        }
+
+        if let Some(proc) = top_mem_proc {
+            let mem_mb = proc.memory() as f64 / (1024.0 * 1024.0);
+            return format!("{} ({}) - {:.1}% CPU, {:.1} MB RAM", proc.name(), proc.pid(), proc.cpu_usage(), mem_mb);
+        }
+
+        "None".to_string()
+    }
+
     /// Collect all metrics
     pub fn collect(&mut self, interface: &str) -> TelemetryState {
         let (load1, load5, load15) = self.read_load_avg().unwrap_or((0.0, 0.0, 0.0));
@@ -368,6 +437,20 @@ impl TelemetryCollector {
         let mac_address = self.get_interface_mac(interface);
         let wifi_rssi = self.get_wifi_rssi(interface);
 
+        // Daily/slow-loop check for package updates
+        let now = std::time::Instant::now();
+        let should_check = match self.last_package_check {
+            None => true,
+            Some(last) => now.duration_since(last) >= std::time::Duration::from_secs(86400),
+        };
+
+        if should_check {
+            self.cached_package_count = self.get_upgradable_packages();
+            self.last_package_check = Some(now);
+        }
+        let upgradable_packages = self.cached_package_count;
+        let top_process = self.get_top_process();
+
         TelemetryState {
             cpu_temperature: self.get_cpu_temperature(),
             ram_usage,
@@ -388,6 +471,8 @@ impl TelemetryCollector {
             ip_address,
             mac_address,
             wifi_rssi,
+            upgradable_packages,
+            top_process,
         }
     }
 }

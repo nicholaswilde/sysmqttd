@@ -2,12 +2,12 @@
 
 This plan guides the implementation of package updates and top process tracking.
 
-## Phase 1: Aggregation Logic
+## Phase 1: Aggregation Logic [checkpoint: 2f1948a]
 Fetch package counts and top process data.
 
-- [ ] Task: Implement daily slow-loop check for system updates in `telemetry.rs`
-- [ ] Task: Implement process list parser in `telemetry.rs` for top resource consumers
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics Core'
+- [x] Task: Implement daily slow-loop check for system updates in `telemetry.rs`
+- [x] Task: Implement process list parser in `telemetry.rs` for top resource consumers
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Diagnostics Core'
 
 ## Phase 2: Home Assistant Exposure
 Add discovery and verify.
