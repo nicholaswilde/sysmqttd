@@ -15,15 +15,15 @@ Implement the config file and command-line option parsing with unit tests.
     - [x] Test environment variable `SYSMQTTD_TEMPERATURE_UNIT` overrides
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI' (Protocol in workflow.md)
 
-## Phase 2: Conversion and Discovery Integration
+## Phase 2: Conversion and Discovery Integration [checkpoint: ce608a5]
 Implement C-to-F conversion, adjust discovery registration, and run automated verification checks.
 
-- [ ] Task: Implement temperature conversion in `src/telemetry.rs`
-    - [ ] Convert temperature from Celsius to Fahrenheit if `"F"` is active
-- [ ] Task: Adjust Discovery payload unit in `src/discovery.rs` and `src/daemon.rs`
-    - [ ] Pass the active unit to `new_cpu_temp` and update the `unit_of_measurement`
-- [ ] Task: Add and run automated tests
-    - [ ] Add unit tests in `telemetry.rs` for C-to-F conversion logic
-    - [ ] Add unit tests in `discovery.rs` for dynamic unit auto-discovery payload
-    - [ ] Run format, clippy, and cross-compilation checks
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Conversion & Discovery' (Protocol in workflow.md)
+- [x] Task: Implement temperature conversion in `src/telemetry.rs`
+    - [x] Convert temperature from Celsius to Fahrenheit if `"F"` is active
+- [x] Task: Adjust Discovery payload unit in `src/discovery.rs` and `src/daemon.rs`
+    - [x] Pass the active unit to `new_cpu_temp` and update the `unit_of_measurement`
+- [x] Task: Add and run automated tests
+    - [x] Add unit tests in `telemetry.rs` for C-to-F conversion logic
+    - [x] Add unit tests in `discovery.rs` for dynamic unit auto-discovery payload
+    - [x] Run format, clippy, and cross-compilation checks
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Conversion & Discovery' (Protocol in workflow.md)
