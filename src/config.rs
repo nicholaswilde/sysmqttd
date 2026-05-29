@@ -40,7 +40,12 @@ pub struct Config {
     pub gpio_outputs: Vec<GpioOutputConfig>,
     #[serde(default)]
     pub verbose: bool,
-    #[serde(alias = "temperature_unit", alias = "unit", alias = "temp_unit", default = "default_temperature_unit")]
+    #[serde(
+        alias = "temperature_unit",
+        alias = "unit",
+        alias = "temp_unit",
+        default = "default_temperature_unit"
+    )]
     pub temperature_unit: String,
 }
 
