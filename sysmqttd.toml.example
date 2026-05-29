@@ -52,6 +52,9 @@ interface = "eth0"
 # Enable verbose logging for detailed payloads, events, and transitions (Default: false).
 verbose = false
 
+# The temperature unit for CPU temperature monitoring: "C" (Celsius) or "F" (Fahrenheit) (Default: "F").
+# temperature_unit = "F"
+
 # ------------------------------------------------------------------------------
 # GPIO Input Monitoring (Optional)
 # ------------------------------------------------------------------------------
