@@ -262,6 +262,7 @@ Once `sysmqttd` starts and establishes a connection, it automatically broadcasts
 System telemetry metrics are parsed and published every **60 seconds** in a single, flat JSON payload to minimize network traffic and processing overhead.
 
 - **Telemetry State Topic:** `<MQTT_TOPIC_PREFIX>/sensor/sysmqttd_<hostname>/state`
+- **CPU Temperature Unit:** The `cpu_temperature` value is automatically converted and published in Celsius (`°C`) or Fahrenheit (`°F`, default) depending on your configuration.
 - **Telemetry Payload Example:**
   ```json
   {
