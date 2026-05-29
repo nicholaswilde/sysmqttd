@@ -14,11 +14,11 @@ Configure package metadata and test local package builds.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Local Packaging Configs'
 
 
-## Phase 2: Workflow Refactoring & Cross Compilation
+## Phase 2: Workflow Refactoring & Cross Compilation [checkpoint: a9b6758]
 
 Refactor the CI/CD release workflow to use the native Rust tools.
 
-- [ ] Task: Update `.github/workflows/release.yml` to replace FPM installation and packaging steps
-- [ ] Task: Ensure multi-architecture support (x86_64, aarch64, armv7, armv6) for both tools
-- [ ] Task: Validate the refactored release workflow on push/tag events
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Workflow Refinement'
+- [x] Task: Update `.github/workflows/release.yml` to replace FPM installation and packaging steps
+- [x] Task: Ensure multi-architecture support (x86_64, aarch64, armv7, armv6) for both tools
+- [x] Task: Validate the refactored release workflow on push/tag events
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Workflow Refinement'
