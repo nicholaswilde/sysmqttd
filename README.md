@@ -14,7 +14,7 @@
 ## :star: Features
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
-- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, and Wi-Fi Signal Strength (RSSI in dBm).
+- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, Wi-Fi Signal Strength (RSSI in dBm), pending system package upgrades (upgradable package count), and active top resource-consuming process details.
 - **Service Status Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
@@ -273,7 +273,9 @@ System telemetry metrics are parsed and published every **60 seconds** in a sing
     "load_15m": 0.08,
     "uptime_seconds": 154320.0,
     "net_rx_rate": 42.7,
-    "net_tx_rate": 12.3
+    "net_tx_rate": 12.3,
+    "upgradable_packages": 3,
+    "top_process": "firefox (12345) - 12.5% CPU, 412.3 MB RAM"
   }
   ```
 
@@ -356,6 +358,10 @@ For every metric and monitored service, discovery configurations are published s
   `homeassistant/sensor/sysmqttd_<hostname>_uptime/config`
 - **Network RX Rate Discovery Config Topic:**
   `homeassistant/sensor/sysmqttd_<hostname>_net_rx_rate/config`
+- **Upgradable Packages Discovery Config Topic:**
+  `homeassistant/sensor/sysmqttd_<hostname>_upgradable_packages/config`
+- **Top Process Discovery Config Topic:**
+  `homeassistant/sensor/sysmqttd_<hostname>_top_process/config`
 - **Monitored Service (e.g. `nginx`) Discovery Config Topic:**
   `homeassistant/binary_sensor/sysmqttd_<hostname>_service_nginx/config`
 
