@@ -44,7 +44,6 @@ pub struct TelemetryCollector {
     cached_package_count: u32,
 }
 
-
 impl Default for TelemetryCollector {
     fn default() -> Self {
         Self::new()
@@ -354,7 +353,10 @@ impl TelemetryCollector {
         {
             if output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
-                let count = stdout.lines().filter(|line| line.starts_with("Inst ")).count();
+                let count = stdout
+                    .lines()
+                    .filter(|line| line.starts_with("Inst "))
+                    .count();
                 return count as u32;
             }
         }
@@ -365,7 +367,7 @@ impl TelemetryCollector {
         self.sys.refresh_processes();
         let mut top_proc: Option<(&sysinfo::Process, f32)> = None;
 
-        for (_pid, proc) in self.sys.processes() {
+        for proc in self.sys.processes().values() {
             let cpu = proc.cpu_usage();
             if let Some((_, top_cpu)) = top_proc {
                 if cpu > top_cpu {
@@ -379,13 +381,19 @@ impl TelemetryCollector {
         if let Some((proc, cpu)) = top_proc {
             if cpu > 0.1 {
                 let mem_mb = proc.memory() as f64 / (1024.0 * 1024.0);
-                return format!("{} ({}) - {:.1}% CPU, {:.1} MB RAM", proc.name(), proc.pid(), cpu, mem_mb);
+                return format!(
+                    "{} ({}) - {:.1}% CPU, {:.1} MB RAM",
+                    proc.name(),
+                    proc.pid(),
+                    cpu,
+                    mem_mb
+                );
             }
         }
 
         // Fallback to top memory consumer if CPU is very low/zero
         let mut top_mem_proc: Option<&sysinfo::Process> = None;
-        for (_pid, proc) in self.sys.processes() {
+        for proc in self.sys.processes().values() {
             if let Some(top_mem) = top_mem_proc {
                 if proc.memory() > top_mem.memory() {
                     top_mem_proc = Some(proc);
@@ -397,7 +405,13 @@ impl TelemetryCollector {
 
         if let Some(proc) = top_mem_proc {
             let mem_mb = proc.memory() as f64 / (1024.0 * 1024.0);
-            return format!("{} ({}) - {:.1}% CPU, {:.1} MB RAM", proc.name(), proc.pid(), proc.cpu_usage(), mem_mb);
+            return format!(
+                "{} ({}) - {:.1}% CPU, {:.1} MB RAM",
+                proc.name(),
+                proc.pid(),
+                proc.cpu_usage(),
+                mem_mb
+            );
         }
 
         "None".to_string()

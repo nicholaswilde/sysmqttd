@@ -31,10 +31,26 @@ impl RemoteAction {
         match self {
             RemoteAction::Reboot => ("sudo".to_string(), vec!["reboot".to_string()]),
             RemoteAction::Shutdown => ("sudo".to_string(), vec!["poweroff".to_string()]),
-            RemoteAction::RestartService => ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "sysmqttd".to_string()]),
-            RemoteAction::StartSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "start".to_string(), svc.clone()]),
-            RemoteAction::StopSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "stop".to_string(), svc.clone()]),
-            RemoteAction::RestartSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), svc.clone()]),
+            RemoteAction::RestartService => (
+                "sudo".to_string(),
+                vec![
+                    "systemctl".to_string(),
+                    "restart".to_string(),
+                    "sysmqttd".to_string(),
+                ],
+            ),
+            RemoteAction::StartSystemdService(svc) => (
+                "sudo".to_string(),
+                vec!["systemctl".to_string(), "start".to_string(), svc.clone()],
+            ),
+            RemoteAction::StopSystemdService(svc) => (
+                "sudo".to_string(),
+                vec!["systemctl".to_string(), "stop".to_string(), svc.clone()],
+            ),
+            RemoteAction::RestartSystemdService(svc) => (
+                "sudo".to_string(),
+                vec!["systemctl".to_string(), "restart".to_string(), svc.clone()],
+            ),
         }
     }
 
@@ -131,19 +147,47 @@ mod tests {
         );
         assert_eq!(
             RemoteAction::RestartService.get_command_and_args(),
-            ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "sysmqttd".to_string()])
+            (
+                "sudo".to_string(),
+                vec![
+                    "systemctl".to_string(),
+                    "restart".to_string(),
+                    "sysmqttd".to_string()
+                ]
+            )
         );
         assert_eq!(
             RemoteAction::StartSystemdService("nginx".to_string()).get_command_and_args(),
-            ("sudo".to_string(), vec!["systemctl".to_string(), "start".to_string(), "nginx".to_string()])
+            (
+                "sudo".to_string(),
+                vec![
+                    "systemctl".to_string(),
+                    "start".to_string(),
+                    "nginx".to_string()
+                ]
+            )
         );
         assert_eq!(
             RemoteAction::StopSystemdService("nginx".to_string()).get_command_and_args(),
-            ("sudo".to_string(), vec!["systemctl".to_string(), "stop".to_string(), "nginx".to_string()])
+            (
+                "sudo".to_string(),
+                vec![
+                    "systemctl".to_string(),
+                    "stop".to_string(),
+                    "nginx".to_string()
+                ]
+            )
         );
         assert_eq!(
             RemoteAction::RestartSystemdService("nginx".to_string()).get_command_and_args(),
-            ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "nginx".to_string()])
+            (
+                "sudo".to_string(),
+                vec![
+                    "systemctl".to_string(),
+                    "restart".to_string(),
+                    "nginx".to_string()
+                ]
+            )
         );
     }
 
@@ -152,9 +196,15 @@ mod tests {
         assert!(RemoteAction::Reboot.execute().is_ok());
         assert!(RemoteAction::Shutdown.execute().is_ok());
         assert!(RemoteAction::RestartService.execute().is_ok());
-        assert!(RemoteAction::StartSystemdService("nginx".to_string()).execute().is_ok());
-        assert!(RemoteAction::StopSystemdService("nginx".to_string()).execute().is_ok());
-        assert!(RemoteAction::RestartSystemdService("nginx".to_string()).execute().is_ok());
+        assert!(RemoteAction::StartSystemdService("nginx".to_string())
+            .execute()
+            .is_ok());
+        assert!(RemoteAction::StopSystemdService("nginx".to_string())
+            .execute()
+            .is_ok());
+        assert!(RemoteAction::RestartSystemdService("nginx".to_string())
+            .execute()
+            .is_ok());
     }
 
     #[test]

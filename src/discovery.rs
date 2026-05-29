@@ -366,7 +366,8 @@ mod tests {
             model: "System Monitor".to_string(),
             manufacturer: "sysmqttd".to_string(),
         };
-        let payload = DiscoveryPayload::new_upgradable_packages("homeassistant", "test-host", device);
+        let payload =
+            DiscoveryPayload::new_upgradable_packages("homeassistant", "test-host", device);
         let serialized = serde_json::to_string(&payload).unwrap();
 
         assert!(serialized.contains(r#""name":"Upgradable Packages""#));
@@ -393,7 +394,6 @@ mod tests {
         assert!(serialized.contains(r#""val_tpl":"{{ value_json.top_process }}""#));
         assert!(serialized.contains(r#""ent_cat":"diagnostic""#));
     }
-
 
     #[test]
     fn test_cpu_temp_serialization() {

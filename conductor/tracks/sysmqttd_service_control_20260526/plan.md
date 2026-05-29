@@ -9,9 +9,9 @@ Expand command execution capabilities.
 - [x] Task: Bind handlers in `daemon.rs` for interactive control topics
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Control Handlers'
 
-## Phase 2: discovery registration
+## Phase 2: discovery registration [checkpoint: a6c5f52]
 Expose buttons and switches to Home Assistant.
 
-- [ ] Task: Setup Auto-Discovery for HA buttons and switches
-- [ ] Task: Perform static quality and format checks
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Controls Integration'
+- [x] Task: Setup Auto-Discovery for HA buttons and switches
+- [x] Task: Perform static quality and format checks
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Controls Integration'
