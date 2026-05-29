@@ -53,6 +53,7 @@ async fn test_integration_daemon_discovery_and_publish() {
             name: "Relay 1".to_string(),
         }],
         verbose: true,
+        temperature_unit: "F".to_string(),
     };
 
     // Create temporary directory for mock GPIO base path

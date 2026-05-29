@@ -932,6 +932,7 @@ mod tests {
             gpio_inputs: vec![],
             gpio_outputs: vec![],
             verbose: false,
+            temperature_unit: "F".to_string(),
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -958,6 +959,7 @@ mod tests {
             }],
             gpio_outputs: vec![],
             verbose: false,
+            temperature_unit: "F".to_string(),
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -980,6 +982,7 @@ mod tests {
                 name: "Mock Switch".to_string(),
             }],
             verbose: false,
+            temperature_unit: "F".to_string(),
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);

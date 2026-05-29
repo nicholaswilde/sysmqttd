@@ -26,6 +26,7 @@ async fn main() {
             gpio_inputs,
             gpio_outputs,
             verbose,
+            temperature_unit,
         }) => sysmqttd::config::CliOverrides {
             config_path,
             mqtt_host,
@@ -38,6 +39,7 @@ async fn main() {
             gpio_inputs,
             gpio_outputs,
             verbose,
+            temperature_unit,
         },
         Err(e) => {
             eprintln!("Error: {}", e);

@@ -17,6 +17,7 @@ pub struct CliOverrides {
     pub gpio_inputs: Option<String>,
     pub gpio_outputs: Option<String>,
     pub verbose: Option<bool>,
+    pub temperature_unit: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -39,6 +40,8 @@ pub struct Config {
     pub gpio_outputs: Vec<GpioOutputConfig>,
     #[serde(default)]
     pub verbose: bool,
+    #[serde(alias = "temperature_unit", alias = "unit", alias = "temp_unit", default = "default_temperature_unit")]
+    pub temperature_unit: String,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -51,6 +54,10 @@ fn default_mqtt_prefix() -> String {
 
 fn default_net_interface() -> String {
     "wlan0".to_string()
+}
+
+fn default_temperature_unit() -> String {
+    "F".to_string()
 }
 
 #[derive(serde::Deserialize, Default, Clone)]
@@ -73,6 +80,8 @@ pub struct FileConfig {
     pub gpio_outputs: Option<Vec<GpioOutputConfig>>,
     #[serde(alias = "verbose")]
     pub verbose: Option<bool>,
+    #[serde(alias = "temperature_unit", alias = "unit", alias = "temp_unit")]
+    pub temperature_unit: Option<String>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -239,6 +248,22 @@ impl Config {
             .or(file_config.verbose)
             .unwrap_or(false);
 
+        let temperature_unit = overrides
+            .temperature_unit
+            .or_else(|| env::var("SYSMQTTD_TEMPERATURE_UNIT").ok())
+            .or_else(|| env::var("TEMPERATURE_UNIT").ok())
+            .or(file_config.temperature_unit)
+            .unwrap_or_else(|| "F".to_string())
+            .trim()
+            .to_uppercase();
+
+        if temperature_unit != "C" && temperature_unit != "F" {
+            return Err(format!(
+                "Invalid temperature unit '{}'. Must be 'C' or 'F' (case-insensitive)",
+                temperature_unit
+            ));
+        }
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -249,6 +274,7 @@ impl Config {
             gpio_inputs,
             gpio_outputs,
             verbose,
+            temperature_unit,
         })
     }
 }
@@ -267,6 +293,7 @@ mod tests {
         env::remove_var("SYSMQTTD_MQTT_TOPIC_PREFIX");
         env::remove_var("SYSMQTTD_NET_INTERFACE");
         env::remove_var("MONITORED_SERVICES");
+        env::remove_var("SYSMQTTD_TEMPERATURE_UNIT");
 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
@@ -274,6 +301,7 @@ mod tests {
         env::remove_var("MQTT_PASSWORD");
         env::remove_var("MQTT_TOPIC_PREFIX");
         env::remove_var("NET_INTERFACE");
+        env::remove_var("TEMPERATURE_UNIT");
 
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");
@@ -429,6 +457,7 @@ mod tests {
             gpio_inputs: None,
             gpio_outputs: None,
             verbose: None,
+            temperature_unit: None,
         };
         let config_overrides = Config::load_with_overrides(overrides).unwrap();
         assert_eq!(config_overrides.mqtt_host, "10.20.30.40");
@@ -489,5 +518,81 @@ mod tests {
 
         clean_env();
         env::remove_var("SYSMQTTD_VERBOSE");
+    }
+
+    #[test]
+    fn test_temperature_unit_config() {
+        // 1. Default temperature unit is F
+        clean_env();
+        let overrides_default = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert_eq!(cfg.temperature_unit, "F");
+
+        // 2. TOML file parses temperature_unit = "C" (case-insensitive and alias)
+        clean_env();
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "127.0.0.1"
+                unit = "c"
+                "#
+            )
+            .unwrap();
+        }
+        let cfg = Config::load().unwrap();
+        assert_eq!(cfg.temperature_unit, "C");
+
+        // 3. CLI override sets it to "C"
+        clean_env();
+        let overrides_cli = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            temperature_unit: Some("c".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_cli).unwrap();
+        assert_eq!(cfg.temperature_unit, "C");
+
+        // 4. Env var sets it to "C" (SYSMQTTD_TEMPERATURE_UNIT)
+        clean_env();
+        env::set_var("SYSMQTTD_TEMPERATURE_UNIT", "c");
+        let overrides_env = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env).unwrap();
+        assert_eq!(cfg.temperature_unit, "C");
+
+        // 5. Env var sets it to "C" (legacy TEMPERATURE_UNIT)
+        clean_env();
+        env::set_var("TEMPERATURE_UNIT", "C");
+        let overrides_env2 = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env2).unwrap();
+        assert_eq!(cfg.temperature_unit, "C");
+
+        // 6. Invalid values return error
+        clean_env();
+        let overrides_invalid = CliOverrides {
+            config_path: None,
+            mqtt_host: Some("127.0.0.1".to_string()),
+            temperature_unit: Some("X".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg_err = Config::load_with_overrides(overrides_invalid);
+        assert!(cfg_err.is_err());
+        assert!(cfg_err.err().unwrap().contains("Invalid temperature unit"));
+
+        clean_env();
     }
 }

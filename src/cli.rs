@@ -21,6 +21,7 @@ pub enum CliAction {
         gpio_inputs: Option<String>,
         gpio_outputs: Option<String>,
         verbose: Option<bool>,
+        temperature_unit: Option<String>,
     },
 }
 
@@ -39,6 +40,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut gpio_inputs = None;
     let mut gpio_outputs = None;
     let mut verbose = None;
+    let mut temperature_unit = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -134,6 +136,14 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                 verbose = Some(true);
                 i += 1;
             }
+            "-T" | "-U" | "--unit" | "--temperature-unit" | "--temperature_unit" => {
+                if i + 1 < args.len() {
+                    temperature_unit = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing temperature unit after unit flag".to_string());
+                }
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
@@ -151,6 +161,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
         gpio_inputs,
         gpio_outputs,
         verbose,
+        temperature_unit,
     })
 }
 
@@ -173,6 +184,7 @@ Options:\n\
     -s, --services <list>    Comma-separated whitelist of systemd services to monitor\n\
     -g, --gpio <list>        Comma-separated whitelist of GPIO input pins\n\
     -o, --gpio-outputs <list> Comma-separated whitelist of GPIO output pins\n\
+    -T, -U, --unit <unit>    Temperature unit selection: C or F (default F)\n\
         --verbose            Enable verbose logging (payloads and packets detail)\n\n\
 The daemon connects to an MQTT broker as configured via arguments, environment variables or a configuration file.\n",
         ver = version
@@ -200,6 +212,7 @@ mod tests {
                 gpio_inputs: None,
                 gpio_outputs: None,
                 verbose: None,
+                temperature_unit: None,
             }
         );
     }
@@ -237,6 +250,7 @@ mod tests {
                 gpio_inputs: None,
                 gpio_outputs: None,
                 verbose: None,
+                temperature_unit: None,
             }
         );
     }
@@ -274,6 +288,7 @@ mod tests {
                 gpio_inputs: None,
                 gpio_outputs: None,
                 verbose: None,
+                temperature_unit: None,
             }
         );
     }
@@ -317,6 +332,7 @@ mod tests {
                 gpio_inputs: None,
                 gpio_outputs: Some("24:Relay 1,25:LED Indicator".to_string()),
                 verbose: None,
+                temperature_unit: None,
             }
         );
     }
@@ -344,6 +360,56 @@ mod tests {
                 gpio_inputs: None,
                 gpio_outputs: None,
                 verbose: Some(true),
+                temperature_unit: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_temperature_unit_flag_valid() {
+        let args1 = vec![
+            "sysmqttd".to_string(),
+            "-T".to_string(),
+            "C".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args1).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: Some("C".to_string()),
+            }
+        );
+
+        let args2 = vec![
+            "sysmqttd".to_string(),
+            "--temperature-unit".to_string(),
+            "F".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args2).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: Some("F".to_string()),
             }
         );
     }
