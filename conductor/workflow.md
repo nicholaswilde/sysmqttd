@@ -51,7 +51,7 @@ cargo test
 cargo check
 
 # Run the project locally (using environment variables)
-MQTT_HOST=localhost MQTT_PORT=1883 cargo run
+SYSMQTTD_MQTT_HOST=localhost SYSMQTTD_MQTT_PORT=1883 cargo run
 ```
 
 ### Before Committing
