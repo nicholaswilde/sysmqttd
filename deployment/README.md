@@ -194,65 +194,42 @@ sudo systemctl restart sysmqttd.service
 
 ---
 
-## 6. Local Packaging & Manual Verification (FPM)
+## 6. Local Packaging & Manual Verification (Native Cargo)
 
-For testing and local package generation, you can build `.deb` and `.rpm` files using **FPM (Effing Package Management)**.
+For testing and local package generation, you can build `.deb` and `.rpm` files natively using `cargo-deb` and `cargo-generate-rpm`.
 
 ### Prerequisites
-On Debian/Ubuntu, install `ruby`, `rpm`, and `fpm`:
+Install the cargo plugins and the RPM utility:
 ```bash
-sudo apt-get update
-sudo apt-get install -y ruby-dev rpm build-essential
-sudo gem install --no-document fpm
+# Install cargo-binstall to get pre-compiled binaries instantly
+curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+# Install the packaging plugins
+cargo binstall -y cargo-deb cargo-generate-rpm
+
+# On Debian/Ubuntu, the 'rpm' package is required for RPM builds:
+sudo apt-get update && sudo apt-get install -y rpm
 ```
 
-### Staging the Files
-Compile the binary for your target or host architecture:
+### Build Debian Package (.deb)
+To generate the `.deb` package:
 ```bash
+# Build release binary first
 cargo build --release
-```
 
-Create a staging directory mirroring the final system path layout:
+# Generate the .deb package
+cargo deb --no-build
+```
+The package will be created in `target/debian/sysmqttd_<version>_<arch>.deb`.
+
+### Build RPM Package (.rpm)
+To generate the `.rpm` package:
 ```bash
-staging="staging-pkg"
-mkdir -p "$staging/usr/bin"
-mkdir -p "$staging/etc/sysmqttd"
-mkdir -p "$staging/usr/share/sysmqttd"
+# Build release binary first
+cargo build --release
 
-# Copy binary, configs, and systemd templates into staging
-cp target/release/sysmqttd "$staging/usr/bin/sysmqttd"
-cp sysmqttd.toml.example "$staging/etc/sysmqttd/sysmqttd.toml.example"
-cp deployment/sysmqttd.service.template "$staging/usr/share/sysmqttd/sysmqttd.service.template"
-cp deployment/sysmqttd.sudoers.template "$staging/usr/share/sysmqttd/sysmqttd.sudoers.template"
+# Generate the .rpm package (disabling auto-requires to bypass cross-compiled ldd checks)
+cargo generate-rpm
 ```
-
-### Build DEB Package
-```bash
-fpm -s dir -t deb \
-  -n sysmqttd \
-  -v "0.1.0" \
-  -a "amd64" \
-  --description "Lightweight MQTT system telemetry daemon for single-board computers" \
-  --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
-  -d "sudo" -d "systemd" \
-  --post-install deployment/post_install.sh \
-  --pre-uninstall deployment/pre_uninstall.sh \
-  -p "sysmqttd-0.1.0-amd64.deb" \
-  -C "$staging" .
-```
-
-### Build RPM Package
-```bash
-fpm -s dir -t rpm \
-  -n sysmqttd \
-  -v "0.1.0" \
-  -a "x86_64" \
-  --description "Lightweight MQTT system telemetry daemon for single-board computers" \
-  --maintainer "Nicholas Wilde <https://github.com/nicholaswilde/>" \
-  -d "sudo" -d "systemd" \
-  --post-install deployment/post_install.sh \
-  --pre-uninstall deployment/pre_uninstall.sh \
-  -p "sysmqttd-0.1.0-x86_64.rpm" \
-  -C "$staging" .
-```
+The package will be created in `target/generate-rpm/sysmqttd-<version>-1.<arch>.rpm`.
 

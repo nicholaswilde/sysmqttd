@@ -27,6 +27,27 @@
 
 ## :arrow_down: Installation
 
+### Debian / Ubuntu (.deb)
+
+Download the `.deb` package from the [GitHub Releases](https://github.com/nicholaswilde/sysmqttd/releases) for your architecture and install it:
+
+```bash
+sudo dpkg -i sysmqttd-*.deb
+```
+
+The package installation automatically:
+- Creates a dedicated `sysmqttd` system user and group.
+- Provisions and secures configuration and state directories (`/etc/sysmqttd`, `/var/lib/sysmqttd`).
+- Provisions, secures, and registers the active systemd service unit.
+
+### RedHat / CentOS / Fedora / Rocky Linux (.rpm)
+
+Download the `.rpm` package from the [GitHub Releases](https://github.com/nicholaswilde/sysmqttd/releases) for your architecture and install it:
+
+```bash
+sudo rpm -ivh sysmqttd-*.rpm
+```
+
 ### Homebrew
 
 You can install `sysmqttd` using [Homebrew](https://brew.sh/) via the [nicholaswilde/homebrew-tap](https://github.com/nicholaswilde/homebrew-tap) tap:
