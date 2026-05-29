@@ -2,11 +2,14 @@ use std::process::Command;
 use std::str::FromStr;
 
 /// Represents a whitelisted safe remote action that can be triggered via MQTT.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RemoteAction {
     Reboot,
     Shutdown,
     RestartService,
+    StartSystemdService(String),
+    StopSystemdService(String),
+    RestartSystemdService(String),
 }
 
 impl FromStr for RemoteAction {
@@ -24,18 +27,22 @@ impl FromStr for RemoteAction {
 
 impl RemoteAction {
     /// Maps each action to its corresponding system command and arguments.
-    pub fn get_command_and_args(&self) -> (&'static str, Vec<&'static str>) {
+    pub fn get_command_and_args(&self) -> (String, Vec<String>) {
         match self {
-            RemoteAction::Reboot => ("sudo", vec!["reboot"]),
-            RemoteAction::Shutdown => ("sudo", vec!["poweroff"]),
-            RemoteAction::RestartService => ("sudo", vec!["systemctl", "restart", "sysmqttd"]),
+            RemoteAction::Reboot => ("sudo".to_string(), vec!["reboot".to_string()]),
+            RemoteAction::Shutdown => ("sudo".to_string(), vec!["poweroff".to_string()]),
+            RemoteAction::RestartService => ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "sysmqttd".to_string()]),
+            RemoteAction::StartSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "start".to_string(), svc.clone()]),
+            RemoteAction::StopSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "stop".to_string(), svc.clone()]),
+            RemoteAction::RestartSystemdService(svc) => ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), svc.clone()]),
         }
     }
 
     /// Executes the safe remote action using system command utilities.
     pub fn execute(&self) -> Result<(), String> {
         let (cmd, args) = self.get_command_and_args();
-        Self::execute_command(cmd, args)
+        let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+        Self::execute_command(&cmd, args_ref)
     }
 
     /// Helper to execute the system command, running "echo" instead under tests.
@@ -116,15 +123,27 @@ mod tests {
     fn test_command_mapping() {
         assert_eq!(
             RemoteAction::Reboot.get_command_and_args(),
-            ("sudo", vec!["reboot"])
+            ("sudo".to_string(), vec!["reboot".to_string()])
         );
         assert_eq!(
             RemoteAction::Shutdown.get_command_and_args(),
-            ("sudo", vec!["poweroff"])
+            ("sudo".to_string(), vec!["poweroff".to_string()])
         );
         assert_eq!(
             RemoteAction::RestartService.get_command_and_args(),
-            ("sudo", vec!["systemctl", "restart", "sysmqttd"])
+            ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "sysmqttd".to_string()])
+        );
+        assert_eq!(
+            RemoteAction::StartSystemdService("nginx".to_string()).get_command_and_args(),
+            ("sudo".to_string(), vec!["systemctl".to_string(), "start".to_string(), "nginx".to_string()])
+        );
+        assert_eq!(
+            RemoteAction::StopSystemdService("nginx".to_string()).get_command_and_args(),
+            ("sudo".to_string(), vec!["systemctl".to_string(), "stop".to_string(), "nginx".to_string()])
+        );
+        assert_eq!(
+            RemoteAction::RestartSystemdService("nginx".to_string()).get_command_and_args(),
+            ("sudo".to_string(), vec!["systemctl".to_string(), "restart".to_string(), "nginx".to_string()])
         );
     }
 
@@ -133,6 +152,9 @@ mod tests {
         assert!(RemoteAction::Reboot.execute().is_ok());
         assert!(RemoteAction::Shutdown.execute().is_ok());
         assert!(RemoteAction::RestartService.execute().is_ok());
+        assert!(RemoteAction::StartSystemdService("nginx".to_string()).execute().is_ok());
+        assert!(RemoteAction::StopSystemdService("nginx".to_string()).execute().is_ok());
+        assert!(RemoteAction::RestartSystemdService("nginx".to_string()).execute().is_ok());
     }
 
     #[test]

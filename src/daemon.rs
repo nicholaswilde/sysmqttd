@@ -565,7 +565,7 @@ impl Daemon {
         let top_proc_payload = discovery::DiscoveryPayload::new_top_process(
             &self.config.mqtt_topic_prefix,
             &self.hostname,
-            device,
+            device.clone(),
         );
         let top_proc_topic = format!(
             "{}/sensor/sysmqttd_{}_top_process/config",
@@ -575,6 +575,65 @@ impl Daemon {
         client
             .publish(top_proc_topic, QoS::AtLeastOnce, true, top_proc_json)
             .await?;
+
+        // 8.13. Reboot Button Discovery configuration
+        let reboot_topic = format!(
+            "{}/button/sysmqttd_{}_reboot/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let reboot_payload = serde_json::json!({
+            "name": "Reboot",
+            "command_topic": format!("{}/sensor/sysmqttd_{}/command", self.config.mqtt_topic_prefix, self.hostname),
+            "payload_press": "reboot",
+            "unique_id": format!("sysmqttd_{}_reboot", self.hostname),
+            "device": device,
+            "availability_topic": format!("{}/sensor/sysmqttd_{}/availability", self.config.mqtt_topic_prefix, self.hostname),
+        });
+        let reboot_json = serde_json::to_vec(&reboot_payload).unwrap();
+        client
+            .publish(reboot_topic, QoS::AtLeastOnce, true, reboot_json)
+            .await?;
+
+        // 8.14. Shutdown Button Discovery configuration
+        let shutdown_topic = format!(
+            "{}/button/sysmqttd_{}_shutdown/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let shutdown_payload = serde_json::json!({
+            "name": "Shutdown",
+            "command_topic": format!("{}/sensor/sysmqttd_{}/command", self.config.mqtt_topic_prefix, self.hostname),
+            "payload_press": "shutdown",
+            "unique_id": format!("sysmqttd_{}_shutdown", self.hostname),
+            "device": device,
+            "availability_topic": format!("{}/sensor/sysmqttd_{}/availability", self.config.mqtt_topic_prefix, self.hostname),
+        });
+        let shutdown_json = serde_json::to_vec(&shutdown_payload).unwrap();
+        client
+            .publish(shutdown_topic, QoS::AtLeastOnce, true, shutdown_json)
+            .await?;
+
+        // 8.15. Monitored Service Control Switch Discovery configurations
+        let monitored_services = crate::service_status::parse_monitored_services();
+        for svc in &monitored_services {
+            let svc_switch_topic = format!(
+                "{}/switch/sysmqttd_{}_service_{}/config",
+                self.config.mqtt_topic_prefix, self.hostname, svc
+            );
+            let svc_switch_payload = serde_json::json!({
+                "name": format!("{} Service Control", svc),
+                "state_topic": format!("{}/binary_sensor/sysmqttd_{}/service_{}/state", self.config.mqtt_topic_prefix, self.hostname, svc),
+                "command_topic": format!("{}/switch/sysmqttd_{}_service_{}/set", self.config.mqtt_topic_prefix, self.hostname, svc),
+                "unique_id": format!("sysmqttd_{}_service_{}_control", self.hostname, svc),
+                "payload_on": "ON",
+                "payload_off": "OFF",
+                "availability_topic": format!("{}/sensor/sysmqttd_{}/availability", self.config.mqtt_topic_prefix, self.hostname),
+                "device": device,
+            });
+            let svc_switch_json = serde_json::to_vec(&svc_switch_payload).unwrap();
+            client
+                .publish(svc_switch_topic, QoS::AtLeastOnce, true, svc_switch_json)
+                .await?;
+        }
 
         // 9. GPIO Inputs discovery configurations
         for pin_config in &self.config.gpio_inputs {
@@ -700,6 +759,17 @@ impl Daemon {
                                     if let Err(e) = client.subscribe(&remote_cmd_topic, QoS::AtLeastOnce).await {
                                         eprintln!("Failed to subscribe to remote commands topic {}: {}", remote_cmd_topic, e);
                                     }
+                                    // Subscribe to Monitored Service command topics
+                                    let monitored_services = crate::service_status::parse_monitored_services();
+                                    for svc in &monitored_services {
+                                         let cmd_topic = format!(
+                                             "{}/switch/sysmqttd_{}_service_{}/set",
+                                             self.config.mqtt_topic_prefix, self.hostname, svc
+                                         );
+                                         if let Err(e) = client.subscribe(&cmd_topic, QoS::AtLeastOnce).await {
+                                             eprintln!("Failed to subscribe to service command topic {}: {}", cmd_topic, e);
+                                         }
+                                    }
                                 }
                                 Packet::Publish(publish) => {
                                     let prefix = &self.config.mqtt_topic_prefix;
@@ -718,6 +788,58 @@ impl Daemon {
                                             }
                                             Err(e) => {
                                                 eprintln!("Ignoring unauthorized or malformed remote command payload: {}", e);
+                                            }
+                                        }
+                                    }
+
+                                    // Check if this publish is for one of our monitored service command topics
+                                    let monitored_services = crate::service_status::parse_monitored_services();
+                                    for svc in &monitored_services {
+                                        let cmd_topic = format!(
+                                            "{}/switch/sysmqttd_{}_service_{}/set",
+                                            prefix, hostname, svc
+                                        );
+                                        if publish.topic == cmd_topic {
+                                            let payload_str = String::from_utf8_lossy(&publish.payload).trim().to_uppercase();
+                                            let action = match payload_str.as_str() {
+                                                "ON" => Some(crate::commands::RemoteAction::StartSystemdService(svc.clone())),
+                                                "OFF" => Some(crate::commands::RemoteAction::StopSystemdService(svc.clone())),
+                                                "RESTART" => Some(crate::commands::RemoteAction::RestartSystemdService(svc.clone())),
+                                                _ => {
+                                                    eprintln!("Unknown service command payload: {}", payload_str);
+                                                    None
+                                                }
+                                            };
+
+                                            if let Some(act) = action {
+                                                if self.config.verbose {
+                                                    println!("Executing whitelisted remote action: {:?}", act);
+                                                }
+                                                match act.execute() {
+                                                    Ok(_) => {
+                                                        if self.config.verbose {
+                                                            println!("Successfully executed remote action: {:?}", act);
+                                                        }
+                                                        // Publish confirmed state back to binary sensor to update switch feedback
+                                                        let state_topic = format!(
+                                                            "{}/binary_sensor/sysmqttd_{}/service_{}/state",
+                                                            prefix, hostname, svc
+                                                        );
+                                                        let confirmed_payload = match act {
+                                                            crate::commands::RemoteAction::StopSystemdService(_) => "off",
+                                                            _ => "on",
+                                                        };
+                                                        let client_clone = client.clone();
+                                                        tokio::spawn(async move {
+                                                            if let Err(e) = client_clone.publish(state_topic, QoS::AtLeastOnce, true, confirmed_payload).await {
+                                                                eprintln!("Failed to publish service state confirmation: {}", e);
+                                                            }
+                                                        });
+                                                    }
+                                                    Err(e) => {
+                                                        eprintln!("Failed to execute remote action {:?}: {}", act, e);
+                                                    }
+                                                }
                                             }
                                         }
                                     }

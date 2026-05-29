@@ -2,12 +2,12 @@
 
 This plan guides the implementation of interactive control buttons and switches.
 
-## Phase 1: Command & Handler Expansion
+## Phase 1: Command & Handler Expansion [checkpoint: 4f07ac6]
 Expand command execution capabilities.
 
-- [ ] Task: Expand `RemoteAction` enum to support target service start/stop/restart
-- [ ] Task: Bind handlers in `daemon.rs` for interactive control topics
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Control Handlers'
+- [x] Task: Expand `RemoteAction` enum to support target service start/stop/restart
+- [x] Task: Bind handlers in `daemon.rs` for interactive control topics
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Control Handlers'
 
 ## Phase 2: discovery registration
 Expose buttons and switches to Home Assistant.
