@@ -278,6 +278,21 @@ impl DiscoveryPayload {
         }
     }
 
+    pub fn new_sd_space_alert(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: "SD Card Space Alert".to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: "{{ 'ON' if value_json.sd_space_alert else 'OFF' }}".to_string(),
+            unit_of_measurement: None,
+            device_class: Some("problem".to_string()),
+            state_class: None,
+            unique_id: format!("sysmqttd_{}_sd_space_alert", hostname),
+            device,
+            entity_category: None,
+        }
+    }
+
     pub fn new_ip_address(prefix: &str, hostname: &str, device: DeviceInfo) -> Self {
         DiscoveryPayload {
             name: "IP Address".to_string(),
@@ -572,10 +587,13 @@ mod tests {
 
         let uv_payload =
             DiscoveryPayload::new_undervoltage("homeassistant", "test-host", device.clone());
-        let thr_payload = DiscoveryPayload::new_throttled("homeassistant", "test-host", device);
+        let thr_payload =
+            DiscoveryPayload::new_throttled("homeassistant", "test-host", device.clone());
+        let sd_payload = DiscoveryPayload::new_sd_space_alert("homeassistant", "test-host", device);
 
         let s_uv = serde_json::to_string(&uv_payload).unwrap();
         let s_thr = serde_json::to_string(&thr_payload).unwrap();
+        let s_sd = serde_json::to_string(&sd_payload).unwrap();
 
         // Under-voltage Detected
         assert!(s_uv.contains(r#""name":"Under-voltage Detected""#));
@@ -593,6 +611,14 @@ mod tests {
         assert!(s_thr.contains(r#""uniq_id":"sysmqttd_test-host_throttled""#));
         assert!(!s_thr.contains("unit_of_meas"));
         assert!(!s_thr.contains("state_class"));
+
+        // SD Card Space Alert
+        assert!(s_sd.contains(r#""name":"SD Card Space Alert""#));
+        assert!(s_sd.contains(r#""val_tpl":"{{ 'ON' if value_json.sd_space_alert else 'OFF' }}""#));
+        assert!(s_sd.contains(r#""dev_cla":"problem""#));
+        assert!(s_sd.contains(r#""uniq_id":"sysmqttd_test-host_sd_space_alert""#));
+        assert!(!s_sd.contains("unit_of_meas"));
+        assert!(!s_sd.contains("state_class"));
     }
 
     #[test]

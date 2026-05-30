@@ -147,6 +147,7 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_CA_CERT_PATH`  | `CA_CERT_PATH`  | `ca_cert_path` (`ca_path`) | *None* | Optional custom/self-signed root CA certificate path for TLS. |
 | `SYSMQTTD_RECONNECT_INITIAL_DELAY` | `RECONNECT_INITIAL_DELAY` | `reconnect_initial_delay` (`initial_delay`) | `2` | Initial connection retry delay in seconds before doubling on consecutive failures. |
 | `SYSMQTTD_RECONNECT_MAX_DELAY` | `RECONNECT_MAX_DELAY` | `reconnect_max_delay` (`max_delay`) | `300` | Maximum connection retry delay ceiling in seconds. |
+| `SYSMQTTD_SD_ALERT_THRESHOLD` | `SD_ALERT_THRESHOLD` | `sd_alert_threshold` (`sd_threshold`) | `95.0` | Root disk space utilization threshold percentage that triggers a Home Assistant alert and dynamically silences logging to prevent disk-write amplification loops. |
 ### Sample Configuration Files
 
 A fully documented, production-ready configuration template is available in the root of the repository as [sysmqttd.toml.example](file:///home/nicholas/git/nicholaswilde/sysmqttd/sysmqttd.toml.example). You can copy this file to get started quickly:
@@ -167,6 +168,7 @@ prefix = "homeassistant"
 interface = "eth0"
 verbose = false
 temperature_unit = "F"
+sd_alert_threshold = 95.0
 
 gpio_inputs = [
   { pin = 23, name = "Front Door", device_class = "door" }
@@ -187,6 +189,7 @@ prefix: "homeassistant"
 interface: "eth0"
 verbose: false
 temperature_unit: "F"
+sd_alert_threshold: 95.0
 gpio_inputs:
   - pin: 23
     name: "Front Door"
@@ -207,6 +210,7 @@ gpio_outputs:
   "interface": "eth0",
   "verbose": false,
   "temperature_unit": "F",
+  "sd_alert_threshold": 95.0,
   "gpio_inputs": [
     { "pin": 23, "name": "Front Door", "device_class": "door" }
   ],

@@ -74,6 +74,13 @@ verbose = false
 # The temperature unit for CPU temperature monitoring: "C" (Celsius) or "F" (Fahrenheit) (Default: "F").
 # temperature_unit = "F"
 
+# Optional: Root disk space utilization threshold guard (Default: 95.0).
+# When root "/" capacity reaches or exceeds this percentage, sysmqttd turns ON
+# the Home Assistant "SD Card Space Alert" binary sensor (problem device class),
+# and instantly silences/quiets all logging output to standard streams to prevent
+# journald/syslog disk write amplification loops.
+# sd_alert_threshold = 95.0
+
 # ------------------------------------------------------------------------------
 # GPIO Input Monitoring (Optional)
 # ------------------------------------------------------------------------------

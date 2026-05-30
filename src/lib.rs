@@ -1,3 +1,5 @@
+#[macro_use]
+pub mod logging;
 pub mod backoff;
 pub mod commands;
 pub mod config;

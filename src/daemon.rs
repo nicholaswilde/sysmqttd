@@ -268,14 +268,18 @@ impl Daemon {
 
         let unit_clone = self.config.temperature_unit.clone();
         let verbose_clone = self.config.verbose;
+        let sd_threshold_clone = self.config.sd_alert_threshold;
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
             let mut collector = telemetry::TelemetryCollector::new();
             collector.temperature_unit = unit_clone;
+            collector.sd_alert_threshold = sd_threshold_clone;
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
 
             loop {
                 let state = collector.collect(&interface_clone);
+                crate::logging::set_quiet_logging(state.sd_space_alert);
+
                 match serde_json::to_vec(&state) {
                     Ok(payload) => {
                         if verbose_clone {
@@ -553,6 +557,26 @@ impl Daemon {
         let throttled_json = serde_json::to_vec(&throttled_payload).unwrap();
         client
             .publish(throttled_topic, QoS::AtLeastOnce, true, throttled_json)
+            .await?;
+
+        // 8.7.5. SD Card Space Alert Discovery configuration
+        let sd_space_alert_payload = discovery::DiscoveryPayload::new_sd_space_alert(
+            &self.config.mqtt_topic_prefix,
+            &self.hostname,
+            device.clone(),
+        );
+        let sd_space_alert_topic = format!(
+            "{}/binary_sensor/sysmqttd_{}_sd_space_alert/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let sd_space_alert_json = serde_json::to_vec(&sd_space_alert_payload).unwrap();
+        client
+            .publish(
+                sd_space_alert_topic,
+                QoS::AtLeastOnce,
+                true,
+                sd_space_alert_json,
+            )
             .await?;
 
         // 8.8. IP Address Discovery configuration
