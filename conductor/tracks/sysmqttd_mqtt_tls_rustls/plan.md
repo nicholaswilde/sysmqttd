@@ -2,14 +2,14 @@
 
 This plan guides the implementation of pure-Rust TLS support for secure daemon communication.
 
-## Phase 1: Cargo Config & Parsing
+## Phase 1: Cargo Config & Parsing [checkpoint: 18223e8]
 
 Enable cargo dependency features and configure TLS CLI/file configuration options.
 
-- [ ] Task: Enable `rustls` features for `rumqttc` in `Cargo.toml`
-- [ ] Task: Add TLS configurations to `src/config.rs` and `src/cli.rs`
-- [ ] Task: Write unit tests verifying configuration parsing
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Cargo and Config'
+- [x] Task: Enable `rustls` features for `rumqttc` in `Cargo.toml`
+- [x] Task: Add TLS configurations to `src/config.rs` and `src/cli.rs`
+- [x] Task: Write unit tests verifying configuration parsing
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Cargo and Config'
 
 ## Phase 2: Secure Handshake Integration
 
