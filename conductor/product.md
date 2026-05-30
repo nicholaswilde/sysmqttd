@@ -19,6 +19,7 @@ System administrators, makers, and smart home enthusiasts running Home Assistant
 9.  **GPIO Output Control:** Actuates physical output devices (like relays, status LEDs, and buzzers) connected to configured GPIO pins via incoming MQTT switch commands, registering them as standard Home Assistant switch entities.
 10. **Safe Remote Commands & Buttons:** Accepts authorized and whitelisted remote system commands (`reboot`, `shutdown`, `restart_service`) via secure MQTT subscriptions, registering Reboot and Shutdown as native Home Assistant button entities to trigger clean host controls under non-root privileges.
 11. **Native Packaging:** Available as native multi-architecture Debian (`.deb`) and RedHat (`.rpm`) packages for all supported platforms (`x86_64`, `arm64`, `armhf`, `armel`), featuring automatic systemd service provisioning, dedicated non-root execution user setups, and zero-configuration defaults.
+12. **Dynamic Telemetry Polling Control:** Supports real-time, bounds-checked adjustment of the telemetry polling interval (from 1s to 86400s) during execution via incoming MQTT messages without requiring a process restart, autodiscovering as a Home Assistant number entity and publishing confirmed interval state updates.
 
 
 

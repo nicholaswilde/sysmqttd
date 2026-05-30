@@ -386,10 +386,22 @@ The daemon registers native Home Assistant **Button** entities for system Reboot
 > [!NOTE]
 > **All other command strings, arguments, or shell flags are completely ignored and discarded to prevent command injection.**
 
+### Dynamic Telemetry Polling Control
+
+`sysmqttd` supports dynamic, real-time adjustments of its telemetry polling interval during execution via incoming MQTT messages, allowing you to change how frequently the daemon gathers and publishes system stats.
+
+- **Command Topic:** `<MQTT_TOPIC_PREFIX>/sensor/sysmqttd_<hostname>/interval/set`
+- **State Topic:** `<MQTT_TOPIC_PREFIX>/sensor/sysmqttd_<hostname>/interval/state`
+- **Payload Requirements:** An integer value between `1` and `86400` (representing interval in seconds, i.e., up to 24 hours).
+- **Validation:** Payloads that are out of bounds or non-numeric are rejected, and the daemon retains its previous interval.
+- **Home Assistant Autodiscovery:** The interval registers as a **Number** entity (`Telemetry Interval`) in Home Assistant, allowing you to control the polling interval directly using a slider in the Home Assistant UI.
+
 ### Auto-Discovery Topics
 
 For every metric and monitored service, discovery configurations are published so they auto-register in Home Assistant:
 
+- **Telemetry Interval Discovery Config Topic:**
+  `homeassistant/number/sysmqttd_<hostname>_interval/config`
 - **CPU Temperature Discovery Config Topic:**
   `homeassistant/sensor/sysmqttd_<hostname>_cpu_temp/config`
 - **CPU Usage Discovery Config Topic:**
