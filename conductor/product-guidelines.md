@@ -32,6 +32,7 @@ This document defines the guidelines and standards for the `sysmqttd` daemon's t
 *   **Verbosity Control:**
     *   **Quiet Mode (Default):** Operates silently (no logging of periodic 60-second telemetry publishing payloads, standard GPIO polling runs, systemd service checks, or MQTT event loop packets) to protect single-board computer SD cards from excessive write cycles.
     *   **Verbose Mode:** Enabled via `--verbose` CLI parameter or `SYSMQTTD_VERBOSE=true` environment variable. In this mode, the daemon logs detailed telemetry payloads before publication, exact incoming and outgoing MQTT packets (such as ConnAck, Publish, etc.) inside the async event loop, and all initial states/transitions for systemd services and GPIO inputs.
+    *   **Dynamic Log Suppression (SD Card Safe-Guard):** When root `/` disk utilization matches or exceeds the configured `sd_alert_threshold` (default `95.0%`), the daemon dynamically silences all `stdout` and `stderr` logging streams (shadowing print macros) to prevent journald/syslog write amplification loops and protect SD card lifetime.
 
 ## 4. Documentation Standards
 *   **README.md and sysmqttd.toml.example Updates**: The project `README.md` and `sysmqttd.toml.example` at the repository root must be updated each time a feature is added, changed, or refined. This guarantees that deployment guides, CLI usage flags, default values, configuration references, and example files are always accurate and synchronised with the executable.
