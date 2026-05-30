@@ -103,7 +103,7 @@ The binary supports the following command-line flags, processed before any confi
 - `-k`, `--healthcheck` – Run ephemeral diagnostic checks and exit.
 - `-c`, `--config <path>` – Specify custom path to a configuration file (TOML, YAML, or JSON).
 - `-H`, `--host <host>` – MQTT broker host (e.g., `localhost`).
-- `-P`, `--port <port>` – MQTT broker port (default `1883`).
+- `-P`, `--port <port>` – MQTT broker port (default `1883`, or `8883` if TLS is active).
 - `-u`, `--user <username>` / `--username <username>` – MQTT broker username.
 - `-w`, `--password <pass>` / `--pass <pass>` – MQTT broker password.
 - `-p`, `--prefix <prefix>` – Home Assistant discovery topic prefix (default `homeassistant`).
@@ -113,6 +113,8 @@ The binary supports the following command-line flags, processed before any confi
 - `-o`, `--gpio-outputs <list>` – Comma-separated list of GPIO output pins in `pin:name` format.
 - `-T`, `-U`, `--unit <unit>` / `--temperature-unit <unit>` – Temperature unit selection (`C` or `F`, case-insensitive, default `F`).
 - `--verbose` – Enable verbose logging (detailed payloads, events, and transitions).
+- `--tls`, `--use-tls` – Enable secure TLS broker connection (defaults port to `8883`).
+- `--ca`, `--ca-cert-path <path>` – Custom/self-signed root CA certificate path for TLS.
 
 ---
 
@@ -141,6 +143,8 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_GPIO_OUTPUTS`  | `GPIO_OUTPUTS`  | `gpio_outputs` | *None* | Whitelist of GPIO output pins in `pin:name` format. |
 | `SYSMQTTD_TEMPERATURE_UNIT` | `TEMPERATURE_UNIT` | `temperature_unit` (`unit`, `temp_unit`) | `F` | Temperature unit selection: `C` (Celsius) or `F` (Fahrenheit, default). |
 | `SYSMQTTD_VERBOSE`       | *N/A*           | `verbose` | `false` | Enable verbose logging (detailed payloads, events, and transitions). |
+| `SYSMQTTD_USE_TLS`       | `USE_TLS`       | `use_tls` (`tls`) | `false` | Enable secure TLS broker connection (defaults port to `8883`). |
+| `SYSMQTTD_CA_CERT_PATH`  | `CA_CERT_PATH`  | `ca_cert_path` (`ca_path`) | *None* | Optional custom/self-signed root CA certificate path for TLS. |
 ### Sample Configuration Files
 
 A fully documented, production-ready configuration template is available in the root of the repository as [sysmqttd.toml.example](file:///home/nicholas/git/nicholaswilde/sysmqttd/sysmqttd.toml.example). You can copy this file to get started quickly:

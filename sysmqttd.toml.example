@@ -38,6 +38,15 @@ user = "mqtt_user"
 # WARNING: NEVER commit this file to git/public repositories with secrets!
 password = "supersecretpassword"
 
+# Optional: Enable secure TLS broker connection (Default: false).
+# If set to true, the default port changes to 8883 (if port is not explicitly configured).
+# use_tls = false
+
+# Optional: Custom/self-signed root CA certificate path for TLS.
+# If use_tls is enabled and this is omitted, sysmqttd automatically falls back to 
+# loading the host system's native root certificate store.
+# ca_cert_path = "/etc/sysmqttd/ca.crt"
+
 # ------------------------------------------------------------------------------
 # System & Discovery Configuration (Optional)
 # ------------------------------------------------------------------------------

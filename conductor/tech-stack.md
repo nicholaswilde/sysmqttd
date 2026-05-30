@@ -10,7 +10,9 @@ This document specifies the technologies, crates, and aggressive optimization pr
 *   **`sysinfo`:**
     *   **Feature Minimized:** Configured with `default-features = false`. Only the necessary features (`system`, `disk`) are enabled to reduce compiled size and memory allocation.
 *   **`rumqttc`:**
-    *   **Async Client:** Uses `rumqttc::AsyncClient` and `rumqttc::EventLoop` for a fully non-blocking asynchronous event loop.
+    *   **Async Client:** Uses `rumqttc::AsyncClient` and `rumqttc::EventLoop` for a fully non-blocking asynchronous event loop. Configured with `use-rustls` enabled to support pure-Rust secure TLS connections.
+*   **`tokio-rustls`**, **`rustls-native-certs`**, and **`rustls-pemfile`**:
+    *   Pure-Rust TLS stack used to establish secure connections, parse custom PEM certificates, and fallback to loading the host system's native root certificate store cleanly without dynamic C library dependencies.
 *   **`serde` and `serde_json`:**
     *   Used for generating clean, flat payload structures for Home Assistant Discovery and Telemetry states.
 *   **`toml` and `serde_yaml`:**
