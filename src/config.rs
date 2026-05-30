@@ -22,6 +22,7 @@ pub struct CliOverrides {
     pub ca_cert_path: Option<String>,
     pub reconnect_initial_delay: Option<u64>,
     pub reconnect_max_delay: Option<u64>,
+    pub sd_alert_threshold: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -67,6 +68,12 @@ pub struct Config {
         default = "default_reconnect_max_delay"
     )]
     pub reconnect_max_delay: u64,
+    #[serde(
+        alias = "sd_alert_threshold",
+        alias = "sd_threshold",
+        default = "default_sd_alert_threshold"
+    )]
+    pub sd_alert_threshold: f64,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -91,6 +98,10 @@ fn default_reconnect_initial_delay() -> u64 {
 
 fn default_reconnect_max_delay() -> u64 {
     300
+}
+
+fn default_sd_alert_threshold() -> f64 {
+    95.0
 }
 
 #[derive(serde::Deserialize, Default, Clone)]
@@ -123,6 +134,8 @@ pub struct FileConfig {
     pub reconnect_initial_delay: Option<u64>,
     #[serde(alias = "reconnect_max_delay", alias = "max_delay")]
     pub reconnect_max_delay: Option<u64>,
+    #[serde(alias = "sd_alert_threshold", alias = "sd_threshold")]
+    pub sd_alert_threshold: Option<f64>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -358,6 +371,21 @@ impl Config {
             .or(file_config.reconnect_max_delay)
             .unwrap_or(300);
 
+        let sd_alert_threshold = overrides
+            .sd_alert_threshold
+            .or_else(|| {
+                env::var("SYSMQTTD_SD_ALERT_THRESHOLD")
+                    .ok()
+                    .and_then(|v| v.parse::<f64>().ok())
+            })
+            .or_else(|| {
+                env::var("SD_ALERT_THRESHOLD")
+                    .ok()
+                    .and_then(|v| v.parse::<f64>().ok())
+            })
+            .or(file_config.sd_alert_threshold)
+            .unwrap_or(95.0);
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -373,6 +401,7 @@ impl Config {
             ca_cert_path,
             reconnect_initial_delay,
             reconnect_max_delay,
+            sd_alert_threshold,
         })
     }
 }
@@ -396,6 +425,7 @@ mod tests {
         env::remove_var("SYSMQTTD_CA_CERT_PATH");
         env::remove_var("SYSMQTTD_RECONNECT_INITIAL_DELAY");
         env::remove_var("SYSMQTTD_RECONNECT_MAX_DELAY");
+        env::remove_var("SYSMQTTD_SD_ALERT_THRESHOLD");
 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
@@ -408,6 +438,7 @@ mod tests {
         env::remove_var("CA_CERT_PATH");
         env::remove_var("RECONNECT_INITIAL_DELAY");
         env::remove_var("RECONNECT_MAX_DELAY");
+        env::remove_var("SD_ALERT_THRESHOLD");
 
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");

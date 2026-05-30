@@ -1116,6 +1116,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -1147,6 +1148,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -1174,6 +1176,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);
@@ -1198,6 +1201,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1227,6 +1231,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1254,6 +1259,7 @@ mod tests {
             ca_cert_path: None,
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();
@@ -1277,6 +1283,7 @@ mod tests {
             ca_cert_path: Some("invalid_path_to_ca_cert_123.pem".to_string()),
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();

@@ -32,6 +32,7 @@ pub struct TelemetryState {
     pub wifi_rssi: Option<i32>,
     pub upgradable_packages: u32,
     pub top_process: String,
+    pub sd_space_alert: bool,
 }
 
 pub struct TelemetryCollector {
@@ -43,6 +44,7 @@ pub struct TelemetryCollector {
     last_package_check: Option<std::time::Instant>,
     cached_package_count: u32,
     pub temperature_unit: String,
+    pub sd_alert_threshold: f64,
 }
 
 impl Default for TelemetryCollector {
@@ -64,6 +66,7 @@ impl TelemetryCollector {
             last_package_check: None,
             cached_package_count: 0,
             temperature_unit: "C".to_string(),
+            sd_alert_threshold: 95.0,
         }
     }
 
@@ -80,6 +83,7 @@ impl TelemetryCollector {
             last_package_check: None,
             cached_package_count: 0,
             temperature_unit: "C".to_string(),
+            sd_alert_threshold: 95.0,
         }
     }
 
@@ -502,6 +506,7 @@ impl TelemetryCollector {
             wifi_rssi,
             upgradable_packages,
             top_process,
+            sd_space_alert: disk_usage >= self.sd_alert_threshold,
         }
     }
 }
@@ -885,5 +890,20 @@ mod tests {
 
         // Clean up
         let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_sd_alert_threshold_bounds() {
+        let mut collector = TelemetryCollector::new();
+
+        // 1. Set threshold to 0.0 -> alert must trigger since disk usage is >= 0%
+        collector.sd_alert_threshold = 0.0;
+        let state = collector.collect("wlan0");
+        assert!(state.sd_space_alert);
+
+        // 2. Set threshold to 101.0 -> alert must not trigger since disk usage is <= 100%
+        collector.sd_alert_threshold = 101.0;
+        let state = collector.collect("wlan0");
+        assert!(!state.sd_space_alert);
     }
 }

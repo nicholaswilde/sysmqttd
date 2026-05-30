@@ -47,6 +47,7 @@ async fn main() {
             ca_cert_path,
             reconnect_initial_delay: None,
             reconnect_max_delay: None,
+            sd_alert_threshold: None,
         },
         Ok(cli::CliAction::Healthcheck {
             config_path,
@@ -82,6 +83,7 @@ async fn main() {
                 ca_cert_path,
                 reconnect_initial_delay: None,
                 reconnect_max_delay: None,
+                sd_alert_threshold: None,
             }
         }
         Err(e) => {
