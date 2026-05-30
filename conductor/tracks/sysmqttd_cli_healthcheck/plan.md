@@ -11,10 +11,10 @@ Implement flag parsing and isolated diagnostic routines.
 - [x] Task: Verify telemetry gathering capability inside health check sequence
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Healthcheck Integration'
 
-## Phase 2: Broker Verification & Validation
+## Phase 2: Broker Verification & Validation [checkpoint: 63a0eb8]
 
 Integrate ephemeral connection testing and add automated test coverage.
 
-- [ ] Task: Implement ephemeral broker connection check in `src/daemon.rs`
-- [ ] Task: Add unit and integration tests for healthcheck execution
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Ephemeral Connection & Tests'
+- [x] Task: Implement ephemeral broker connection check in `src/daemon.rs`
+- [x] Task: Add unit and integration tests for healthcheck execution
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Ephemeral Connection & Tests'
