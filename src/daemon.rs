@@ -936,8 +936,53 @@ impl Daemon {
         let _state = collector.collect(&self.config.net_interface);
         println!("Telemetry gathered successfully.");
 
-        // Broker connection check (Implemented in Phase 2)
-        println!("Verifying MQTT broker connection (stub for Phase 1)...");
+        // 2. Ephemeral broker connection check
+        println!("Verifying MQTT broker connection...");
+        let mut mqttoptions = self.get_mqtt_options();
+        // Set a low timeout / reconnection settings so we fail quickly if the broker is not reachable
+        mqttoptions.set_keep_alive(Duration::from_secs(5));
+
+        let (client, mut eventloop) = AsyncClient::new(mqttoptions, 5);
+
+        let connection_result = tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                match eventloop.poll().await {
+                    Ok(Event::Incoming(Packet::ConnAck(connack))) => {
+                        if connack.code != rumqttc::ConnectReturnCode::Success {
+                            return Err(HealthcheckError::BrokerError(format!(
+                                "MQTT broker connection refused: {:?}",
+                                connack.code
+                            )));
+                        }
+                        return Ok(connack);
+                    }
+                    Ok(_) => {} // Ignore other events during handshake
+                    Err(e) => {
+                        return Err(HealthcheckError::BrokerError(format!(
+                            "Failed to poll MQTT connection: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+        })
+        .await;
+
+        match connection_result {
+            Ok(Ok(_connack)) => {
+                println!("MQTT connection handshake verified successfully.");
+                // Cleanly disconnect
+                if let Err(e) = client.disconnect().await {
+                    eprintln!("Warning: failed to cleanly disconnect MQTT client: {}", e);
+                }
+            }
+            Ok(Err(e)) => return Err(e),
+            Err(_) => {
+                return Err(HealthcheckError::BrokerError(
+                    "MQTT broker connection timed out after 3 seconds".to_string(),
+                ));
+            }
+        }
 
         Ok(())
     }
@@ -1043,5 +1088,53 @@ mod tests {
         assert_eq!(daemon.config.gpio_outputs.len(), 1);
         assert_eq!(daemon.config.gpio_outputs[0].pin, 24);
         assert_eq!(daemon.config.gpio_outputs[0].name, "Mock Switch");
+    }
+
+    #[tokio::test]
+    async fn test_run_healthcheck_telemetry_failure() {
+        let config = Config {
+            mqtt_host: "127.0.0.1".to_string(),
+            mqtt_port: 1883,
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "non_existent_interface_abc123".to_string(),
+            gpio_inputs: vec![],
+            gpio_outputs: vec![],
+            verbose: false,
+            temperature_unit: "F".to_string(),
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+        let res = daemon.run_healthcheck().await;
+        assert!(res.is_err());
+        match res.err().unwrap() {
+            HealthcheckError::TelemetryError(msg) => {
+                assert!(msg.contains("non_existent_interface_abc123"));
+            }
+            other => panic!("Expected TelemetryError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_run_healthcheck_broker_failure() {
+        let config = Config {
+            mqtt_host: "127.0.0.1".to_string(),
+            mqtt_port: 59999, // Unlikely to be a broker running here
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "lo".to_string(),
+            gpio_inputs: vec![],
+            gpio_outputs: vec![],
+            verbose: false,
+            temperature_unit: "F".to_string(),
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+        let res = daemon.run_healthcheck().await;
+        assert!(res.is_err());
+        match res.err().unwrap() {
+            HealthcheckError::BrokerError(_) => {}
+            other => panic!("Expected BrokerError, got {:?}", other),
+        }
     }
 }
