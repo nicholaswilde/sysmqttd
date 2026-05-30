@@ -758,6 +758,12 @@ impl Daemon {
         // Setup GPIO Outputs
         self.setup_gpio_outputs(client.clone());
 
+        let mut backoff = crate::backoff::Backoff::new(
+            Duration::from_secs(self.config.reconnect_initial_delay),
+            Duration::from_secs(self.config.reconnect_max_delay),
+        );
+        let mut last_error_log_time: Option<tokio::time::Instant> = None;
+
         println!("Connecting to MQTT broker...");
         loop {
             tokio::select! {
@@ -782,6 +788,7 @@ impl Daemon {
                             match incoming {
                                 Packet::ConnAck(connack) => {
                                     println!("Successfully connected to MQTT broker! ConnAck: {:?}", connack);
+                                    backoff.reset();
                                     // Publish Birth Message
                                     let availability_topic = format!(
                                         "{}/sensor/sysmqttd_{}/availability",
@@ -954,8 +961,25 @@ impl Daemon {
                             }
                         }
                         Err(e) => {
-                            eprintln!("MQTT EventLoop Error: {}. Retrying in 5 seconds...", e);
-                            time::sleep(Duration::from_secs(5)).await;
+                            let retries = backoff.retries();
+                            let delay = backoff.next_delay();
+                            let now = tokio::time::Instant::now();
+                            let elapsed_5_mins = last_error_log_time
+                                .map(|t| now.duration_since(t) >= Duration::from_secs(300))
+                                .unwrap_or(true);
+                            let consecutive_failures = retries + 1;
+                            let is_milestone = consecutive_failures == 1
+                                || consecutive_failures == 5
+                                || consecutive_failures.is_multiple_of(10);
+
+                            if is_milestone || elapsed_5_mins {
+                                eprintln!(
+                                    "MQTT EventLoop Error (consecutive failure #{}): {}. Retrying in {:?}",
+                                    consecutive_failures, e, delay
+                                );
+                                last_error_log_time = Some(now);
+                            }
+                            time::sleep(delay).await;
                         }
                     }
                 }
@@ -1090,6 +1114,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: false,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -1119,6 +1145,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: false,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -1144,6 +1172,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: false,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);
@@ -1166,6 +1196,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: false,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1193,6 +1225,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: false,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1218,6 +1252,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: true,
             ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();
@@ -1239,6 +1275,8 @@ mod tests {
             temperature_unit: "F".to_string(),
             use_tls: true,
             ca_cert_path: Some("invalid_path_to_ca_cert_123.pem".to_string()),
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();

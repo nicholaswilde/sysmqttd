@@ -25,7 +25,10 @@ impl LcgRng {
 
     fn next_u64(&mut self) -> u64 {
         // MMIX LCG multiplier and increment
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -156,7 +159,13 @@ mod tests {
         for retry in 10..35 {
             for _ in 0..50 {
                 let delay = backoff.calculate_delay(retry);
-                assert!(delay <= max_delay, "Retry {} produced delay {:?} exceeding max {:?}", retry, delay, max_delay);
+                assert!(
+                    delay <= max_delay,
+                    "Retry {} produced delay {:?} exceeding max {:?}",
+                    retry,
+                    delay,
+                    max_delay
+                );
             }
         }
     }
@@ -168,7 +177,7 @@ mod tests {
         let mut backoff = Backoff::new(initial, max_delay);
 
         assert_eq!(backoff.retries(), 0);
-        
+
         let d1 = backoff.next_delay();
         assert_eq!(backoff.retries(), 1);
         assert!(d1 <= Duration::from_secs(2));
@@ -211,10 +220,21 @@ mod tests {
 
         let average = Duration::from_nanos(total_nanos / iterations);
         // Average of uniform [0, 64] should be close to 32
-        assert!(average > Duration::from_secs(20) && average < Duration::from_secs(44),
-                "Average delay of {:?} is out of expected distribution center [20s, 44s]", average);
+        assert!(
+            average > Duration::from_secs(20) && average < Duration::from_secs(44),
+            "Average delay of {:?} is out of expected distribution center [20s, 44s]",
+            average
+        );
 
-        assert!(min_seen < Duration::from_secs(5), "Expected to see some small delays, got min_seen = {:?}", min_seen);
-        assert!(max_seen > Duration::from_secs(58), "Expected to see some large delays near 64s, got max_seen = {:?}", max_seen);
+        assert!(
+            min_seen < Duration::from_secs(5),
+            "Expected to see some small delays, got min_seen = {:?}",
+            min_seen
+        );
+        assert!(
+            max_seen > Duration::from_secs(58),
+            "Expected to see some large delays near 64s, got max_seen = {:?}",
+            max_seen
+        );
     }
 }

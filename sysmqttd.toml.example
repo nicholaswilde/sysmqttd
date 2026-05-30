@@ -47,6 +47,16 @@ password = "supersecretpassword"
 # loading the host system's native root certificate store.
 # ca_cert_path = "/etc/sysmqttd/ca.crt"
 
+# Optional: Reconnection retry delay settings.
+# sysmqttd uses a dynamic Jittered Exponential Backoff algorithm when the broker drops
+# connection to avoid thundering herd conditions and journal-spamming.
+#
+# Initial connection retry delay in seconds before doubling on consecutive failures (Default: 2).
+# reconnect_initial_delay = 2
+#
+# Maximum reconnection retry delay limit/ceiling in seconds (Default: 300).
+# reconnect_max_delay = 300
+
 # ------------------------------------------------------------------------------
 # System & Discovery Configuration (Optional)
 # ------------------------------------------------------------------------------

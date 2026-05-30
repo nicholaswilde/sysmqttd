@@ -1,3 +1,4 @@
+pub mod backoff;
 pub mod commands;
 pub mod config;
 pub mod daemon;
@@ -6,5 +7,3 @@ pub mod gpio_inputs;
 pub mod gpio_outputs;
 pub mod service_status;
 pub mod telemetry;
-pub mod backoff;
-

@@ -45,6 +45,8 @@ async fn main() {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            reconnect_initial_delay: None,
+            reconnect_max_delay: None,
         },
         Ok(cli::CliAction::Healthcheck {
             config_path,
@@ -78,6 +80,8 @@ async fn main() {
                 temperature_unit,
                 use_tls,
                 ca_cert_path,
+                reconnect_initial_delay: None,
+                reconnect_max_delay: None,
             }
         }
         Err(e) => {

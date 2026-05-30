@@ -145,6 +145,8 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_VERBOSE`       | *N/A*           | `verbose` | `false` | Enable verbose logging (detailed payloads, events, and transitions). |
 | `SYSMQTTD_USE_TLS`       | `USE_TLS`       | `use_tls` (`tls`) | `false` | Enable secure TLS broker connection (defaults port to `8883`). |
 | `SYSMQTTD_CA_CERT_PATH`  | `CA_CERT_PATH`  | `ca_cert_path` (`ca_path`) | *None* | Optional custom/self-signed root CA certificate path for TLS. |
+| `SYSMQTTD_RECONNECT_INITIAL_DELAY` | `RECONNECT_INITIAL_DELAY` | `reconnect_initial_delay` (`initial_delay`) | `2` | Initial connection retry delay in seconds before doubling on consecutive failures. |
+| `SYSMQTTD_RECONNECT_MAX_DELAY` | `RECONNECT_MAX_DELAY` | `reconnect_max_delay` (`max_delay`) | `300` | Maximum connection retry delay ceiling in seconds. |
 ### Sample Configuration Files
 
 A fully documented, production-ready configuration template is available in the root of the repository as [sysmqttd.toml.example](file:///home/nicholas/git/nicholaswilde/sysmqttd/sysmqttd.toml.example). You can copy this file to get started quickly:

@@ -20,6 +20,8 @@ pub struct CliOverrides {
     pub temperature_unit: Option<String>,
     pub use_tls: Option<bool>,
     pub ca_cert_path: Option<String>,
+    pub reconnect_initial_delay: Option<u64>,
+    pub reconnect_max_delay: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -53,6 +55,18 @@ pub struct Config {
     pub use_tls: bool,
     #[serde(alias = "ca_cert_path", alias = "ca_path")]
     pub ca_cert_path: Option<String>,
+    #[serde(
+        alias = "reconnect_initial_delay",
+        alias = "initial_delay",
+        default = "default_reconnect_initial_delay"
+    )]
+    pub reconnect_initial_delay: u64,
+    #[serde(
+        alias = "reconnect_max_delay",
+        alias = "max_delay",
+        default = "default_reconnect_max_delay"
+    )]
+    pub reconnect_max_delay: u64,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -69,6 +83,14 @@ fn default_net_interface() -> String {
 
 fn default_temperature_unit() -> String {
     "F".to_string()
+}
+
+fn default_reconnect_initial_delay() -> u64 {
+    2
+}
+
+fn default_reconnect_max_delay() -> u64 {
+    300
 }
 
 #[derive(serde::Deserialize, Default, Clone)]
@@ -97,6 +119,10 @@ pub struct FileConfig {
     pub use_tls: Option<bool>,
     #[serde(alias = "ca_cert_path", alias = "ca_path")]
     pub ca_cert_path: Option<String>,
+    #[serde(alias = "reconnect_initial_delay", alias = "initial_delay")]
+    pub reconnect_initial_delay: Option<u64>,
+    #[serde(alias = "reconnect_max_delay", alias = "max_delay")]
+    pub reconnect_max_delay: Option<u64>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -302,6 +328,36 @@ impl Config {
             ));
         }
 
+        let reconnect_initial_delay = overrides
+            .reconnect_initial_delay
+            .or_else(|| {
+                env::var("SYSMQTTD_RECONNECT_INITIAL_DELAY")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or_else(|| {
+                env::var("RECONNECT_INITIAL_DELAY")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or(file_config.reconnect_initial_delay)
+            .unwrap_or(2);
+
+        let reconnect_max_delay = overrides
+            .reconnect_max_delay
+            .or_else(|| {
+                env::var("SYSMQTTD_RECONNECT_MAX_DELAY")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or_else(|| {
+                env::var("RECONNECT_MAX_DELAY")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or(file_config.reconnect_max_delay)
+            .unwrap_or(300);
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -315,6 +371,8 @@ impl Config {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            reconnect_initial_delay,
+            reconnect_max_delay,
         })
     }
 }
@@ -336,6 +394,8 @@ mod tests {
         env::remove_var("SYSMQTTD_TEMPERATURE_UNIT");
         env::remove_var("SYSMQTTD_USE_TLS");
         env::remove_var("SYSMQTTD_CA_CERT_PATH");
+        env::remove_var("SYSMQTTD_RECONNECT_INITIAL_DELAY");
+        env::remove_var("SYSMQTTD_RECONNECT_MAX_DELAY");
 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
@@ -346,6 +406,8 @@ mod tests {
         env::remove_var("TEMPERATURE_UNIT");
         env::remove_var("USE_TLS");
         env::remove_var("CA_CERT_PATH");
+        env::remove_var("RECONNECT_INITIAL_DELAY");
+        env::remove_var("RECONNECT_MAX_DELAY");
 
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");
@@ -705,6 +767,51 @@ mod tests {
         assert!(cfg.use_tls);
         assert_eq!(cfg.mqtt_port, 8883);
         assert_eq!(cfg.ca_cert_path, Some("/custom/ca.crt".to_string()));
+
+        clean_env();
+    }
+
+    #[test]
+    fn test_reconnect_delay_config() {
+        // 1. Default reconnect delays are 2 and 300
+        clean_env();
+        let overrides_default = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert_eq!(cfg.reconnect_initial_delay, 2);
+        assert_eq!(cfg.reconnect_max_delay, 300);
+
+        // 2. TOML file parses reconnect_initial_delay and reconnect_max_delay
+        clean_env();
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "127.0.0.1"
+                reconnect_initial_delay = 15
+                reconnect_max_delay = 120
+                "#
+            )
+            .unwrap();
+        }
+        let cfg = Config::load().unwrap();
+        assert_eq!(cfg.reconnect_initial_delay, 15);
+        assert_eq!(cfg.reconnect_max_delay, 120);
+
+        // 3. Env var overrides reconnect delay
+        clean_env();
+        env::set_var("SYSMQTTD_RECONNECT_INITIAL_DELAY", "5");
+        env::set_var("SYSMQTTD_RECONNECT_MAX_DELAY", "90");
+        let overrides_env = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env).unwrap();
+        assert_eq!(cfg.reconnect_initial_delay, 5);
+        assert_eq!(cfg.reconnect_max_delay, 90);
 
         clean_env();
     }

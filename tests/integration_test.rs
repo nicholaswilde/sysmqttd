@@ -56,6 +56,8 @@ async fn test_integration_daemon_discovery_and_publish() {
         temperature_unit: "F".to_string(),
         use_tls: false,
         ca_cert_path: None,
+        reconnect_initial_delay: 2,
+        reconnect_max_delay: 300,
     };
 
     // Create temporary directory for mock GPIO base path
