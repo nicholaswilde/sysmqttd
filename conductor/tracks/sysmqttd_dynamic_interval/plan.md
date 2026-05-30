@@ -2,7 +2,7 @@
 
 This plan outlines the design and implementation steps for dynamically modifying the telemetry polling interval during execution via incoming MQTT messages.
 
-## Phase 1: Subscription & Validation
+## Phase 1: Subscription & Validation [checkpoint: ed3ebe9]
 
 Implement the subscription to the command topic and parsing/validation logic.
 
@@ -11,7 +11,7 @@ Implement the subscription to the command topic and parsing/validation logic.
 - [x] Task: Integrate log reporting for parsed commands and rejected payloads
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Dynamic Interval Subscriptions'
 
-## Phase 2: Dynamic Loop Integration & Verification
+## Phase 2: Dynamic Loop Integration & Verification [checkpoint: ed3ebe9]
 
 Integrate dynamic interval updates in the main loop and publish state feedback.
 
