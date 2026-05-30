@@ -916,6 +916,58 @@ impl Daemon {
         let (_tx, rx) = tokio::sync::oneshot::channel();
         self.run_with_shutdown(rx).await
     }
+
+    /// Run ephemeral diagnostic healthcheck sequence
+    pub async fn run_healthcheck(&self) -> Result<(), HealthcheckError> {
+        // 1. Run local telemetry gather
+        println!("Checking local telemetry gathering...");
+        let mut collector = telemetry::TelemetryCollector::new();
+        collector.temperature_unit = self.config.temperature_unit.clone();
+
+        // Verify network interface is readable/accessible
+        if let Err(e) = collector.read_interface_bytes(&self.config.net_interface) {
+            return Err(HealthcheckError::TelemetryError(format!(
+                "Failed to read interface '{}' metrics: {}",
+                self.config.net_interface, e
+            )));
+        }
+
+        // Run single-cycle gather
+        let _state = collector.collect(&self.config.net_interface);
+        println!("Telemetry gathered successfully.");
+
+        // Broker connection check (Implemented in Phase 2)
+        println!("Verifying MQTT broker connection (stub for Phase 1)...");
+
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub enum HealthcheckError {
+    ConfigError(String),
+    TelemetryError(String),
+    BrokerError(String),
+}
+
+impl HealthcheckError {
+    pub fn exit_code(&self) -> i32 {
+        match self {
+            HealthcheckError::ConfigError(_) => 1,
+            HealthcheckError::TelemetryError(_) => 2,
+            HealthcheckError::BrokerError(_) => 3,
+        }
+    }
+}
+
+impl std::fmt::Display for HealthcheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HealthcheckError::ConfigError(msg) => write!(f, "Configuration Error: {}", msg),
+            HealthcheckError::TelemetryError(msg) => write!(f, "Telemetry Error: {}", msg),
+            HealthcheckError::BrokerError(msg) => write!(f, "Broker Connection Error: {}", msg),
+        }
+    }
 }
 
 #[cfg(test)]

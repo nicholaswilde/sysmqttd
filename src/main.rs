@@ -4,6 +4,7 @@ mod cli;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    let mut is_healthcheck = false;
     // Parse CLI arguments before any other work
     let cli_overrides = match cli::parse_arguments(std::env::args().collect()) {
         Ok(cli::CliAction::PrintHelp) => {
@@ -41,13 +42,47 @@ async fn main() {
             verbose,
             temperature_unit,
         },
+        Ok(cli::CliAction::Healthcheck {
+            config_path,
+            mqtt_host,
+            mqtt_port,
+            mqtt_user,
+            mqtt_password,
+            mqtt_topic_prefix,
+            net_interface,
+            monitored_services,
+            gpio_inputs,
+            gpio_outputs,
+            verbose,
+            temperature_unit,
+        }) => {
+            is_healthcheck = true;
+            sysmqttd::config::CliOverrides {
+                config_path,
+                mqtt_host,
+                mqtt_port,
+                mqtt_user,
+                mqtt_password,
+                mqtt_topic_prefix,
+                net_interface,
+                monitored_services,
+                gpio_inputs,
+                gpio_outputs,
+                verbose,
+                temperature_unit,
+            }
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
             std::process::exit(1);
         }
     };
 
-    println!("Starting sysmqttd system monitoring daemon...");
+    if !is_healthcheck {
+        println!("Starting sysmqttd system monitoring daemon...");
+    } else {
+        println!("Running sysmqttd ephemeral diagnostics...");
+    }
 
     // 1. Load configuration
     let config = match Config::load_with_overrides(cli_overrides) {
@@ -58,15 +93,31 @@ async fn main() {
         }
     };
 
-    println!("Configuration loaded successfully.");
-    println!("MQTT Broker: {}:{}", config.mqtt_host, config.mqtt_port);
-    println!("Topic Prefix: {}", config.mqtt_topic_prefix);
+    if !is_healthcheck {
+        println!("Configuration loaded successfully.");
+        println!("MQTT Broker: {}:{}", config.mqtt_host, config.mqtt_port);
+        println!("Topic Prefix: {}", config.mqtt_topic_prefix);
+    }
 
     // 2. Set up host parameters
     let hostname = hostname::get_hostname().unwrap_or_else(|| "unknown-host".to_string());
 
     // 3. Instantiate and run Daemon
     let daemon = Daemon::new(config, hostname);
+
+    if is_healthcheck {
+        match daemon.run_healthcheck().await {
+            Ok(_) => {
+                println!("Diagnostics completed successfully.");
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(e.exit_code());
+            }
+        }
+    }
+
     if let Err(e) = daemon.run().await {
         eprintln!("Daemon execution failure: {}", e);
         std::process::exit(1);

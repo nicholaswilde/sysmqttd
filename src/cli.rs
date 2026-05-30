@@ -8,6 +8,21 @@ pub enum CliAction {
     PrintHelp,
     /// Print the version of the binary and exit.
     PrintVersion,
+    /// Run diagnostic check and exit.
+    Healthcheck {
+        config_path: Option<String>,
+        mqtt_host: Option<String>,
+        mqtt_port: Option<u16>,
+        mqtt_user: Option<String>,
+        mqtt_password: Option<String>,
+        mqtt_topic_prefix: Option<String>,
+        net_interface: Option<String>,
+        monitored_services: Option<String>,
+        gpio_inputs: Option<String>,
+        gpio_outputs: Option<String>,
+        verbose: Option<bool>,
+        temperature_unit: Option<String>,
+    },
     /// Proceed with normal daemon boot.
     Boot {
         config_path: Option<String>,
@@ -41,6 +56,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut gpio_outputs = None;
     let mut verbose = None;
     let mut temperature_unit = None;
+    let mut healthcheck = false;
 
     let mut i = 1;
     while i < args.len() {
@@ -48,6 +64,10 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
         match arg.as_str() {
             "-h" | "--help" => return Ok(CliAction::PrintHelp),
             "-v" | "--version" => return Ok(CliAction::PrintVersion),
+            "-k" | "--healthcheck" => {
+                healthcheck = true;
+                i += 1;
+            }
             "-c" | "--config" => {
                 if i + 1 < args.len() {
                     config_path = Some(args[i + 1].clone());
@@ -149,20 +169,38 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             }
         }
     }
-    Ok(CliAction::Boot {
-        config_path,
-        mqtt_host,
-        mqtt_port,
-        mqtt_user,
-        mqtt_password,
-        mqtt_topic_prefix,
-        net_interface,
-        monitored_services,
-        gpio_inputs,
-        gpio_outputs,
-        verbose,
-        temperature_unit,
-    })
+
+    if healthcheck {
+        Ok(CliAction::Healthcheck {
+            config_path,
+            mqtt_host,
+            mqtt_port,
+            mqtt_user,
+            mqtt_password,
+            mqtt_topic_prefix,
+            net_interface,
+            monitored_services,
+            gpio_inputs,
+            gpio_outputs,
+            verbose,
+            temperature_unit,
+        })
+    } else {
+        Ok(CliAction::Boot {
+            config_path,
+            mqtt_host,
+            mqtt_port,
+            mqtt_user,
+            mqtt_password,
+            mqtt_topic_prefix,
+            net_interface,
+            monitored_services,
+            gpio_inputs,
+            gpio_outputs,
+            verbose,
+            temperature_unit,
+        })
+    }
 }
 
 /// Returns a short usage string printed for the `--help` flag.
@@ -174,6 +212,7 @@ Usage: sysmqttd [OPTIONS]\n\
 Options:\n\
     -h, --help               Print this help message and exit\n\
     -v, --version            Print version information and exit\n\
+    -k, --healthcheck        Run diagnostic check and exit\n\
     -c, --config <path>      Specify custom path to configuration file (TOML, YAML, JSON)\n\
     -H, --host <host>        MQTT broker host (e.g., localhost)\n\
     -P, --port <port>        MQTT broker port (default 1883)\n\
@@ -406,6 +445,52 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: Some("F".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn test_healthcheck_flag_valid() {
+        let args1 = vec!["sysmqttd".to_string(), "-k".to_string()];
+        assert_eq!(
+            parse_arguments(args1).unwrap(),
+            CliAction::Healthcheck {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: None,
+            }
+        );
+
+        let args2 = vec![
+            "sysmqttd".to_string(),
+            "--healthcheck".to_string(),
+            "-c".to_string(),
+            "my_config.toml".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args2).unwrap(),
+            CliAction::Healthcheck {
+                config_path: Some("my_config.toml".to_string()),
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: None,
             }
         );
     }
