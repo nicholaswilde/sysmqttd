@@ -220,13 +220,7 @@ impl Config {
                     .and_then(|p| p.parse::<u16>().ok())
             })
             .or(file_config.mqtt_port)
-            .unwrap_or_else(|| {
-                if use_tls {
-                    8883
-                } else {
-                    1883
-                }
-            });
+            .unwrap_or(if use_tls { 8883 } else { 1883 });
 
         let mqtt_user = overrides
             .mqtt_user
@@ -657,7 +651,7 @@ mod tests {
             ..CliOverrides::default()
         };
         let cfg = Config::load_with_overrides(overrides_default).unwrap();
-        assert_eq!(cfg.use_tls, false);
+        assert!(!cfg.use_tls);
         assert_eq!(cfg.mqtt_port, 1883);
         assert_eq!(cfg.ca_cert_path, None);
 
@@ -669,7 +663,7 @@ mod tests {
             ..CliOverrides::default()
         };
         let cfg = Config::load_with_overrides(overrides_tls).unwrap();
-        assert_eq!(cfg.use_tls, true);
+        assert!(cfg.use_tls);
         assert_eq!(cfg.mqtt_port, 8883);
 
         // 3. Env var SYSMQTTD_USE_TLS -> active
@@ -680,7 +674,7 @@ mod tests {
             ..CliOverrides::default()
         };
         let cfg = Config::load_with_overrides(overrides_env).unwrap();
-        assert_eq!(cfg.use_tls, true);
+        assert!(cfg.use_tls);
         assert_eq!(cfg.mqtt_port, 8883);
 
         // 4. Env var SYSMQTTD_CA_CERT_PATH
@@ -708,7 +702,7 @@ mod tests {
             .unwrap();
         }
         let cfg = Config::load().unwrap();
-        assert_eq!(cfg.use_tls, true);
+        assert!(cfg.use_tls);
         assert_eq!(cfg.mqtt_port, 8883);
         assert_eq!(cfg.ca_cert_path, Some("/custom/ca.crt".to_string()));
 

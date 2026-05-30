@@ -72,7 +72,10 @@ impl Daemon {
             if certs_loaded == 0 {
                 return Err(format!("No certificates found in CA path '{}'", ca_path));
             }
-            println!("Loaded {} custom CA certificate(s) from {}", certs_loaded, ca_path);
+            println!(
+                "Loaded {} custom CA certificate(s) from {}",
+                certs_loaded, ca_path
+            );
         } else {
             // Load native platform certs
             let certs = rustls_native_certs::load_native_certs()
@@ -990,7 +993,7 @@ impl Daemon {
         println!("Verifying MQTT broker connection...");
         let mut mqttoptions = self
             .get_mqtt_options()
-            .map_err(|e| HealthcheckError::ConfigError(e))?;
+            .map_err(HealthcheckError::ConfigError)?;
         // Set a low timeout / reconnection settings so we fail quickly if the broker is not reachable
         mqttoptions.set_keep_alive(Duration::from_secs(5));
 
@@ -1240,6 +1243,9 @@ mod tests {
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();
         assert!(tls_config.is_err());
-        assert!(tls_config.err().unwrap().contains("Failed to open CA certificate file"));
+        assert!(tls_config
+            .err()
+            .unwrap()
+            .contains("Failed to open CA certificate file"));
     }
 }
