@@ -6,7 +6,7 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 
 
 
-- [~] [SD Card Low Disk Space Safe-Guard Protection](./tracks/sysmqttd_sd_write_protection/index.md)
+- [x] [SD Card Low Disk Space Safe-Guard Protection](./tracks/sysmqttd_sd_write_protection/index.md)
 - [ ] [Dynamic Polling Interval Adjustment via MQTT Command](./tracks/sysmqttd_dynamic_interval/index.md)
 
 
