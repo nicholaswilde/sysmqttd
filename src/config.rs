@@ -172,7 +172,7 @@ impl Config {
             .or_else(|| env::var("SYSMQTTD_MQTT_HOST").ok())
             .or_else(|| env::var("MQTT_HOST").ok())
             .or(file_config.mqtt_host)
-            .ok_or_else(|| "Missing required MQTT_HOST configuration".to_string())?;
+            .ok_or_else(|| "Missing required SYSMQTTD_MQTT_HOST configuration".to_string())?;
 
         let mqtt_port = overrides
             .mqtt_port
@@ -326,7 +326,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap(),
-            "Missing required MQTT_HOST configuration"
+            "Missing required SYSMQTTD_MQTT_HOST configuration"
         );
 
         // 2. Test legacy ENV loading
