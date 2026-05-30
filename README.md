@@ -100,6 +100,7 @@ The binary supports the following command-line flags, processed before any confi
 
 - `-h`, `--help` – Show usage information and exit.
 - `-v`, `--version` – Show the current version (e.g., `sysmqttd v0.1.0`) and exit.
+- `-k`, `--healthcheck` – Run ephemeral diagnostic checks and exit.
 - `-c`, `--config <path>` – Specify custom path to a configuration file (TOML, YAML, or JSON).
 - `-H`, `--host <host>` – MQTT broker host (e.g., `localhost`).
 - `-P`, `--port <port>` – MQTT broker port (default `1883`).
