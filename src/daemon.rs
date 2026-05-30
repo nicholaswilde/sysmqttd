@@ -1033,6 +1033,8 @@ mod tests {
             gpio_outputs: vec![],
             verbose: false,
             temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -1060,6 +1062,8 @@ mod tests {
             gpio_outputs: vec![],
             verbose: false,
             temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -1083,6 +1087,8 @@ mod tests {
             }],
             verbose: false,
             temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);
@@ -1103,6 +1109,8 @@ mod tests {
             gpio_outputs: vec![],
             verbose: false,
             temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1128,6 +1136,8 @@ mod tests {
             gpio_outputs: vec![],
             verbose: false,
             temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;

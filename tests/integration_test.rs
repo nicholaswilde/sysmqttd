@@ -54,6 +54,8 @@ async fn test_integration_daemon_discovery_and_publish() {
         }],
         verbose: true,
         temperature_unit: "F".to_string(),
+        use_tls: false,
+        ca_cert_path: None,
     };
 
     // Create temporary directory for mock GPIO base path

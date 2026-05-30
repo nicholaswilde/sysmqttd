@@ -18,6 +18,8 @@ pub struct CliOverrides {
     pub gpio_outputs: Option<String>,
     pub verbose: Option<bool>,
     pub temperature_unit: Option<String>,
+    pub use_tls: Option<bool>,
+    pub ca_cert_path: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -47,6 +49,10 @@ pub struct Config {
         default = "default_temperature_unit"
     )]
     pub temperature_unit: String,
+    #[serde(alias = "use_tls", alias = "tls", default)]
+    pub use_tls: bool,
+    #[serde(alias = "ca_cert_path", alias = "ca_path")]
+    pub ca_cert_path: Option<String>,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -87,6 +93,10 @@ pub struct FileConfig {
     pub verbose: Option<bool>,
     #[serde(alias = "temperature_unit", alias = "unit", alias = "temp_unit")]
     pub temperature_unit: Option<String>,
+    #[serde(alias = "use_tls", alias = "tls")]
+    pub use_tls: Option<bool>,
+    #[serde(alias = "ca_cert_path", alias = "ca_path")]
+    pub ca_cert_path: Option<String>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -174,6 +184,29 @@ impl Config {
             .or(file_config.mqtt_host)
             .ok_or_else(|| "Missing required SYSMQTTD_MQTT_HOST configuration".to_string())?;
 
+        let use_tls = overrides
+            .use_tls
+            .or_else(|| {
+                env::var("SYSMQTTD_USE_TLS").ok().map(|v| {
+                    let v_lower = v.to_lowercase();
+                    v_lower == "true" || v_lower == "1" || v_lower == "yes"
+                })
+            })
+            .or_else(|| {
+                env::var("USE_TLS").ok().map(|v| {
+                    let v_lower = v.to_lowercase();
+                    v_lower == "true" || v_lower == "1" || v_lower == "yes"
+                })
+            })
+            .or(file_config.use_tls)
+            .unwrap_or(false);
+
+        let ca_cert_path = overrides
+            .ca_cert_path
+            .or_else(|| env::var("SYSMQTTD_CA_CERT_PATH").ok())
+            .or_else(|| env::var("CA_CERT_PATH").ok())
+            .or(file_config.ca_cert_path);
+
         let mqtt_port = overrides
             .mqtt_port
             .or_else(|| {
@@ -187,7 +220,13 @@ impl Config {
                     .and_then(|p| p.parse::<u16>().ok())
             })
             .or(file_config.mqtt_port)
-            .unwrap_or(1883);
+            .unwrap_or_else(|| {
+                if use_tls {
+                    8883
+                } else {
+                    1883
+                }
+            });
 
         let mqtt_user = overrides
             .mqtt_user
@@ -280,6 +319,8 @@ impl Config {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         })
     }
 }
@@ -299,6 +340,8 @@ mod tests {
         env::remove_var("SYSMQTTD_NET_INTERFACE");
         env::remove_var("MONITORED_SERVICES");
         env::remove_var("SYSMQTTD_TEMPERATURE_UNIT");
+        env::remove_var("SYSMQTTD_USE_TLS");
+        env::remove_var("SYSMQTTD_CA_CERT_PATH");
 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
@@ -307,6 +350,8 @@ mod tests {
         env::remove_var("MQTT_TOPIC_PREFIX");
         env::remove_var("NET_INTERFACE");
         env::remove_var("TEMPERATURE_UNIT");
+        env::remove_var("USE_TLS");
+        env::remove_var("CA_CERT_PATH");
 
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");
@@ -463,6 +508,7 @@ mod tests {
             gpio_outputs: None,
             verbose: None,
             temperature_unit: None,
+            ..CliOverrides::default()
         };
         let config_overrides = Config::load_with_overrides(overrides).unwrap();
         assert_eq!(config_overrides.mqtt_host, "10.20.30.40");
@@ -597,6 +643,74 @@ mod tests {
         let cfg_err = Config::load_with_overrides(overrides_invalid);
         assert!(cfg_err.is_err());
         assert!(cfg_err.err().unwrap().contains("Invalid temperature unit"));
+
+        clean_env();
+    }
+
+    #[test]
+    fn test_tls_config() {
+        clean_env();
+
+        // 1. Defaults: TLS is inactive, port is 1883
+        let overrides_default = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert_eq!(cfg.use_tls, false);
+        assert_eq!(cfg.mqtt_port, 1883);
+        assert_eq!(cfg.ca_cert_path, None);
+
+        // 2. CLI override use_tls -> active, defaults port to 8883
+        clean_env();
+        let overrides_tls = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            use_tls: Some(true),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_tls).unwrap();
+        assert_eq!(cfg.use_tls, true);
+        assert_eq!(cfg.mqtt_port, 8883);
+
+        // 3. Env var SYSMQTTD_USE_TLS -> active
+        clean_env();
+        env::set_var("SYSMQTTD_USE_TLS", "yes");
+        let overrides_env = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env).unwrap();
+        assert_eq!(cfg.use_tls, true);
+        assert_eq!(cfg.mqtt_port, 8883);
+
+        // 4. Env var SYSMQTTD_CA_CERT_PATH
+        clean_env();
+        env::set_var("SYSMQTTD_CA_CERT_PATH", "/etc/ssl/certs/ca.pem");
+        let overrides_env2 = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env2).unwrap();
+        assert_eq!(cfg.ca_cert_path, Some("/etc/ssl/certs/ca.pem".to_string()));
+
+        // 5. TOML configuration file sets use_tls and ca_cert_path
+        clean_env();
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "127.0.0.1"
+                use_tls = true
+                ca_cert_path = "/custom/ca.crt"
+                "#
+            )
+            .unwrap();
+        }
+        let cfg = Config::load().unwrap();
+        assert_eq!(cfg.use_tls, true);
+        assert_eq!(cfg.mqtt_port, 8883);
+        assert_eq!(cfg.ca_cert_path, Some("/custom/ca.crt".to_string()));
 
         clean_env();
     }

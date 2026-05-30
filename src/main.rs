@@ -28,6 +28,8 @@ async fn main() {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         }) => sysmqttd::config::CliOverrides {
             config_path,
             mqtt_host,
@@ -41,6 +43,8 @@ async fn main() {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         },
         Ok(cli::CliAction::Healthcheck {
             config_path,
@@ -55,6 +59,8 @@ async fn main() {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         }) => {
             is_healthcheck = true;
             sysmqttd::config::CliOverrides {
@@ -70,6 +76,8 @@ async fn main() {
                 gpio_outputs,
                 verbose,
                 temperature_unit,
+                use_tls,
+                ca_cert_path,
             }
         }
         Err(e) => {

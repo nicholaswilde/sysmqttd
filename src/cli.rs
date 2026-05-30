@@ -22,6 +22,8 @@ pub enum CliAction {
         gpio_outputs: Option<String>,
         verbose: Option<bool>,
         temperature_unit: Option<String>,
+        use_tls: Option<bool>,
+        ca_cert_path: Option<String>,
     },
     /// Proceed with normal daemon boot.
     Boot {
@@ -37,6 +39,8 @@ pub enum CliAction {
         gpio_outputs: Option<String>,
         verbose: Option<bool>,
         temperature_unit: Option<String>,
+        use_tls: Option<bool>,
+        ca_cert_path: Option<String>,
     },
 }
 
@@ -57,6 +61,8 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut verbose = None;
     let mut temperature_unit = None;
     let mut healthcheck = false;
+    let mut use_tls = None;
+    let mut ca_cert_path = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -164,6 +170,18 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing temperature unit after unit flag".to_string());
                 }
             }
+            "--tls" | "--use-tls" => {
+                use_tls = Some(true);
+                i += 1;
+            }
+            "--ca" | "--ca-cert-path" | "--ca_cert_path" => {
+                if i + 1 < args.len() {
+                    ca_cert_path = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    return Err("Missing CA certificate path after CA flag".to_string());
+                }
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
@@ -184,6 +202,8 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         })
     } else {
         Ok(CliAction::Boot {
@@ -199,6 +219,8 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             gpio_outputs,
             verbose,
             temperature_unit,
+            use_tls,
+            ca_cert_path,
         })
     }
 }
@@ -252,6 +274,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -290,6 +314,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -328,6 +354,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -372,6 +400,8 @@ mod tests {
                 gpio_outputs: Some("24:Relay 1,25:LED Indicator".to_string()),
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -400,6 +430,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: Some(true),
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -422,6 +454,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: Some("C".to_string()),
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
 
@@ -445,6 +479,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: Some("F".to_string()),
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
     }
@@ -467,6 +503,8 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
             }
         );
 
@@ -491,6 +529,63 @@ mod tests {
                 gpio_outputs: None,
                 verbose: None,
                 temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_tls_arguments() {
+        let args1 = vec![
+            "sysmqttd".to_string(),
+            "--tls".to_string(),
+            "--ca".to_string(),
+            "/my/ca.crt".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args1).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: None,
+                use_tls: Some(true),
+                ca_cert_path: Some("/my/ca.crt".to_string()),
+            }
+        );
+
+        let args2 = vec![
+            "sysmqttd".to_string(),
+            "--use-tls".to_string(),
+            "--ca-cert-path".to_string(),
+            "/my/other/ca.crt".to_string(),
+        ];
+        assert_eq!(
+            parse_arguments(args2).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: None,
+                use_tls: Some(true),
+                ca_cert_path: Some("/my/other/ca.crt".to_string()),
             }
         );
     }
