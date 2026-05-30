@@ -82,7 +82,7 @@ async fn test_integration_daemon_discovery_and_publish() {
     let daemon = Daemon::new(config, "integration-tester".to_string())
         .with_gpio_base_path(temp_gpio_dir.clone());
 
-    let daemon_mqtt_client_id = daemon.get_mqtt_options().client_id();
+    let daemon_mqtt_client_id = daemon.get_mqtt_options().unwrap().client_id();
 
     // 2. Connect verifier client and start collecting messages
     let client_id = "verifier_client".to_string();

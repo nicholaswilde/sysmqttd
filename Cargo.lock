@@ -1442,12 +1442,15 @@ name = "sysmqttd"
 version = "0.1.17"
 dependencies = [
  "rumqttc",
+ "rustls-native-certs 0.7.3",
+ "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_yaml",
  "sysinfo",
  "testcontainers",
  "tokio",
+ "tokio-rustls 0.25.0",
  "toml",
 ]
 

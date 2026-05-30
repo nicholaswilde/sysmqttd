@@ -27,7 +27,7 @@ impl Daemon {
     }
 
     /// Set up MqttOptions for client
-    pub fn get_mqtt_options(&self) -> MqttOptions {
+    pub fn get_mqtt_options(&self) -> Result<MqttOptions, String> {
         let client_id = format!("sysmqttd_{}", self.hostname);
         let mut mqttoptions =
             MqttOptions::new(client_id, &self.config.mqtt_host, self.config.mqtt_port);
@@ -44,7 +44,55 @@ impl Daemon {
         if let (Some(user), Some(pass)) = (&self.config.mqtt_user, &self.config.mqtt_password) {
             mqttoptions.set_credentials(user, pass);
         }
-        mqttoptions
+
+        if self.config.use_tls {
+            let tls_config = self.get_tls_config()?;
+            mqttoptions.set_transport(rumqttc::Transport::tls_with_config(tls_config.into()));
+        }
+
+        Ok(mqttoptions)
+    }
+
+    fn get_tls_config(&self) -> Result<tokio_rustls::rustls::ClientConfig, String> {
+        let mut root_cert_store = tokio_rustls::rustls::RootCertStore::empty();
+
+        if let Some(ca_path) = &self.config.ca_cert_path {
+            let file = std::fs::File::open(ca_path)
+                .map_err(|e| format!("Failed to open CA certificate file '{}': {}", ca_path, e))?;
+            let mut reader = std::io::BufReader::new(file);
+            let mut certs_loaded = 0;
+            for cert_result in rustls_pemfile::certs(&mut reader) {
+                let cert = cert_result
+                    .map_err(|e| format!("Failed to parse CA certificate PEM: {}", e))?;
+                root_cert_store
+                    .add(cert)
+                    .map_err(|e| format!("Failed to add CA certificate to store: {}", e))?;
+                certs_loaded += 1;
+            }
+            if certs_loaded == 0 {
+                return Err(format!("No certificates found in CA path '{}'", ca_path));
+            }
+            println!("Loaded {} custom CA certificate(s) from {}", certs_loaded, ca_path);
+        } else {
+            // Load native platform certs
+            let certs = rustls_native_certs::load_native_certs()
+                .map_err(|e| format!("Failed to load native root certificates: {}", e))?;
+            let mut certs_loaded = 0;
+            for cert in certs {
+                if root_cert_store.add(cert).is_ok() {
+                    certs_loaded += 1;
+                }
+            }
+            if certs_loaded == 0 {
+                return Err("Failed to load any native root certificates".to_string());
+            }
+        }
+
+        let client_config = tokio_rustls::rustls::ClientConfig::builder()
+            .with_root_certificates(root_cert_store)
+            .with_no_client_auth();
+
+        Ok(client_config)
     }
 
     /// Spawn service status monitoring loop
@@ -693,7 +741,9 @@ impl Daemon {
         self,
         mut shutdown_rx: tokio::sync::oneshot::Receiver<()>,
     ) -> Result<(), String> {
-        let mqttoptions = self.get_mqtt_options();
+        let mqttoptions = self
+            .get_mqtt_options()
+            .map_err(|e| format!("TLS/MQTT Option configuration error: {}", e))?;
         let (client, mut eventloop) = AsyncClient::new(mqttoptions, 100);
 
         // Spawn Telemetry Loop
@@ -938,7 +988,9 @@ impl Daemon {
 
         // 2. Ephemeral broker connection check
         println!("Verifying MQTT broker connection...");
-        let mut mqttoptions = self.get_mqtt_options();
+        let mut mqttoptions = self
+            .get_mqtt_options()
+            .map_err(|e| HealthcheckError::ConfigError(e))?;
         // Set a low timeout / reconnection settings so we fail quickly if the broker is not reachable
         mqttoptions.set_keep_alive(Duration::from_secs(5));
 
@@ -1038,7 +1090,7 @@ mod tests {
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
-        let options = daemon.get_mqtt_options();
+        let options = daemon.get_mqtt_options().unwrap();
         assert_eq!(options.broker_address(), ("10.0.0.5".to_string(), 1883));
 
         let client_id = format!("sysmqttd_{}", "pi-zero");
@@ -1146,5 +1198,48 @@ mod tests {
             HealthcheckError::BrokerError(_) => {}
             other => panic!("Expected BrokerError, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_daemon_get_tls_config_native() {
+        let config = Config {
+            mqtt_host: "10.0.0.5".to_string(),
+            mqtt_port: 8883,
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "wlan0".to_string(),
+            gpio_inputs: vec![],
+            gpio_outputs: vec![],
+            verbose: false,
+            temperature_unit: "F".to_string(),
+            use_tls: true,
+            ca_cert_path: None,
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+        let tls_config = daemon.get_tls_config();
+        assert!(tls_config.is_ok());
+    }
+
+    #[test]
+    fn test_daemon_get_tls_config_invalid_ca() {
+        let config = Config {
+            mqtt_host: "10.0.0.5".to_string(),
+            mqtt_port: 8883,
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "wlan0".to_string(),
+            gpio_inputs: vec![],
+            gpio_outputs: vec![],
+            verbose: false,
+            temperature_unit: "F".to_string(),
+            use_tls: true,
+            ca_cert_path: Some("invalid_path_to_ca_cert_123.pem".to_string()),
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+        let tls_config = daemon.get_tls_config();
+        assert!(tls_config.is_err());
+        assert!(tls_config.err().unwrap().contains("Failed to open CA certificate file"));
     }
 }
