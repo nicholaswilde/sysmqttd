@@ -246,7 +246,9 @@ Options:\n\
     -g, --gpio <list>        Comma-separated whitelist of GPIO input pins\n\
     -o, --gpio-outputs <list> Comma-separated whitelist of GPIO output pins\n\
     -T, -U, --unit <unit>    Temperature unit selection: C or F (default F)\n\
-        --verbose            Enable verbose logging (payloads and packets detail)\n\n\
+        --verbose            Enable verbose logging (payloads and packets detail)\n\
+        --tls, --use-tls     Enable secure TLS broker connection\n\
+        --ca, --ca-cert-path <path> Custom CA certificate path for TLS\n\n\
 The daemon connects to an MQTT broker as configured via arguments, environment variables or a configuration file.\n",
         ver = version
     )
