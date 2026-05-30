@@ -6,6 +6,6 @@ This file tracks all major development tracks for the `sysmqttd` project. Each t
 
 
 
-- [ ] [Dynamic Polling Interval Adjustment via MQTT Command](./tracks/sysmqttd_dynamic_interval/index.md)
+- [~] [Dynamic Polling Interval Adjustment via MQTT Command](./tracks/sysmqttd_dynamic_interval/index.md)
 
 

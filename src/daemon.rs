@@ -261,7 +261,11 @@ impl Daemon {
     }
 
     /// Spawn the non-blocking async telemetry polling loop
-    pub fn spawn_telemetry_loop(&self, client: AsyncClient) {
+    pub fn spawn_telemetry_loop(
+        &self,
+        client: AsyncClient,
+        mut interval_rx: tokio::sync::watch::Receiver<u64>,
+    ) {
         let hostname_clone = self.hostname.clone();
         let prefix_clone = self.config.mqtt_topic_prefix.clone();
         let interface_clone = self.config.net_interface.clone();
@@ -276,27 +280,70 @@ impl Daemon {
             collector.sd_alert_threshold = sd_threshold_clone;
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
 
-            loop {
-                let state = collector.collect(&interface_clone);
-                crate::logging::set_quiet_logging(state.sd_space_alert);
+            let mut current_interval = Duration::from_secs(*interval_rx.borrow());
 
-                match serde_json::to_vec(&state) {
-                    Ok(payload) => {
-                        if verbose_clone {
-                            println!("Publishing telemetry state: {:?}", state);
-                        }
-                        if let Err(e) = client
-                            .publish(&state_topic, QoS::AtLeastOnce, false, payload)
-                            .await
-                        {
-                            eprintln!("Telemetry publication error: {}", e);
-                        }
+            // First publish immediately after startup delay
+            let state = collector.collect(&interface_clone);
+            crate::logging::set_quiet_logging(state.sd_space_alert);
+
+            match serde_json::to_vec(&state) {
+                Ok(payload) => {
+                    if verbose_clone {
+                        println!("Publishing telemetry state: {:?}", state);
                     }
-                    Err(e) => {
-                        eprintln!("Failed to serialize telemetry state payload: {}", e);
+                    if let Err(e) = client
+                        .publish(&state_topic, QoS::AtLeastOnce, false, payload)
+                        .await
+                    {
+                        eprintln!("Telemetry publication error: {}", e);
                     }
                 }
-                time::sleep(Duration::from_secs(60)).await;
+                Err(e) => {
+                    eprintln!("Failed to serialize telemetry state payload: {}", e);
+                }
+            }
+
+            let sleep = time::sleep(current_interval);
+            tokio::pin!(sleep);
+
+            loop {
+                tokio::select! {
+                    _ = &mut sleep => {
+                        let state = collector.collect(&interface_clone);
+                        crate::logging::set_quiet_logging(state.sd_space_alert);
+
+                        match serde_json::to_vec(&state) {
+                            Ok(payload) => {
+                                if verbose_clone {
+                                    println!("Publishing telemetry state: {:?}", state);
+                                }
+                                if let Err(e) = client
+                                    .publish(&state_topic, QoS::AtLeastOnce, false, payload)
+                                    .await
+                                {
+                                    eprintln!("Telemetry publication error: {}", e);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to serialize telemetry state payload: {}", e);
+                            }
+                        }
+                        current_interval = Duration::from_secs(*interval_rx.borrow());
+                        sleep.as_mut().reset(time::Instant::now() + current_interval);
+                    }
+                    changed = interval_rx.changed() => {
+                        if changed.is_ok() {
+                            let new_val = *interval_rx.borrow();
+                            if verbose_clone {
+                                println!("Telemetry loop received updated interval: {}s", new_val);
+                            }
+                            current_interval = Duration::from_secs(new_val);
+                            sleep.as_mut().reset(time::Instant::now() + current_interval);
+                        } else {
+                            break;
+                        }
+                    }
+                }
             }
         });
     }
@@ -759,6 +806,28 @@ impl Daemon {
                 .await?;
         }
 
+        // 11. Telemetry Interval Discovery configuration (as a Home Assistant number entity)
+        let interval_discovery_topic = format!(
+            "{}/number/sysmqttd_{}_interval/config",
+            self.config.mqtt_topic_prefix, self.hostname
+        );
+        let interval_payload = serde_json::json!({
+            "name": "Telemetry Interval",
+            "state_topic": format!("{}/sensor/sysmqttd_{}/interval/state", self.config.mqtt_topic_prefix, self.hostname),
+            "command_topic": format!("{}/sensor/sysmqttd_{}/interval/set", self.config.mqtt_topic_prefix, self.hostname),
+            "unique_id": format!("sysmqttd_{}_interval", self.hostname),
+            "min": 1,
+            "max": 86400,
+            "step": 1,
+            "unit_of_measurement": "s",
+            "device": device,
+            "availability_topic": format!("{}/sensor/sysmqttd_{}/availability", self.config.mqtt_topic_prefix, self.hostname),
+        });
+        let interval_discovery_json = serde_json::to_vec(&interval_payload).unwrap();
+        client
+            .publish(interval_discovery_topic, QoS::AtLeastOnce, true, interval_discovery_json)
+            .await?;
+
         println!("Published Home Assistant MQTT Discovery configs successfully.");
         Ok(())
     }
@@ -773,8 +842,10 @@ impl Daemon {
             .map_err(|e| format!("TLS/MQTT Option configuration error: {}", e))?;
         let (client, mut eventloop) = AsyncClient::new(mqttoptions, 100);
 
+        let (interval_tx, interval_rx) = tokio::sync::watch::channel(60u64);
+
         // Spawn Telemetry Loop
-        self.spawn_telemetry_loop(client.clone());
+        self.spawn_telemetry_loop(client.clone(), interval_rx.clone());
         // Spawn Service Status Loop
         self.spawn_service_status_loop(client.clone());
         // Spawn GPIO Inputs Polling Loop
@@ -828,6 +899,18 @@ impl Daemon {
                                             eprintln!("Failed to publish Home Assistant discovery configurations: {}", e);
                                         }
                                     });
+                                    // Publish initial interval state
+                                    let interval_state_topic = format!(
+                                        "{}/sensor/sysmqttd_{}/interval/state",
+                                        self.config.mqtt_topic_prefix, self.hostname
+                                    );
+                                    let init_interval = *interval_rx.borrow();
+                                    let client_clone2 = client.clone();
+                                    tokio::spawn(async move {
+                                        if let Err(e) = client_clone2.publish(&interval_state_topic, QoS::AtLeastOnce, true, init_interval.to_string()).await {
+                                            eprintln!("Failed to publish initial interval state: {}", e);
+                                        }
+                                    });
                                     // Subscribe to GPIO output command topics
                                     for pin_config in &self.config.gpio_outputs {
                                          let cmd_topic = format!(
@@ -857,10 +940,52 @@ impl Daemon {
                                              eprintln!("Failed to subscribe to service command topic {}: {}", cmd_topic, e);
                                          }
                                     }
+                                    // Subscribe to dynamic interval adjustment command topic
+                                    let interval_cmd_topic = format!(
+                                        "{}/sensor/sysmqttd_{}/interval/set",
+                                        self.config.mqtt_topic_prefix, self.hostname
+                                    );
+                                    if let Err(e) = client.subscribe(&interval_cmd_topic, QoS::AtLeastOnce).await {
+                                        eprintln!("Failed to subscribe to interval command topic {}: {}", interval_cmd_topic, e);
+                                    }
                                 }
                                 Packet::Publish(publish) => {
                                     let prefix = &self.config.mqtt_topic_prefix;
                                     let hostname = &self.hostname;
+
+                                    // Check if this publish is for our dynamic interval set topic
+                                    let interval_set_topic = format!("{}/sensor/sysmqttd_{}/interval/set", prefix, hostname);
+                                    if publish.topic == interval_set_topic {
+                                        let payload_str = String::from_utf8_lossy(&publish.payload);
+                                        let trimmed = payload_str.trim();
+                                        match trimmed.parse::<u64>() {
+                                            Ok(val) => {
+                                                if (1..=86400).contains(&val) {
+                                                    println!("Received valid dynamic polling interval adjustment: {}s", val);
+                                                    if let Err(e) = interval_tx.send(val) {
+                                                        eprintln!("Failed to update telemetry interval: {}", e);
+                                                    } else {
+                                                        // Publish confirmed state
+                                                        let state_topic = format!(
+                                                            "{}/sensor/sysmqttd_{}/interval/state",
+                                                            prefix, hostname
+                                                        );
+                                                        let client_clone = client.clone();
+                                                        tokio::spawn(async move {
+                                                            if let Err(e) = client_clone.publish(&state_topic, QoS::AtLeastOnce, true, val.to_string()).await {
+                                                                eprintln!("Failed to publish interval state confirmation: {}", e);
+                                                            }
+                                                        });
+                                                    }
+                                                } else {
+                                                    eprintln!("Rejected interval adjustment command: value {} is out of bounds (1s to 86400s)", val);
+                                                }
+                                            }
+                                            Err(_) => {
+                                                eprintln!("Rejected invalid dynamic polling interval payload: '{}' (must be an integer)", trimmed);
+                                            }
+                                        }
+                                    }
 
                                     // Check if this publish is for our remote command topic
                                     let global_cmd_topic = format!("{}/sensor/sysmqttd_{}/command", prefix, hostname);
@@ -1316,5 +1441,40 @@ mod tests {
             .err()
             .unwrap()
             .contains("Failed to open CA certificate file"));
+    }
+
+    #[tokio::test]
+    async fn test_spawn_telemetry_loop_dynamic_interval() {
+        let config = Config {
+            mqtt_host: "127.0.0.1".to_string(),
+            mqtt_port: 1883,
+            mqtt_user: None,
+            mqtt_password: None,
+            mqtt_topic_prefix: "ha_home".to_string(),
+            net_interface: "lo".to_string(),
+            gpio_inputs: vec![],
+            gpio_outputs: vec![],
+            verbose: false,
+            temperature_unit: "F".to_string(),
+            use_tls: false,
+            ca_cert_path: None,
+            reconnect_initial_delay: 2,
+            reconnect_max_delay: 300,
+            sd_alert_threshold: 95.0,
+        };
+        let daemon = Daemon::new(config, "pi-zero".to_string());
+
+        let mqttoptions = daemon.get_mqtt_options().unwrap();
+        let (client, _eventloop) = AsyncClient::new(mqttoptions, 10);
+        let (interval_tx, interval_rx) = tokio::sync::watch::channel(5u64);
+
+        daemon.spawn_telemetry_loop(client, interval_rx);
+
+        // Initially, the interval should be 5 seconds
+        assert_eq!(*interval_tx.borrow(), 5);
+
+        // Update the interval to 10 seconds
+        interval_tx.send(10).unwrap();
+        assert_eq!(*interval_tx.borrow(), 10);
     }
 }
