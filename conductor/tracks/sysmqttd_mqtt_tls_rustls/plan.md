@@ -11,11 +11,11 @@ Enable cargo dependency features and configure TLS CLI/file configuration option
 - [x] Task: Write unit tests verifying configuration parsing
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Cargo and Config'
 
-## Phase 2: Secure Handshake Integration
+## Phase 2: Secure Handshake Integration [checkpoint: 6e107b9]
 
 Implement the TLS connection setup and verification routines in the daemon loop.
 
-- [ ] Task: Modify `src/daemon.rs` to configure `MqttOptions` with `rustls` TLS configuration
-- [ ] Task: Implement custom CA cert loading or native root store loading fallbacks
-- [ ] Task: Add unit and integration tests for secure MQTT connections
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Secure Handshake'
+- [x] Task: Modify `src/daemon.rs` to configure `MqttOptions` with `rustls` TLS configuration
+- [x] Task: Implement custom CA cert loading or native root store loading fallbacks
+- [x] Task: Add unit and integration tests for secure MQTT connections
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Secure Handshake'
