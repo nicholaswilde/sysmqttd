@@ -1,31 +1,99 @@
+# ==============================================================================
+# sysmqttd - Local Orchestration Sandbox (Docker Compose)
+# ==============================================================================
+# This configuration orchestrates a local sandbox containing:
+# 1. eclipse-mosquitto: An isolated lightweight MQTT broker.
+# 2. sysmqttd: The system monitoring daemon compiled from the local source.
+#
+# Network Options:
+# - Bridge Network (Default): Perfect for sandbox verification, isolated
+#   testing, and development mock setups.
+# - Host Network: Strongly recommended for real single-board computer (SBC)
+#   deployments. This allows sysmqttd to monitor actual host network
+#   interfaces, RX/TX bandwidth, and control native systemd services.
+#   To use: Uncomment the `network_mode: host` option under the sysmqttd
+#   service and change `SYSMQTTD_MQTT_HOST` to `127.0.0.1` or `localhost`.
+# ==============================================================================
+
 services:
-  # The local MQTT broker container
+  # ----------------------------------------------------------------------------
+  # Local MQTT Broker Service
+  # ----------------------------------------------------------------------------
   mosquitto:
     image: eclipse-mosquitto:2.0.18
     container_name: sysmqttd-mosquitto
+    restart: unless-stopped
     ports:
       - "1883:1883"
+      - "9001:9001" # WebSockets support for debugging tools (e.g. MQTT Explorer)
     command: mosquitto -c /mosquitto-no-auth.conf
-    restart: unless-stopped
     networks:
       - sysmqttd_net
 
-  # The sysmqttd daemon container
+  # ----------------------------------------------------------------------------
+  # sysmqttd Daemon Service
+  # ----------------------------------------------------------------------------
   sysmqttd:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: sysmqttd-daemon
-    environment:
-      - MQTT_HOST=mosquitto
-      - MQTT_PORT=1883
-      - MQTT_TOPIC_PREFIX=homeassistant
+    restart: unless-stopped
     depends_on:
       - mosquitto
-    restart: unless-stopped
     networks:
       - sysmqttd_net
 
+    # Host-level monitoring configurations (Sandboxing & Access)
+    # --------------------------------------------------------------------------
+    # To monitor the host system's hardware, performance, and interfaces,
+    # we mount key host pseudo-filesystems in read-only mode:
+    volumes:
+      - /proc:/proc:ro                          # CPU Load, RAM stats, system uptime, and proc status
+      - /sys:/sys:ro                            # Access host thermal zones for CPU temp sensors
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro # Query/control systemd services via D-Bus
+
+    # To monitor or actuate hardware GPIO pins, uncomment the devices block:
+    # devices:
+    #   - "/dev/gpiomem:/dev/gpiomem"
+    #   - "/dev/gpiochip0:/dev/gpiochip0"
+
+    # Security & Capability Hardening (Required if using sudo reboot/shutdown/restart)
+    # cap_add:
+    #   - CAP_SETUID
+    #   - CAP_SETGID
+
+    # Production Deployment Network Mode (Uncomment to monitor physical host networks)
+    # network_mode: host
+
+    # Daemon Configuration Environment Variables
+    # --------------------------------------------------------------------------
+    environment:
+      # Connection settings (uses the modern SYSMQTTD_ prefix)
+      - SYSMQTTD_MQTT_HOST=mosquitto
+      - SYSMQTTD_MQTT_PORT=1883
+      # - SYSMQTTD_MQTT_USER=mqtt_user
+      # - SYSMQTTD_MQTT_PASSWORD=secure_pass
+      - SYSMQTTD_MQTT_TOPIC_PREFIX=homeassistant
+
+      # Telemetry & System Monitoring Settings
+      - SYSMQTTD_NET_INTERFACE=eth0             # Network interface card to monitor (e.g. wlan0, eth0)
+      - MONITORED_SERVICES=docker,nginx,ssh     # Whitelist of systemd services to monitor & control
+      - SYSMQTTD_TEMPERATURE_UNIT=F             # Temperature measurement unit (C or F)
+      - SYSMQTTD_VERBOSE=true                   # Enables detailed payload logs
+      - SYSMQTTD_TELEMETRY_INTERVAL=30          # Telemetry gathering frequency in seconds
+      - SYSMQTTD_SD_ALERT_THRESHOLD=95.0        # Write protection warning disk space percentage
+
+    # Healthcheck utilizing sysmqttd's native diagnostic --healthcheck CLI option
+    # --------------------------------------------------------------------------
+    healthcheck:
+      test: ["CMD", "sysmqttd", "--healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
 networks:
   sysmqttd_net:
+    name: sysmqttd_net
     driver: bridge
