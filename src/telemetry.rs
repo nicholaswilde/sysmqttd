@@ -557,8 +557,17 @@ mod tests {
         std::fs::write(&net_dev_file, mock_content_2).unwrap();
 
         let state_2 = collector.collect("wlan0");
-        assert!((state_2.net_rx_rate - 1.0).abs() < 0.1);
-        assert!((state_2.net_tx_rate - 2.0).abs() < 0.1);
+
+        // Calculate expected rates based on actual delta_secs to prevent timing flakes
+        let actual_now = collector.prev_time.unwrap();
+        let delta_secs = actual_now.duration_since(past_time).as_secs_f64();
+        assert!(delta_secs >= 2.0);
+
+        let expected_rx = (((2048.0 / delta_secs) / 1024.0) * 10.0).round() / 10.0;
+        let expected_tx = (((4096.0 / delta_secs) / 1024.0) * 10.0).round() / 10.0;
+
+        assert_eq!(state_2.net_rx_rate, expected_rx);
+        assert_eq!(state_2.net_tx_rate, expected_tx);
 
         // Clean up
         let _ = std::fs::remove_file(net_dev_file);
