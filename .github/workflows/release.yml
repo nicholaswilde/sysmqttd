@@ -244,18 +244,30 @@ jobs:
         # Build Debian & RPM packages if on Linux host
         if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
           version="${{ needs.create-release.outputs.version }}"
+          pkg_version="$version"
+          if [ "${{ matrix.build }}" = "linux-armv6" ]; then
+            pkg_version="${version}+armv6"
+          fi
 
           # Build DEB using cargo-deb
-          cargo deb --no-build --target "${{ matrix.target }}"
+          if [ "${{ matrix.build }}" = "linux-armv6" ]; then
+            cargo deb --no-build --target "${{ matrix.target }}" --deb-version "$pkg_version"
+          else
+            cargo deb --no-build --target "${{ matrix.target }}"
+          fi
           deb_generated=$(find target/ -name "*.deb" | head -n 1)
-          deb_file="sysmqttd-${version}-${{ matrix.target }}.deb"
+          deb_file="sysmqttd-${pkg_version}-${{ matrix.target }}.deb"
           cp "$deb_generated" "$deb_file"
           shasum -a 256 "$deb_file" > "$deb_file.sha256"
 
           # Build RPM using cargo-generate-rpm
-          cargo generate-rpm --target "${{ matrix.target }}" --auto-req disabled
+          if [ "${{ matrix.build }}" = "linux-armv6" ]; then
+            cargo generate-rpm --target "${{ matrix.target }}" --auto-req disabled --set-metadata "version = \"$pkg_version\""
+          else
+            cargo generate-rpm --target "${{ matrix.target }}" --auto-req disabled
+          fi
           rpm_generated=$(find target/ -name "*.rpm" | head -n 1)
-          rpm_file="sysmqttd-${version}-${{ matrix.target }}.rpm"
+          rpm_file="sysmqttd-${pkg_version}-${{ matrix.target }}.rpm"
           cp "$rpm_generated" "$rpm_file"
           shasum -a 256 "$rpm_file" > "$rpm_file.sha256"
         fi

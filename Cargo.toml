@@ -38,6 +38,7 @@ debug = 0 # No debug info needed for basic CI checks
 
 [package.metadata.deb]
 maintainer = "Nicholas Wilde <https://github.com/nicholaswilde/>"
+section = "utils"
 depends = "sudo, systemd"
 maintainer-scripts = "deployment"
 assets = [
@@ -49,6 +50,7 @@ assets = [
 
 
 [package.metadata.generate-rpm]
+group = "Applications/System"
 release = "1"
 post_install_script = "deployment/post_install.sh"
 pre_uninstall_script = "deployment/pre_uninstall.sh"

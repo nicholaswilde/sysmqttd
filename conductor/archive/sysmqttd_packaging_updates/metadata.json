@@ -1,0 +1,8 @@
+{
+  "track_id": "sysmqttd_packaging_updates",
+  "type": "feature",
+  "status": "completed",
+  "created_at": "2026-05-30T17:56:00Z",
+  "updated_at": "2026-05-30T17:57:00Z",
+  "description": "Debian Section Label & ARMv6 Packaging Versioning"
+}
