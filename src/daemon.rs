@@ -1266,6 +1266,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 
@@ -1298,6 +1299,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_inputs.len(), 1);
@@ -1326,6 +1328,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         assert_eq!(daemon.config.gpio_outputs.len(), 1);
@@ -1351,6 +1354,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1381,6 +1385,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let res = daemon.run_healthcheck().await;
@@ -1409,6 +1414,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();
@@ -1433,6 +1439,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 60,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
         let tls_config = daemon.get_tls_config();
@@ -1461,6 +1468,7 @@ mod tests {
             reconnect_initial_delay: 2,
             reconnect_max_delay: 300,
             sd_alert_threshold: 95.0,
+            telemetry_interval: 5,
         };
         let daemon = Daemon::new(config, "pi-zero".to_string());
 

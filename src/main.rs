@@ -48,6 +48,7 @@ async fn main() {
             reconnect_initial_delay: None,
             reconnect_max_delay: None,
             sd_alert_threshold: None,
+            telemetry_interval: None,
         },
         Ok(cli::CliAction::Healthcheck {
             config_path,
@@ -84,6 +85,7 @@ async fn main() {
                 reconnect_initial_delay: None,
                 reconnect_max_delay: None,
                 sd_alert_threshold: None,
+                telemetry_interval: None,
             }
         }
         Err(e) => {

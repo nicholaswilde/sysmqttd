@@ -148,6 +148,7 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_RECONNECT_INITIAL_DELAY` | `RECONNECT_INITIAL_DELAY` | `reconnect_initial_delay` (`initial_delay`) | `2` | Initial connection retry delay in seconds before doubling on consecutive failures. |
 | `SYSMQTTD_RECONNECT_MAX_DELAY` | `RECONNECT_MAX_DELAY` | `reconnect_max_delay` (`max_delay`) | `300` | Maximum connection retry delay ceiling in seconds. |
 | `SYSMQTTD_SD_ALERT_THRESHOLD` | `SD_ALERT_THRESHOLD` | `sd_alert_threshold` (`sd_threshold`) | `95.0` | Root disk space utilization threshold percentage that triggers a Home Assistant alert and dynamically silences logging to prevent disk-write amplification loops. |
+| `SYSMQTTD_TELEMETRY_INTERVAL` | `TELEMETRY_INTERVAL` / `INTERVAL` | `telemetry_interval` (`interval`, `polling_interval`) | `60` | Telemetry gathering and publication polling interval in seconds (bounds: 1s to 86400s). |
 ### Sample Configuration Files
 
 A fully documented, production-ready configuration template is available in the root of the repository as [sysmqttd.toml.example](file:///home/nicholas/git/nicholaswilde/sysmqttd/sysmqttd.toml.example). You can copy this file to get started quickly:

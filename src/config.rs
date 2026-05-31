@@ -23,6 +23,7 @@ pub struct CliOverrides {
     pub reconnect_initial_delay: Option<u64>,
     pub reconnect_max_delay: Option<u64>,
     pub sd_alert_threshold: Option<f64>,
+    pub telemetry_interval: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -74,6 +75,13 @@ pub struct Config {
         default = "default_sd_alert_threshold"
     )]
     pub sd_alert_threshold: f64,
+    #[serde(
+        alias = "telemetry_interval",
+        alias = "interval",
+        alias = "polling_interval",
+        default = "default_telemetry_interval"
+    )]
+    pub telemetry_interval: u64,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -102,6 +110,10 @@ fn default_reconnect_max_delay() -> u64 {
 
 fn default_sd_alert_threshold() -> f64 {
     95.0
+}
+
+fn default_telemetry_interval() -> u64 {
+    60
 }
 
 #[derive(serde::Deserialize, Default, Clone)]
@@ -136,6 +148,12 @@ pub struct FileConfig {
     pub reconnect_max_delay: Option<u64>,
     #[serde(alias = "sd_alert_threshold", alias = "sd_threshold")]
     pub sd_alert_threshold: Option<f64>,
+    #[serde(
+        alias = "telemetry_interval",
+        alias = "interval",
+        alias = "polling_interval"
+    )]
+    pub telemetry_interval: Option<u64>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -386,6 +404,29 @@ impl Config {
             .or(file_config.sd_alert_threshold)
             .unwrap_or(95.0);
 
+        let telemetry_interval = overrides
+            .telemetry_interval
+            .or_else(|| {
+                env::var("SYSMQTTD_TELEMETRY_INTERVAL")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or_else(|| {
+                env::var("TELEMETRY_INTERVAL")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+            })
+            .or(file_config.telemetry_interval)
+            .unwrap_or(60);
+
+        // Validate bounds (1s to 86400s)
+        if !(1..=86400).contains(&telemetry_interval) {
+            return Err(format!(
+                "Telemetry interval value {} is out of bounds (1s to 86400s)",
+                telemetry_interval
+            ));
+        }
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -402,6 +443,7 @@ impl Config {
             reconnect_initial_delay,
             reconnect_max_delay,
             sd_alert_threshold,
+            telemetry_interval,
         })
     }
 }
@@ -426,7 +468,8 @@ mod tests {
         env::remove_var("SYSMQTTD_RECONNECT_INITIAL_DELAY");
         env::remove_var("SYSMQTTD_RECONNECT_MAX_DELAY");
         env::remove_var("SYSMQTTD_SD_ALERT_THRESHOLD");
-
+        env::remove_var("SYSMQTTD_TELEMETRY_INTERVAL");
+ 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
         env::remove_var("MQTT_USER");
@@ -439,7 +482,8 @@ mod tests {
         env::remove_var("RECONNECT_INITIAL_DELAY");
         env::remove_var("RECONNECT_MAX_DELAY");
         env::remove_var("SD_ALERT_THRESHOLD");
-
+        env::remove_var("TELEMETRY_INTERVAL");
+ 
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");
         let _ = fs::remove_file("sysmqttd.yml");
@@ -843,6 +887,57 @@ mod tests {
         let cfg = Config::load_with_overrides(overrides_env).unwrap();
         assert_eq!(cfg.reconnect_initial_delay, 5);
         assert_eq!(cfg.reconnect_max_delay, 90);
+
+        clean_env();
+    }
+
+    #[test]
+    fn test_telemetry_interval_config() {
+        // 1. Default telemetry interval is 60
+        clean_env();
+        let overrides_default = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert_eq!(cfg.telemetry_interval, 60);
+
+        // 2. TOML file parses telemetry_interval
+        clean_env();
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "127.0.0.1"
+                telemetry_interval = 30
+                "#
+            )
+            .unwrap();
+        }
+        let cfg = Config::load().unwrap();
+        assert_eq!(cfg.telemetry_interval, 30);
+
+        // 3. Env var overrides telemetry interval
+        clean_env();
+        env::set_var("SYSMQTTD_TELEMETRY_INTERVAL", "15");
+        let overrides_env = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_env).unwrap();
+        assert_eq!(cfg.telemetry_interval, 15);
+
+        // 4. Out-of-bounds telemetry interval throws error
+        clean_env();
+        env::set_var("SYSMQTTD_TELEMETRY_INTERVAL", "0");
+        let overrides_env2 = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg_err = Config::load_with_overrides(overrides_env2);
+        assert!(cfg_err.is_err());
+        assert!(cfg_err.err().unwrap().contains("Telemetry interval value 0 is out of bounds"));
 
         clean_env();
     }

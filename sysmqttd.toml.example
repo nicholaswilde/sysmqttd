@@ -74,6 +74,10 @@ verbose = false
 # The temperature unit for CPU temperature monitoring: "C" (Celsius) or "F" (Fahrenheit) (Default: "F").
 # temperature_unit = "F"
 
+# Optional: The telemetry gathering and publication polling interval in seconds (Default: 60).
+# Enforces a minimum bound of 1 second and a maximum of 86400 seconds (24 hours).
+# telemetry_interval = 60
+
 # Optional: Root disk space utilization threshold guard (Default: 95.0).
 # When root "/" capacity reaches or exceeds this percentage, sysmqttd turns ON
 # the Home Assistant "SD Card Space Alert" binary sensor (problem device class),

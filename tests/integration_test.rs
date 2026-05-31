@@ -59,6 +59,7 @@ async fn test_integration_daemon_discovery_and_publish() {
         reconnect_initial_delay: 2,
         reconnect_max_delay: 300,
         sd_alert_threshold: 95.0,
+        telemetry_interval: 60,
     };
 
     // Create temporary directory for mock GPIO base path
