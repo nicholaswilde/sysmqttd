@@ -37,6 +37,9 @@ incremental = false # Disable incremental compilation for CI
 debug = 0 # No debug info needed for basic CI checks
 
 [package.metadata.deb]
+extended-description = """
+A lightweight, native Rust system monitoring daemon optimized aggressively
+for low-resource single-board computers."""
 maintainer = "Nicholas Wilde <https://github.com/nicholaswilde/>"
 section = "utils"
 depends = "sudo, systemd"
