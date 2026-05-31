@@ -825,7 +825,12 @@ impl Daemon {
         });
         let interval_discovery_json = serde_json::to_vec(&interval_payload).unwrap();
         client
-            .publish(interval_discovery_topic, QoS::AtLeastOnce, true, interval_discovery_json)
+            .publish(
+                interval_discovery_topic,
+                QoS::AtLeastOnce,
+                true,
+                interval_discovery_json,
+            )
             .await?;
 
         println!("Published Home Assistant MQTT Discovery configs successfully.");

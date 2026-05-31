@@ -469,7 +469,7 @@ mod tests {
         env::remove_var("SYSMQTTD_RECONNECT_MAX_DELAY");
         env::remove_var("SYSMQTTD_SD_ALERT_THRESHOLD");
         env::remove_var("SYSMQTTD_TELEMETRY_INTERVAL");
- 
+
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
         env::remove_var("MQTT_USER");
@@ -483,7 +483,7 @@ mod tests {
         env::remove_var("RECONNECT_MAX_DELAY");
         env::remove_var("SD_ALERT_THRESHOLD");
         env::remove_var("TELEMETRY_INTERVAL");
- 
+
         let _ = fs::remove_file("sysmqttd.toml");
         let _ = fs::remove_file("sysmqttd.yaml");
         let _ = fs::remove_file("sysmqttd.yml");
@@ -937,7 +937,10 @@ mod tests {
         };
         let cfg_err = Config::load_with_overrides(overrides_env2);
         assert!(cfg_err.is_err());
-        assert!(cfg_err.err().unwrap().contains("Telemetry interval value 0 is out of bounds"));
+        assert!(cfg_err
+            .err()
+            .unwrap()
+            .contains("Telemetry interval value 0 is out of bounds"));
 
         clean_env();
     }
