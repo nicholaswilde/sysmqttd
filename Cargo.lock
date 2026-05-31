@@ -1439,7 +1439,7 @@ dependencies = [
 
 [[package]]
 name = "sysmqttd"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "rumqttc",
  "rustls-native-certs 0.7.3",

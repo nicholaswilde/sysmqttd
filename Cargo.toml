@@ -1,6 +1,6 @@
 [package]
 name = "sysmqttd"
-version = "0.1.21"
+version = "0.1.22"
 edition = "2021"
 description = "Lightweight MQTT system telemetry daemon for single-board computers"
 authors = ["Nicholas Wilde <https://github.com/nicholaswilde/>"]
