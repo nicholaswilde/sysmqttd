@@ -5,6 +5,8 @@ dotenv: ['.env']
 vars:
   LOCAL_IP:
     sh: hostname -I | awk '{print $1}'
+  ROOT_DIR:
+    sh: git rev-parse --show-toplevel
 
 tasks:
   update:
@@ -120,3 +122,45 @@ tasks:
     desc: Compile AMD64 binary (Standard PC/server)
     cmds:
       - cross build --target x86_64-unknown-linux-gnu --release
+
+  markdownlint:
+    desc: Lint markdown files with rumdl
+    cmds:
+      - rumdl check .
+
+  markdownlint:fix:
+    desc: Auto-fix markdown files with rumdl
+    cmds:
+      - rumdl check --fix .
+
+  yamllint:
+    desc: Lint YAML files with yamllint-rs
+    cmds:
+      - yamllint-rs .
+
+  spellcheck:
+    desc: Run typos spellchecker
+    cmds:
+      - typos
+
+  spellcheck-file:
+    desc: Run typos spellchecker on a specific file
+    vars:
+      FILE: '{{.FILE}}'
+    cmds:
+      - typos {{shellQuote .FILE}}
+
+  shellcheck:
+    desc: Lint shell scripts with shuck
+    cmds:
+      - shuck deployment/*.sh
+
+  linkcheck:
+    desc: Check links with lychee
+    cmds:
+      - lychee --config lychee.toml .
+
+  linkcheck:offline:
+    desc: Check links with lychee (offline)
+    cmds:
+      - lychee --offline --config lychee.toml .

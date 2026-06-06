@@ -146,7 +146,7 @@ jobs:
       - test
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install System Dependencies
         run: |
@@ -175,3 +175,11 @@ jobs:
         with:
           files: lcov.info
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Check spelling
+        uses: crate-ci/typos@v1

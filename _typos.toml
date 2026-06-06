@@ -1,0 +1,3 @@
+[default.extend-words]
+# Add repo-specific false-positive exceptions here
+# e.g. sysmqttd = "sysmqttd"
