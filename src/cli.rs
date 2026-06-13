@@ -24,6 +24,7 @@ pub enum CliAction {
         temperature_unit: Option<String>,
         use_tls: Option<bool>,
         ca_cert_path: Option<String>,
+        no_fan: Option<bool>,
     },
     /// Proceed with normal daemon boot.
     Boot {
@@ -41,6 +42,7 @@ pub enum CliAction {
         temperature_unit: Option<String>,
         use_tls: Option<bool>,
         ca_cert_path: Option<String>,
+        no_fan: Option<bool>,
     },
 }
 
@@ -63,6 +65,8 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut healthcheck = false;
     let mut use_tls = None;
     let mut ca_cert_path = None;
+    let mut no_fan = None;
+
 
     let mut i = 1;
     while i < args.len() {
@@ -182,9 +186,14 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
                     return Err("Missing CA certificate path after CA flag".to_string());
                 }
             }
+            "--no-fan" => {
+                no_fan = Some(true);
+                i += 1;
+            }
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
+
         }
     }
 
@@ -204,6 +213,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            no_fan,
         })
     } else {
         Ok(CliAction::Boot {
@@ -221,6 +231,7 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            no_fan,
         })
     }
 }
@@ -278,6 +289,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -318,6 +330,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -358,6 +371,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -404,6 +418,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -434,6 +449,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -458,6 +474,7 @@ mod tests {
                 temperature_unit: Some("C".to_string()),
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
 
@@ -483,6 +500,7 @@ mod tests {
                 temperature_unit: Some("F".to_string()),
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -507,6 +525,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
 
@@ -533,6 +552,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: None,
                 ca_cert_path: None,
+                no_fan: None,
             }
         );
     }
@@ -562,6 +582,7 @@ mod tests {
                 temperature_unit: None,
                 use_tls: Some(true),
                 ca_cert_path: Some("/my/ca.crt".to_string()),
+                no_fan: None,
             }
         );
 
@@ -588,6 +609,32 @@ mod tests {
                 temperature_unit: None,
                 use_tls: Some(true),
                 ca_cert_path: Some("/my/other/ca.crt".to_string()),
+                no_fan: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_no_fan_argument() {
+        let args = vec!["sysmqttd".to_string(), "--no-fan".to_string()];
+        assert_eq!(
+            parse_arguments(args).unwrap(),
+            CliAction::Boot {
+                config_path: None,
+                mqtt_host: None,
+                mqtt_port: None,
+                mqtt_user: None,
+                mqtt_password: None,
+                mqtt_topic_prefix: None,
+                net_interface: None,
+                monitored_services: None,
+                gpio_inputs: None,
+                gpio_outputs: None,
+                verbose: None,
+                temperature_unit: None,
+                use_tls: None,
+                ca_cert_path: None,
+                no_fan: Some(true),
             }
         );
     }

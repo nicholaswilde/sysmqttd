@@ -1,15 +1,15 @@
 # Plan: Fan Speed Monitoring
 
-## Phase 1: Configuration & CLI Flag Support
-- [ ] Task: Write tests for CLI parsing, configuration parsing, and environment overrides for `no_fan`.
-    - [ ] Write unit tests verifying `--no-fan` sets `no_fan = true`.
-    - [ ] Write unit tests verifying `SYSMQTTD_NO_FAN=true` sets `no_fan = true`.
-    - [ ] Write unit tests verifying configuration file parsing sets `no_fan`.
-- [ ] Task: Implement `no_fan` configuration support.
-    - [ ] Update config structure in `src/config.rs` to include `no_fan` field.
-    - [ ] Update CLI arguments parsing in `src/cli.rs` to support `--no-fan`.
-    - [ ] Update environment variable reading in `src/config.rs`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI Flag Support' (Protocol in workflow.md)
+## Phase 1: Configuration & CLI Flag Support [checkpoint: d6818a3]
+- [x] Task: Write tests for CLI parsing, configuration parsing, and environment overrides for `no_fan`.
+    - [x] Write unit tests verifying `--no-fan` sets `no_fan = true`.
+    - [x] Write unit tests verifying `SYSMQTTD_NO_FAN=true` sets `no_fan = true`.
+    - [x] Write unit tests verifying configuration file parsing sets `no_fan`.
+- [x] Task: Implement `no_fan` configuration support.
+    - [x] Update config structure in `src/config.rs` to include `no_fan` field.
+    - [x] Update CLI arguments parsing in `src/cli.rs` to support `--no-fan`.
+    - [x] Update environment variable reading in `src/config.rs`.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI Flag Support' (Protocol in workflow.md)
 
 ## Phase 2: Fan Speed Telemetry Gathering
 - [ ] Task: Write tests for discovering and reading fan speeds.

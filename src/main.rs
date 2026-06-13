@@ -30,6 +30,7 @@ async fn main() {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            no_fan,
         }) => sysmqttd::config::CliOverrides {
             config_path,
             mqtt_host,
@@ -45,6 +46,7 @@ async fn main() {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            no_fan,
             reconnect_initial_delay: None,
             reconnect_max_delay: None,
             sd_alert_threshold: None,
@@ -65,6 +67,7 @@ async fn main() {
             temperature_unit,
             use_tls,
             ca_cert_path,
+            no_fan,
         }) => {
             is_healthcheck = true;
             sysmqttd::config::CliOverrides {
@@ -82,6 +85,7 @@ async fn main() {
                 temperature_unit,
                 use_tls,
                 ca_cert_path,
+                no_fan,
                 reconnect_initial_delay: None,
                 reconnect_max_delay: None,
                 sd_alert_threshold: None,

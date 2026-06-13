@@ -24,6 +24,7 @@ pub struct CliOverrides {
     pub reconnect_max_delay: Option<u64>,
     pub sd_alert_threshold: Option<f64>,
     pub telemetry_interval: Option<u64>,
+    pub no_fan: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -82,6 +83,8 @@ pub struct Config {
         default = "default_telemetry_interval"
     )]
     pub telemetry_interval: u64,
+    #[serde(alias = "no_fan", default)]
+    pub no_fan: bool,
 }
 
 fn default_mqtt_port() -> u16 {
@@ -154,6 +157,8 @@ pub struct FileConfig {
         alias = "polling_interval"
     )]
     pub telemetry_interval: Option<u64>,
+    #[serde(alias = "no_fan")]
+    pub no_fan: Option<bool>,
 }
 
 fn parse_file_content(path: &str, content: &str) -> Result<FileConfig, String> {
@@ -427,6 +432,17 @@ impl Config {
             ));
         }
 
+        let no_fan = overrides
+            .no_fan
+            .or_else(|| {
+                env::var("SYSMQTTD_NO_FAN").ok().map(|v| {
+                    let v_lower = v.to_lowercase();
+                    v_lower == "true" || v_lower == "1" || v_lower == "yes"
+                })
+            })
+            .or(file_config.no_fan)
+            .unwrap_or(false);
+
         Ok(Config {
             mqtt_host,
             mqtt_port,
@@ -444,6 +460,7 @@ impl Config {
             reconnect_max_delay,
             sd_alert_threshold,
             telemetry_interval,
+            no_fan,
         })
     }
 }
@@ -469,6 +486,8 @@ mod tests {
         env::remove_var("SYSMQTTD_RECONNECT_MAX_DELAY");
         env::remove_var("SYSMQTTD_SD_ALERT_THRESHOLD");
         env::remove_var("SYSMQTTD_TELEMETRY_INTERVAL");
+        env::remove_var("SYSMQTTD_NO_FAN");
+
 
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
@@ -941,6 +960,56 @@ mod tests {
             .err()
             .unwrap()
             .contains("Telemetry interval value 0 is out of bounds"));
+
+        clean_env();
+    }
+
+    #[test]
+    fn test_no_fan_config() {
+        // 1. Default no_fan is false
+        clean_env();
+        let overrides_default = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg = Config::load_with_overrides(overrides_default).unwrap();
+        assert!(!cfg.no_fan);
+
+        // 2. TOML file parses no_fan = true
+        clean_env();
+        {
+            let mut file = File::create("sysmqttd.toml").unwrap();
+            writeln!(
+                file,
+                r#"
+                host = "127.0.0.1"
+                no_fan = true
+                "#
+            )
+            .unwrap();
+        }
+        let cfg_toml = Config::load().unwrap();
+        assert!(cfg_toml.no_fan);
+
+        // 3. Env var overrides no_fan
+        clean_env();
+        env::set_var("SYSMQTTD_NO_FAN", "true");
+        let overrides_env = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            ..CliOverrides::default()
+        };
+        let cfg_env = Config::load_with_overrides(overrides_env).unwrap();
+        assert!(cfg_env.no_fan);
+
+        // 4. CLI override takes precedence
+        clean_env();
+        let overrides_cli = CliOverrides {
+            mqtt_host: Some("127.0.0.1".to_string()),
+            no_fan: Some(true),
+            ..CliOverrides::default()
+        };
+        let cfg_cli = Config::load_with_overrides(overrides_cli).unwrap();
+        assert!(cfg_cli.no_fan);
 
         clean_env();
     }
