@@ -1,3 +1,5 @@
 [default.extend-words]
-# Add repo-specific false-positive exceptions here
-# e.g. sysmqttd = "sysmqttd"
+mosquitto = "mosquitto"
+thr = "thr"
+thr2 = "thr2"
+ot = "ot"
