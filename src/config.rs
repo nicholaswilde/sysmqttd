@@ -488,7 +488,6 @@ mod tests {
         env::remove_var("SYSMQTTD_TELEMETRY_INTERVAL");
         env::remove_var("SYSMQTTD_NO_FAN");
 
-
         env::remove_var("MQTT_HOST");
         env::remove_var("MQTT_PORT");
         env::remove_var("MQTT_USER");

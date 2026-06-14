@@ -713,12 +713,12 @@ impl Daemon {
 
         // 8.12.5. Fan Speed Discovery configuration
         if !self.config.no_fan {
-            let mut collector = telemetry::TelemetryCollector::with_sysfs_root(self.sysfs_root.clone());
+            let mut collector =
+                telemetry::TelemetryCollector::with_sysfs_root(self.sysfs_root.clone());
             collector.no_fan = self.config.no_fan;
             let fan_speeds = collector.read_fan_speeds();
             for (fan_id, _) in fan_speeds {
-                let fan_name = if fan_id.starts_with("fan_") {
-                    let index = &fan_id[4..];
+                let fan_name = if let Some(index) = fan_id.strip_prefix("fan_") {
                     format!("Fan {} Speed", index)
                 } else {
                     format!("{} Speed", fan_id)

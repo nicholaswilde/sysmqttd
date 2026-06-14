@@ -368,7 +368,13 @@ impl DiscoveryPayload {
         }
     }
 
-    pub fn new_fan_speed(prefix: &str, hostname: &str, fan_id: &str, fan_name: &str, device: DeviceInfo) -> Self {
+    pub fn new_fan_speed(
+        prefix: &str,
+        hostname: &str,
+        fan_id: &str,
+        fan_name: &str,
+        device: DeviceInfo,
+    ) -> Self {
         DiscoveryPayload {
             name: fan_name.to_string(),
             state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
@@ -686,7 +692,13 @@ mod tests {
             manufacturer: "sysmqttd".to_string(),
         };
 
-        let payload = DiscoveryPayload::new_fan_speed("homeassistant", "test-host", "fan_1", "Fan 1 Speed", device);
+        let payload = DiscoveryPayload::new_fan_speed(
+            "homeassistant",
+            "test-host",
+            "fan_1",
+            "Fan 1 Speed",
+            device,
+        );
         let s = serde_json::to_string(&payload).unwrap();
 
         assert!(s.contains(r#""name":"Fan 1 Speed""#));

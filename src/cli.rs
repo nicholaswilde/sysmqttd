@@ -67,7 +67,6 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
     let mut ca_cert_path = None;
     let mut no_fan = None;
 
-
     let mut i = 1;
     while i < args.len() {
         let arg = &args[i];
@@ -193,7 +192,6 @@ pub fn parse_arguments(args: Vec<String>) -> Result<CliAction, String> {
             unknown => {
                 return Err(format!("Unknown argument '{}'", unknown));
             }
-
         }
     }
 

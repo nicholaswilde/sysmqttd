@@ -14,7 +14,7 @@
 ## :star: Features
 
 - **Negligible Footprint:** Optimized native Rust binary under **530KB** when stripped, consuming only **~4-6MB RAM RSS** during active execution.
-- **Comprehensive Telemetry:** Gathers CPU Temperature, CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, Wi-Fi Signal Strength (RSSI in dBm), pending system package upgrades (upgradable package count), and active top resource-consuming process details.
+- **Comprehensive Telemetry:** Gathers CPU Temperature, Fan Speeds (RPM), CPU Usage (%), RAM Usage (%) and absolute capacity (Used & Free in MB), Disk Storage Utilization (%) and absolute capacity (Used & Free in GB), CPU Load Averages (1m, 5m, 15m), System Uptime, Real-time Network Bandwidth Rates (RX & TX rate in kB/s), Primary Interface IP & MAC addresses, Wi-Fi Signal Strength (RSSI in dBm), pending system package upgrades (upgradable package count), and active top resource-consuming process details.
 - **Service Status & Control Monitoring:** Asynchronously monitors a customizable whitelist of systemd services (e.g., `docker`, `nginx`, `ssh`), reporting their status as Home Assistant binary sensors (`connectivity` class) and registering corresponding dynamic switch entities for remote control (Start, Stop, Restart).
 - **GPIO Input Monitoring:** Monitors physical state transitions of configured GPIO input pins (e.g., buttons, door sensors) and publishes changes instantly as Home Assistant binary sensors.
 - **GPIO Output Actuation Control:** Drives physical output devices (e.g., relays, indicators) connected to whitelisted systemd GPIO pins via incoming MQTT switch commands.
@@ -112,6 +112,7 @@ The binary supports the following command-line flags, processed before any confi
 - `-g`, `--gpio <list>` / `--gpio-inputs <list>` – Comma-separated list of GPIO input pins in `pin:name[:device_class]` format.
 - `-o`, `--gpio-outputs <list>` – Comma-separated list of GPIO output pins in `pin:name` format.
 - `-T`, `-U`, `--unit <unit>` / `--temperature-unit <unit>` – Temperature unit selection (`C` or `F`, case-insensitive, default `F`).
+- `--no-fan` – Disable fan speed monitoring.
 - `--verbose` – Enable verbose logging (detailed payloads, events, and transitions).
 - `--tls`, `--use-tls` – Enable secure TLS broker connection (defaults port to `8883`).
 - `--ca`, `--ca-cert-path <path>` – Custom/self-signed root CA certificate path for TLS.
@@ -142,6 +143,7 @@ The binary supports the following command-line flags, processed before any confi
 | `SYSMQTTD_GPIO_INPUTS`   | `GPIO_INPUTS`   | `gpio_inputs` | *None* | Whitelist of GPIO input pins in `pin:name[:device_class]` format. |
 | `SYSMQTTD_GPIO_OUTPUTS`  | `GPIO_OUTPUTS`  | `gpio_outputs` | *None* | Whitelist of GPIO output pins in `pin:name` format. |
 | `SYSMQTTD_TEMPERATURE_UNIT` | `TEMPERATURE_UNIT` | `temperature_unit` (`unit`, `temp_unit`) | `F` | Temperature unit selection: `C` (Celsius) or `F` (Fahrenheit, default). |
+| `SYSMQTTD_NO_FAN`        | *None*           | `no_fan` | `false` | Disable fan speed monitoring. |
 | `SYSMQTTD_VERBOSE`       | *N/A*           | `verbose` | `false` | Enable verbose logging (detailed payloads, events, and transitions). |
 | `SYSMQTTD_USE_TLS`       | `USE_TLS`       | `use_tls` (`tls`) | `false` | Enable secure TLS broker connection (defaults port to `8883`). |
 | `SYSMQTTD_CA_CERT_PATH`  | `CA_CERT_PATH`  | `ca_cert_path` (`ca_path`) | *None* | Optional custom/self-signed root CA certificate path for TLS. |
@@ -169,6 +171,7 @@ prefix = "homeassistant"
 interface = "eth0"
 verbose = false
 temperature_unit = "F"
+no_fan = false
 sd_alert_threshold = 95.0
 
 gpio_inputs = [
@@ -419,6 +422,8 @@ For every metric and monitored service, discovery configurations are published s
   `homeassistant/sensor/sysmqttd_<hostname>_upgradable_packages/config`
 - **Top Process Discovery Config Topic:**
   `homeassistant/sensor/sysmqttd_<hostname>_top_process/config`
+- **Fan Speed (e.g. `fan_1`) Discovery Config Topic:**
+  `homeassistant/sensor/sysmqttd_<hostname>_fan_1/config`
 - **Monitored Service (e.g. `nginx`) Discovery Config Topic:**
   `homeassistant/binary_sensor/sysmqttd_<hostname>_service_nginx/config`
 - **Reboot Button Discovery Config Topic:**

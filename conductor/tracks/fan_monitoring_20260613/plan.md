@@ -31,12 +31,12 @@
     - [x] Update `src/daemon.rs` to dynamically discover fans and publish auto-discovery configuration messages for each discovered fan on startup.
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Home Assistant Discovery & Payload Integration' (Protocol in workflow.md)
 
-## Phase 4: Integration Verification, Formatting & Documentation
-- [ ] Task: Integration Verification.
-    - [ ] Run full test suite (`cargo test`) locally.
-    - [ ] Check cross-compilation target (`cross build --target arm-unknown-linux-gnueabihf`).
-    - [ ] Run clippy and formatting checks.
-- [ ] Task: Update Documentation & Configuration Examples.
-    - [ ] Update `README.md` to document the new fan speed monitoring feature and the `--no-fan` toggle options.
-    - [ ] Update `sysmqttd.toml.example` to document the new `no_fan` configuration option.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Integration Verification, Formatting & Documentation' (Protocol in workflow.md)
+## Phase 4: Integration Verification, Formatting & Documentation [checkpoint: 1a64dbb]
+- [x] Task: Integration Verification.
+    - [x] Run full test suite (`cargo test`) locally.
+    - [x] Check cross-compilation target (`cross build --target arm-unknown-linux-gnueabihf`).
+    - [x] Run clippy and formatting checks.
+- [x] Task: Update Documentation & Configuration Examples.
+    - [x] Update `README.md` to document the new fan speed monitoring feature and the `--no-fan` toggle options.
+    - [x] Update `sysmqttd.toml.example` to document the new `no_fan` configuration option.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Integration Verification, Formatting & Documentation' (Protocol in workflow.md)
