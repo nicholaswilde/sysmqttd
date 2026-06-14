@@ -22,14 +22,14 @@
     - [x] Update `TelemetryState` in `src/telemetry.rs` to include flattened extra metrics map and populate it with fan speeds in `collect`.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Fan Speed Telemetry Gathering' (Protocol in workflow.md)
 
-## Phase 3: Home Assistant Discovery & Payload Integration
-- [ ] Task: Write tests for MQTT discovery payloads and serialization.
-    - [ ] Write unit test verifying discovery configuration payload generated for a fan speed sensor.
-    - [ ] Write unit test verifying serialization of `TelemetryState` includes flattened fan keys.
-- [ ] Task: Implement discovery payload generation and publishing.
-    - [ ] Update `src/discovery.rs` to add `new_fan_speed` constructor for `DiscoveryPayload`.
-    - [ ] Update `src/daemon.rs` to dynamically discover fans and publish auto-discovery configuration messages for each discovered fan on startup.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Home Assistant Discovery & Payload Integration' (Protocol in workflow.md)
+## Phase 3: Home Assistant Discovery & Payload Integration [checkpoint: fcbe2b1]
+- [x] Task: Write tests for MQTT discovery payloads and serialization.
+    - [x] Write unit test verifying discovery configuration payload generated for a fan speed sensor.
+    - [x] Write unit test verifying serialization of `TelemetryState` includes flattened fan keys.
+- [x] Task: Implement discovery payload generation and publishing.
+    - [x] Update `src/discovery.rs` to add `new_fan_speed` constructor for `DiscoveryPayload`.
+    - [x] Update `src/daemon.rs` to dynamically discover fans and publish auto-discovery configuration messages for each discovered fan on startup.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Home Assistant Discovery & Payload Integration' (Protocol in workflow.md)
 
 ## Phase 4: Integration Verification, Formatting & Documentation
 - [ ] Task: Integration Verification.

@@ -367,6 +367,21 @@ impl DiscoveryPayload {
             entity_category: Some("diagnostic".to_string()),
         }
     }
+
+    pub fn new_fan_speed(prefix: &str, hostname: &str, fan_id: &str, fan_name: &str, device: DeviceInfo) -> Self {
+        DiscoveryPayload {
+            name: fan_name.to_string(),
+            state_topic: format!("{}/sensor/sysmqttd_{}/state", prefix, hostname),
+            availability_topic: format!("{}/sensor/sysmqttd_{}/availability", prefix, hostname),
+            value_template: format!("{{{{ value_json.{} }}}}", fan_id),
+            unit_of_measurement: Some("RPM".to_string()),
+            device_class: None,
+            state_class: Some("measurement".to_string()),
+            unique_id: format!("sysmqttd_{}_{}", hostname, fan_id),
+            device,
+            entity_category: None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -660,5 +675,26 @@ mod tests {
         assert!(s_rssi.contains(r#""state_class":"measurement""#));
         assert!(s_rssi.contains(r#""uniq_id":"sysmqttd_test-host_wifi_rssi""#));
         assert!(s_rssi.contains(r#""ent_cat":"diagnostic""#));
+    }
+
+    #[test]
+    fn test_fan_speed_discovery_serialization() {
+        let device = DeviceInfo {
+            identifiers: vec!["sysmqttd_test-host".to_string()],
+            name: "sysmqttd test-host".to_string(),
+            model: "System Monitor".to_string(),
+            manufacturer: "sysmqttd".to_string(),
+        };
+
+        let payload = DiscoveryPayload::new_fan_speed("homeassistant", "test-host", "fan_1", "Fan 1 Speed", device);
+        let s = serde_json::to_string(&payload).unwrap();
+
+        assert!(s.contains(r#""name":"Fan 1 Speed""#));
+        assert!(s.contains(r#""val_tpl":"{{ value_json.fan_1 }}""#));
+        assert!(s.contains(r#""unit_of_meas":"RPM""#));
+        assert!(s.contains(r#""state_class":"measurement""#));
+        assert!(s.contains(r#""uniq_id":"sysmqttd_test-host_fan_1""#));
+        assert!(!s.contains("dev_cla"));
+        assert!(!s.contains("ent_cat"));
     }
 }

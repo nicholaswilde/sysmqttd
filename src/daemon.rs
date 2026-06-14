@@ -10,6 +10,7 @@ pub struct Daemon {
     pub config: Config,
     pub hostname: String,
     pub gpio_base_path: std::path::PathBuf,
+    pub sysfs_root: std::path::PathBuf,
 }
 
 impl Daemon {
@@ -18,11 +19,17 @@ impl Daemon {
             config,
             hostname,
             gpio_base_path: std::path::PathBuf::from("/sys/class/gpio"),
+            sysfs_root: std::path::PathBuf::from("/"),
         }
     }
 
     pub fn with_gpio_base_path(mut self, path: std::path::PathBuf) -> Self {
         self.gpio_base_path = path;
+        self
+    }
+
+    pub fn with_sysfs_root(mut self, path: std::path::PathBuf) -> Self {
+        self.sysfs_root = path;
         self
     }
 
@@ -274,9 +281,10 @@ impl Daemon {
         let verbose_clone = self.config.verbose;
         let sd_threshold_clone = self.config.sd_alert_threshold;
         let no_fan_clone = self.config.no_fan;
+        let sysfs_root_clone = self.sysfs_root.clone();
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
-            let mut collector = telemetry::TelemetryCollector::new();
+            let mut collector = telemetry::TelemetryCollector::with_sysfs_root(sysfs_root_clone);
             collector.temperature_unit = unit_clone;
             collector.sd_alert_threshold = sd_threshold_clone;
             collector.no_fan = no_fan_clone;
@@ -702,6 +710,37 @@ impl Daemon {
         client
             .publish(top_proc_topic, QoS::AtLeastOnce, true, top_proc_json)
             .await?;
+
+        // 8.12.5. Fan Speed Discovery configuration
+        if !self.config.no_fan {
+            let mut collector = telemetry::TelemetryCollector::with_sysfs_root(self.sysfs_root.clone());
+            collector.no_fan = self.config.no_fan;
+            let fan_speeds = collector.read_fan_speeds();
+            for (fan_id, _) in fan_speeds {
+                let fan_name = if fan_id.starts_with("fan_") {
+                    let index = &fan_id[4..];
+                    format!("Fan {} Speed", index)
+                } else {
+                    format!("{} Speed", fan_id)
+                };
+
+                let fan_payload = discovery::DiscoveryPayload::new_fan_speed(
+                    &self.config.mqtt_topic_prefix,
+                    &self.hostname,
+                    &fan_id,
+                    &fan_name,
+                    device.clone(),
+                );
+                let fan_topic = format!(
+                    "{}/sensor/sysmqttd_{}_{}/config",
+                    self.config.mqtt_topic_prefix, self.hostname, fan_id
+                );
+                let fan_json = serde_json::to_vec(&fan_payload).unwrap();
+                client
+                    .publish(fan_topic, QoS::AtLeastOnce, true, fan_json)
+                    .await?;
+            }
+        }
 
         // 8.13. Reboot Button Discovery configuration
         let reboot_topic = format!(
@@ -1154,7 +1193,7 @@ impl Daemon {
     pub async fn run_healthcheck(&self) -> Result<(), HealthcheckError> {
         // 1. Run local telemetry gather
         println!("Checking local telemetry gathering...");
-        let mut collector = telemetry::TelemetryCollector::new();
+        let mut collector = telemetry::TelemetryCollector::with_sysfs_root(self.sysfs_root.clone());
         collector.temperature_unit = self.config.temperature_unit.clone();
         collector.no_fan = self.config.no_fan;
 
