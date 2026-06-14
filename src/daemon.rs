@@ -273,11 +273,13 @@ impl Daemon {
         let unit_clone = self.config.temperature_unit.clone();
         let verbose_clone = self.config.verbose;
         let sd_threshold_clone = self.config.sd_alert_threshold;
+        let no_fan_clone = self.config.no_fan;
         tokio::spawn(async move {
             time::sleep(Duration::from_secs(5)).await;
             let mut collector = telemetry::TelemetryCollector::new();
             collector.temperature_unit = unit_clone;
             collector.sd_alert_threshold = sd_threshold_clone;
+            collector.no_fan = no_fan_clone;
             let state_topic = format!("{}/sensor/sysmqttd_{}/state", prefix_clone, hostname_clone);
 
             let mut current_interval = Duration::from_secs(*interval_rx.borrow());
@@ -1154,6 +1156,7 @@ impl Daemon {
         println!("Checking local telemetry gathering...");
         let mut collector = telemetry::TelemetryCollector::new();
         collector.temperature_unit = self.config.temperature_unit.clone();
+        collector.no_fan = self.config.no_fan;
 
         // Verify network interface is readable/accessible
         if let Err(e) = collector.read_interface_bytes(&self.config.net_interface) {

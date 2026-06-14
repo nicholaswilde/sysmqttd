@@ -11,16 +11,16 @@
     - [x] Update environment variable reading in `src/config.rs`.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration & CLI Flag Support' (Protocol in workflow.md)
 
-## Phase 2: Fan Speed Telemetry Gathering
-- [ ] Task: Write tests for discovering and reading fan speeds.
-    - [ ] Write unit test verifying discovery of multiple mock fans in a temp directory.
-    - [ ] Write unit test verifying mock fallback to `fan_1` at `1200` RPM when no fans are discovered in non-root `sysfs_root`.
-    - [ ] Write unit test verifying no fans are collected when `no_fan` is set to `true`.
-- [ ] Task: Implement fan speed telemetry collection.
-    - [ ] Update `TelemetryCollector` in `src/telemetry.rs` to store `no_fan` flag.
-    - [ ] Implement `read_fan_speeds` logic in `src/telemetry.rs` to search for `/sys/class/hwmon/hwmon*/fan*_input`.
-    - [ ] Update `TelemetryState` in `src/telemetry.rs` to include flattened extra metrics map and populate it with fan speeds in `collect`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Fan Speed Telemetry Gathering' (Protocol in workflow.md)
+## Phase 2: Fan Speed Telemetry Gathering [checkpoint: 81a130d]
+- [x] Task: Write tests for discovering and reading fan speeds.
+    - [x] Write unit test verifying discovery of multiple mock fans in a temp directory.
+    - [x] Write unit test verifying mock fallback to `fan_1` at `1200` RPM when no fans are discovered in non-root `sysfs_root`.
+    - [x] Write unit test verifying no fans are collected when `no_fan` is set to `true`.
+- [x] Task: Implement fan speed telemetry collection.
+    - [x] Update `TelemetryCollector` in `src/telemetry.rs` to store `no_fan` flag.
+    - [x] Implement `read_fan_speeds` logic in `src/telemetry.rs` to search for `/sys/class/hwmon/hwmon*/fan*_input`.
+    - [x] Update `TelemetryState` in `src/telemetry.rs` to include flattened extra metrics map and populate it with fan speeds in `collect`.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Fan Speed Telemetry Gathering' (Protocol in workflow.md)
 
 ## Phase 3: Home Assistant Discovery & Payload Integration
 - [ ] Task: Write tests for MQTT discovery payloads and serialization.

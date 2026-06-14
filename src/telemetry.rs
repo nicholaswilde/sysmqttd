@@ -33,6 +33,8 @@ pub struct TelemetryState {
     pub upgradable_packages: u32,
     pub top_process: String,
     pub sd_space_alert: bool,
+    #[serde(flatten)]
+    pub extra_metrics: std::collections::BTreeMap<String, u32>,
 }
 
 pub struct TelemetryCollector {
@@ -45,6 +47,7 @@ pub struct TelemetryCollector {
     cached_package_count: u32,
     pub temperature_unit: String,
     pub sd_alert_threshold: f64,
+    pub no_fan: bool,
 }
 
 impl Default for TelemetryCollector {
@@ -67,6 +70,7 @@ impl TelemetryCollector {
             cached_package_count: 0,
             temperature_unit: "C".to_string(),
             sd_alert_threshold: 95.0,
+            no_fan: false,
         }
     }
 
@@ -84,6 +88,7 @@ impl TelemetryCollector {
             cached_package_count: 0,
             temperature_unit: "C".to_string(),
             sd_alert_threshold: 95.0,
+            no_fan: false,
         }
     }
 
@@ -175,6 +180,49 @@ impl TelemetryCollector {
             "Interface {} not found in /proc/net/dev",
             interface
         ))
+    }
+
+    /// Discover and read fan speed inputs from sysfs
+    pub fn read_fan_speeds(&self) -> std::collections::BTreeMap<String, u32> {
+        let mut fan_speeds = std::collections::BTreeMap::new();
+        if self.no_fan {
+            return fan_speeds;
+        }
+
+        let hwmon_dir = self.sysfs_root.join("sys/class/hwmon");
+        let mut discovered = false;
+        if let Ok(entries) = std::fs::read_dir(&hwmon_dir) {
+            let mut entries: Vec<_> = entries.flatten().collect();
+            entries.sort_by_key(|e| e.file_name());
+            let mut fan_index = 1;
+            for entry in entries {
+                let path = entry.path();
+                if let Ok(fan_entries) = std::fs::read_dir(&path) {
+                    let mut fan_entries: Vec<_> = fan_entries.flatten().collect();
+                    fan_entries.sort_by_key(|e| e.file_name());
+                    for fan_entry in fan_entries {
+                        let filename = fan_entry.file_name();
+                        let filename_str = filename.to_string_lossy();
+                        if filename_str.starts_with("fan") && filename_str.ends_with("_input") {
+                            if let Ok(content) = std::fs::read_to_string(fan_entry.path()) {
+                                if let Ok(rpm) = content.trim().parse::<u32>() {
+                                    fan_speeds.insert(format!("fan_{}", fan_index), rpm);
+                                    fan_index += 1;
+                                    discovered = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Mock fallback for testing/non-Linux environments
+        if !discovered && self.sysfs_root != Path::new("/") {
+            fan_speeds.insert("fan_1".to_string(), 1200);
+        }
+
+        fan_speeds
     }
     /// Read RAM statistics: (percentage, used_mb, free_mb)
     pub fn get_ram_stats(&mut self) -> (f64, f64, f64) {
@@ -507,6 +555,7 @@ impl TelemetryCollector {
             upgradable_packages,
             top_process,
             sd_space_alert: disk_usage >= self.sd_alert_threshold,
+            extra_metrics: self.read_fan_speeds(),
         }
     }
 }
@@ -914,5 +963,46 @@ mod tests {
         collector.sd_alert_threshold = 101.0;
         let state = collector.collect("wlan0");
         assert!(!state.sd_space_alert);
+    }
+
+    #[test]
+    fn test_fan_speed_discovery_and_fallback() {
+        // 1. Mock fallback to fan_1 at 1200 RPM when no fans are discovered in non-root sysfs_root
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_fans_fallback");
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let fan_speeds = collector.read_fan_speeds();
+        assert_eq!(fan_speeds.len(), 1);
+        assert_eq!(fan_speeds.get("fan_1"), Some(&1200));
+
+        // 2. No fans collected when no_fan is set to true
+        let mut collector_no_fan = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        collector_no_fan.no_fan = true;
+        let fan_speeds_no_fan = collector_no_fan.read_fan_speeds();
+        assert!(fan_speeds_no_fan.is_empty());
+
+        let _ = fs::remove_dir_all(test_dir);
+    }
+
+    #[test]
+    fn test_fan_speed_multi_discovery() {
+        // 3. Discovery of multiple mock fans in a temp directory
+        let test_dir = std::env::temp_dir().join("sysmqttd_test_fans_multi");
+        let hwmon0 = test_dir.join("sys/class/hwmon/hwmon0");
+        let hwmon1 = test_dir.join("sys/class/hwmon/hwmon1");
+        fs::create_dir_all(&hwmon0).unwrap();
+        fs::create_dir_all(&hwmon1).unwrap();
+
+        fs::write(hwmon0.join("fan1_input"), "1500\n").unwrap();
+        fs::write(hwmon0.join("fan2_input"), "1800\n").unwrap();
+        fs::write(hwmon1.join("fan1_input"), "2200\n").unwrap();
+
+        let collector = TelemetryCollector::with_sysfs_root(test_dir.clone());
+        let fan_speeds = collector.read_fan_speeds();
+        assert_eq!(fan_speeds.len(), 3);
+        assert_eq!(fan_speeds.get("fan_1"), Some(&1500));
+        assert_eq!(fan_speeds.get("fan_2"), Some(&1800));
+        assert_eq!(fan_speeds.get("fan_3"), Some(&2200));
+
+        let _ = fs::remove_dir_all(test_dir);
     }
 }
